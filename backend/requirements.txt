@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+psycopg2-binary
+motor                 # MongoDB client
+openai
+langchain
+python-dotenv
+beautifulsoup4 
+readability-lxml
+lxml

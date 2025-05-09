@@ -1,0 +1,54 @@
+body {
+  background-color: #111;
+  color: #0ff;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 2rem;
+}
+
+nav {
+  margin-bottom: 2rem;
+}
+
+button {
+  margin: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #0ff;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0cc;
+}
+
+textarea,
+input,
+select {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: #222;
+  border: 1px solid #0ff;
+  color: #0ff;
+  border-radius: 4px;
+}
+
+table {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #0ff;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.hidden {
+  display: none;
+}
