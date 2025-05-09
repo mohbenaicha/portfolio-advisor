@@ -4,33 +4,45 @@ from app.services.langchain_summary import summarize_articles
 from app.services.article_scraper import extract_with_readability
 from app.db.mongo import get_cached_articles, store_article_summaries
 
-async def handle_prompt(request):
-    # Step 1: Prompt 1 → extract asset_types, sectors, regions, themes, keywords
-    entities = await extract_entities(request.question, request.portfolio_summary)
+# async def handle_prompt(request):
+#     # Step 1: Prompt 1 → extract asset_types, sectors, regions, themes, keywords
+#     entities = await extract_entities(request.question, request.portfolio_summary)
 
-    # Step 2: Check MongoDB for recent summaries
-    cached_articles = await get_cached_articles(entities)
+#     # Step 2: Check MongoDB for recent summaries
+#     cached_articles = await get_cached_articles(entities)
 
-    if not cached_articles:
-        # Step 3: Fetch articles from Alpha Vantage
-        fresh_articles = await fetch_articles(entities)
+#     if not cached_articles:
+#         # Step 3: Fetch articles from Alpha Vantage
+#         fresh_articles = await fetch_articles(entities)
 
-        # Step 4: Scrape full article content using readability
-        for article in fresh_articles:
-            article["raw_article"] = extract_with_readability(article["url"])
+#         # Step 4: Scrape full article content using readability
+#         for article in fresh_articles:
+#             article["raw_article"] = extract_with_readability(article["url"])
 
-        # Step 5: Summarize articles using LangChain
-        summarized = await summarize_articles(fresh_articles)
+#         # Step 5: Summarize articles using LangChain
+#         summarized = await summarize_articles(fresh_articles)
 
-        # Step 6: Cache summaries in MongoDB
-        await store_article_summaries(summarized)
-    else:
-        summarized = cached_articles
+#         # Step 6: Cache summaries in MongoDB
+#         await store_article_summaries(summarized)
+#     else:
+#         summarized = cached_articles
 
-    # Step 7: Prompt 2 → generate advice using OpenAI
-    advice = await generate_advice(request.question, request.portfolio_data, summarized)
+#     # Step 7: Prompt 2 → generate advice using OpenAI
+#     advice = await generate_advice(request.question, request.portfolio_data, summarized)
 
-    return {
-        "summary": advice,
-        "articles": summarized
-    }
+#     return {
+#         "summary": advice,
+#         "articles": summarized
+#     }
+
+
+from app.models.schemas import PromptRequest, PromptResponse
+
+async def handle_prompt(request: PromptRequest) -> PromptResponse:
+    return PromptResponse(
+        summary=f"[MOCK] Summary for: {request.question}",
+        articles=[
+            {"title": "Mock Article 1", "url": "https://example.com/a", "source": "Mock News"},
+            {"title": "Mock Article 2", "url": "https://example.com/b", "source": "Mock Finance"}
+        ]
+    )

@@ -1,45 +1,50 @@
+import { safeFetch } from "./utils.js";
+
 const BASE_URL = "http://localhost:8000"; // Update this for production
 
 // Portfolio APIs
-async function getPortfolios() {
-  const res = await fetch(`${BASE_URL}/portfolios`);
-  return res.json();
+export async function getPortfolios() {
+  return safeFetch(`${BASE_URL}/portfolios`);
 }
 
-async function createPortfolioAPI(name, assets) {
-  const res = await fetch(`${BASE_URL}/portfolios`, {
-    method: "POST",
+export async function createPortfolioAPI(name, assets, id = null) {
+  const method = id ? "PUT" : "POST";
+  const url = id ? `${BASE_URL}/portfolios/${id}` : `${BASE_URL}/portfolios`;
+  return safeFetch(url, {
+    method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, assets })
   });
-  return res.json();
 }
 
-async function deletePortfolioAPI(id) {
-  await fetch(`${BASE_URL}/portfolios/${id}`, { method: "DELETE" });
+
+export async function deletePortfolioAPI(id) {
+  await safeFetch(`${BASE_URL}/portfolios/${id}`, { method: "DELETE" });
 }
 
 // Prompt submission
-async function analyzePrompt(question, portfolio, summary) {
-  const res = await fetch(`${BASE_URL}/analyze`, {
+export async function analyzePrompt(question, portfolio, summary) {
+  return safeFetch(`${BASE_URL}/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      question,
-      portfolio_data: portfolio,
-      portfolio_summary: summary
-    })
+    body: JSON.stringify({ question, portfolio_data: portfolio, portfolio_summary: summary })
   });
-  return res.json();
 }
 
 // Archive APIs
-async function getArchives() {
-  const res = await fetch(`${BASE_URL}/archives`);
-  return res.json();
+export async function getArchives() {
+  return safeFetch(`${BASE_URL}/archives`);
 }
 
-async function getArchivedResponse(id) {
-  const res = await fetch(`${BASE_URL}/responses/${id}`);
-  return res.json();
+export async function getArchivedResponse(id) {
+  return safeFetch(`${BASE_URL}/responses/${id}`);
+}
+
+
+export async function saveArchive(payload) {
+  return safeFetch(`${BASE_URL}/archives`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
 }

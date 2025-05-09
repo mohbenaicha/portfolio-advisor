@@ -1,8 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
-
-Base = declarative_base()
+from app.models.sql_models import Base  # share the same Base
 
 class ArchivedResponse(Base):
     __tablename__ = "archived_responses"

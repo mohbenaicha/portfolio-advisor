@@ -1,6 +1,12 @@
+import {
+  getPortfolios,
+  createPortfolioAPI,
+  deletePortfolioAPI
+} from './api.js';
+
 let selectedPortfolioId = null;
 
-async function loadPortfolioDropdown() {
+export async function loadPortfolioDropdown() {
   const portfolios = await getPortfolios();
   const dropdown = document.getElementById("portfolio-dropdown");
   dropdown.innerHTML = "";
@@ -10,9 +16,10 @@ async function loadPortfolioDropdown() {
     opt.textContent = p.name;
     dropdown.appendChild(opt);
   });
+  dropdown.value = selectedPortfolioId;
 }
 
-async function loadPortfolio() {
+export async function loadPortfolio() {
   const id = parseInt(document.getElementById("portfolio-dropdown").value);
   const portfolios = await getPortfolios();
   const selected = portfolios.find(p => p.id === id);
@@ -29,29 +36,38 @@ async function loadPortfolio() {
   });
 }
 
-async function createPortfolio() {
+export async function createPortfolio() {
   const name = document.getElementById("portfolio-name").value;
-  const assets = [];
-  const newPortfolio = await createPortfolioAPI(name, assets);
-  await loadPortfolioDropdown();
+  const assets = []; // empty for now
+  try {
+    const newPortfolio = await createPortfolioAPI(name, assets, selectedPortfolioId);
+    selectedPortfolioId = newPortfolio.id;
+    await loadPortfolioDropdown();
+    await loadPortfolio();
+  } catch (err) {
+    alert('Failed to save portfolio: ' + err.message);
+  }
 }
 
-async function deletePortfolio() {
+export async function deletePortfolio() {
   if (!selectedPortfolioId) return;
-  await deletePortfolioAPI(selectedPortfolioId);
-  selectedPortfolioId = null;
-  await loadPortfolioDropdown();
-  document.querySelector("#asset-table tbody").innerHTML = "";
+  try {
+    await deletePortfolioAPI(selectedPortfolioId);
+    selectedPortfolioId = null;
+    await loadPortfolioDropdown();
+    document.querySelector("#asset-table tbody").innerHTML = "";
+  } catch (err) {
+    alert('Failed to delete portfolio: ' + err.message);
+  }
 }
 
-function addAssetRow() {
+export function addAssetRow() {
   const row = createAssetRow();
   document.querySelector("#asset-table tbody").appendChild(row);
 }
 
 function createAssetRow(data = {}) {
   const tr = document.createElement("tr");
-
   const fields = ["ticker", "name", "asset_type", "sector", "region", "market_price", "units_held", "is_hedge", "hedges_asset"];
   const types = {
     asset_type: ["stock", "bond", "option", "future", "swap"],
@@ -104,7 +120,7 @@ function createAssetRow(data = {}) {
   return tr;
 }
 
-async function saveAssets() {
+export async function saveAssets() {
   const name = document.getElementById("portfolio-name").value;
   const rows = document.querySelectorAll("#asset-table tbody tr");
   const assets = [];
@@ -140,6 +156,17 @@ async function saveAssets() {
     row.querySelector(".auto-pct").textContent = assets[i].percentage_of_total;
   });
 
-  await createPortfolioAPI(name, assets);
-  await loadPortfolioDropdown();
+  try {
+    await createPortfolioAPI(name, assets, selectedPortfolioId);
+    await loadPortfolioDropdown();
+  } catch (err) {
+    alert('Failed to save portfolio: ' + err.message);
+  }
 }
+
+// Expose key functions to window if needed
+window.createPortfolio = createPortfolio;
+window.saveAssets = saveAssets;
+window.loadPortfolio = loadPortfolio;
+window.deletePortfolio = deletePortfolio;
+window.addAssetRow = addAssetRow;

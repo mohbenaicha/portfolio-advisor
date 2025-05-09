@@ -1,3 +1,5 @@
+import { getPortfolios, analyzePrompt, saveArchive } from "./api.js";
+
 async function loadPortfolioOptions() {
   const portfolios = await getPortfolios();
   const select = document.getElementById("portfolio-select");
@@ -12,12 +14,12 @@ async function loadPortfolioOptions() {
 
 async function submitPrompt() {
   const select = document.getElementById("portfolio-select");
-  const question = document.getElementById("question").value;
+  const question = document.getElementById("question").value.trim();
   const portfolioId = parseInt(select.value);
 
   const portfolios = await getPortfolios();
   const selected = portfolios.find(p => p.id === portfolioId);
-  if (!selected) return;
+  if (!selected || !question) return;
 
   const summary = {
     asset_types: [...new Set(selected.assets.map(a => a.asset_type))],
@@ -27,6 +29,18 @@ async function submitPrompt() {
 
   const result = await analyzePrompt(question, selected.assets, summary);
   renderResponse(result);
+
+  try {
+    await saveArchive({
+      portfolio_id: selected.id,
+      original_question: question,
+      openai_response: result.summary,
+      article_ids: result.articles.map(a => a.url),
+      summary_tags: [...new Set([...summary.asset_types, ...summary.sectors, ...summary.regions])]
+    });
+  } catch (err) {
+    console.warn("Archiving failed:", err.message);
+  }
 }
 
 function renderResponse(data) {
@@ -37,5 +51,5 @@ function renderResponse(data) {
   });
 }
 
-// Load portfolios when advisor tab is shown
 document.addEventListener("DOMContentLoaded", loadPortfolioOptions);
+window.submitPrompt = submitPrompt;

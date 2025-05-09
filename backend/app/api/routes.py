@@ -1,17 +1,14 @@
-from fastapi import APIRouter, HTTPException
-from app.core.prompt_logic import handle_prompt
-from app.db.portfolio_crud import get_all_portfolios
-from app.models.schemas import PromptRequest, PromptResponse
+# backend/app/api/routes.py
+
+from fastapi import APIRouter
+from .portfolio_routes import router as portfolio_router
+from .archive_routes import router as archive_router
+from .advisor_routes import router as advisor_router
 
 router = APIRouter()
 
-@router.get("/portfolios")
-async def list_portfolios():
-    return await get_all_portfolios()
+# Mount sub-routers with prefixes
+router.include_router(portfolio_router, tags=["Portfolio"])
+router.include_router(archive_router, tags=["Archive"])
+router.include_router(advisor_router, tags=["Advisor"])
 
-@router.post("/analyze", response_model=PromptResponse)
-async def analyze(request: PromptRequest):
-    try:
-        return await handle_prompt(request)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))

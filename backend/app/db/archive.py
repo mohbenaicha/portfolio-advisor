@@ -1,8 +1,9 @@
 from app.models.archive_models import ArchivedResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from datetime import datetime
 
-def save_archive(db: Session, archive_data):
+async def save_archive(db: AsyncSession, archive_data):
     record = ArchivedResponse(
         portfolio_id=archive_data.portfolio_id,
         original_question=archive_data.original_question,
@@ -12,12 +13,18 @@ def save_archive(db: Session, archive_data):
         timestamp=datetime.utcnow()
     )
     db.add(record)
-    db.commit()
-    db.refresh(record)
+    await db.commit()
+    await db.refresh(record)
     return record
 
-def list_archives(db: Session):
-    return db.query(ArchivedResponse).order_by(ArchivedResponse.timestamp.desc()).all()
+async def list_archives(db: AsyncSession):
+    result = await db.execute(
+        select(ArchivedResponse).order_by(ArchivedResponse.timestamp.desc())
+    )
+    return result.scalars().all()
 
-def get_archive_by_id(db: Session, archive_id: int):
-    return db.query(ArchivedResponse).filter(ArchivedResponse.id == archive_id).first()
+async def get_archive_by_id(db: AsyncSession, archive_id: int):
+    result = await db.execute(
+        select(ArchivedResponse).filter(ArchivedResponse.id == archive_id)
+    )
+    return result.scalar_one_or_none()
