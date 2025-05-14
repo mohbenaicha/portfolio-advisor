@@ -3,15 +3,16 @@ from os import getenv
 import requests
 from random import choice
 import urllib.request
-
-from app.services.openai_client import extract_entities
-import asyncio
-import json
 from unittest.mock import patch, AsyncMock
+
+from app.services.langchain_summary import summarize_articles
+from app.services.openai_client import extract_entities
 from app.services.openai_client import generate_advice
+from app.utils.portfolio_utils import get_asset_representation, get_exposure_summary
+from app.utils.news_utils import news_summary_string_representation
 
 
-def test_alpha_vantage_news_sentiment_api(keywords="technology,finance"):
+def test_alpha_vantage_news_sentiment_api(keywords="technology,US"):
     # Replace 'YOUR_API_KEY' with your actual Alpha Vantage API key
     api_key = getenv("ALPHA_VANTAGE_KEY")
     url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&topics={keywords}&apikey={api_key}"
@@ -79,77 +80,96 @@ async def test_openai_extract_entities():
         print(f"Test Failed: An error occurred - {e}")
 
 
+from langchain.llms.base import LLM
+
+
+class MockLLM(LLM):
+    def _call(self, prompt, stop=None):
+        return "Mock summary of: " + prompt[:100]
+
+    @property
+    def _llm_type(self):
+        return "mock"
+
+
+async def test_langchain_summary():
+    # Load articles from the JSON file
+    with open("./tests/article_content.json", "r", encoding="utf-8") as file:
+        articles_data = json.load(
+            file,
+        )
+
+    articles = [
+        {
+            "raw_article": article["Content"],
+            "url": article["Link"],
+            "title": title,
+        }
+        for title, article in list(articles_data.items())[
+            :10
+        ]  # {title: {content:  content, link: url}, ...}
+    ]
+    print("Loaded article samples:\n\n", articles[0])
+
+    test_llm = MockLLM()
+
+    summarized_articles = await summarize_articles(articles)
+    for article in summarized_articles:
+        print("Article URL:", article["url"])
+        print("Summary:", article["summary"])
+        print("Title:", article["title"])
+        print("\n")
+
+    # Write the summaries to a JSON file
+    with open("./tests/article_summary.json", "w") as file:
+        json.dump(
+            [
+                {
+                    "title": article["title"],
+                    "summary": article["summary"],
+                    "url": article["url"],
+                }
+                for article in summarized_articles
+            ],
+            file,
+            indent=4,
+        )
+    print("Summaries written to article_summary.json")
+
+
 async def test_generate_advice():
     # Define the question and portfolio
     question = "What is the best investment strategy for my portfolio given the current market conditions?"
-    portfolio = {
-        "id": 2,
-        "name": "Emerging Markets Play",
-        "assets": [
-            {
-                "ticker": "EEM",
-                "name": "MSCI EM Index ETF",
-                "asset_type": "stock",
-                "sector": "Finance",
-                "region": "Emerging Markets",
-                "market_price": 45.0,
-                "units_held": 500.0,
-                "is_hedge": False,
-                "hedges_asset": "",
-                "id": 15,
-            },
-            {
-                "ticker": "PBR",
-                "name": "Petrobras",
-                "asset_type": "stock",
-                "sector": "Energy",
-                "region": "Emerging Markets",
-                "market_price": 12.0,
-                "units_held": 200.0,
-                "is_hedge": False,
-                "hedges_asset": "",
-                "id": 16,
-            },
-            {
-                "ticker": "PBR-PUT",
-                "name": "Petrobras Put Option",
-                "asset_type": "option",
-                "sector": "Energy",
-                "region": "Emerging Markets",
-                "market_price": 1.5,
-                "units_held": 100.0,
-                "is_hedge": True,
-                "hedges_asset": "PBR",
-                "id": 17,
-            },
-        ],
-    }
 
-    # Load articles from the JSON file
-    with open("./article_content.json", "r") as file:
-        articles_data = json.load(file)
-    articles = [
-        {"title": f"Article {i+1}", "summary": article["summary"]}
-        for i, article in enumerate(articles_data[:2])
-    ]
+    response = requests.get("http://localhost:8000/portfolios")
+    if response.status_code == 200:
+        portfolios = response.json()
+        if portfolios:
+            selected_portfolio = choice(portfolios)  # Pick a random portfolio
+            print("Selected Portfolio:", selected_portfolio)
+            portfolio_string_rep = "\n".join(
+                [
+                    get_asset_representation(selected_portfolio),
+                    get_exposure_summary(selected_portfolio),
+                ]
+            )
+            # Organize assets into a string representation
 
-    # Mock the OpenAI API response
-    mock_response = AsyncMock()
-    mock_response.choices = [
-        {
-            "message": {
-                "content": "This is a mock financial analysis and recommendation."
-            }
-        }
-    ]
+        else:
+            print("No portfolios available to select.")
+            return
+    else:
+        print(f"Failed to fetch portfolios: {response.status_code}")
+        return
 
-    with patch("openai.ChatCompletion.create", return_value=mock_response):
-        result = await generate_advice(question, portfolio, articles)
+    with open("./tests/article_summary.json", "r") as file:
+        articles_summaries = json.load(file)
+    articles_string_rep = news_summary_string_representation(articles_summaries)
 
-        # Assertions
-        assert result == "This is a mock financial analysis and recommendation."
-        print("Test Passed: generate_advice returned valid data.")
-        print("Generated Advice:\n", result)
+    result = await generate_advice(question, portfolio_string_rep, articles_string_rep)
+
+    # Assertions
+    print("Generated Advice:\n", result)
 
 
 # test_openai_extract_entities()

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from app.services.openai_client import extract_entities, generate_advice
 from app.services.alpha_vantage import fetch_articles
 from app.services.langchain_summary import summarize_articles
@@ -9,8 +10,10 @@ async def handle_prompt(request):
     entities = await extract_entities(request.question, request.portfolio_summary)
 
     # Step 2: Check MongoDB for recent summaries
-    cached_articles = await get_cached_articles(entities)
-
+    start_date = datetime.now(timezone.utc) - timedelta(days=1)
+    end_date = datetime.now(timezone.utc)
+    cached_articles = await get_cached_articles(entities, start_date=start_date, end_date=end_date)
+    
     if not cached_articles:
         # Step 3: Fetch articles from Alpha Vantage
         fresh_articles = await fetch_articles(entities)
@@ -23,7 +26,7 @@ async def handle_prompt(request):
         summarized = await summarize_articles(fresh_articles)
 
         # Step 6: Cache summaries in MongoDB
-        await store_article_summaries(summarized)
+        await store_article_summaries(summarized, entities.get("keywords"))
     else:
         summarized = cached_articles
 
