@@ -47,6 +47,9 @@ async def test_openai_extract_entities():
             selected_portfolio = choice(portfolios)  # Pick a random portfolio
             print("Selected Portfolio:", selected_portfolio)
             summary = {
+                "asset_names": [
+                    asset["name"] for asset in selected_portfolio.get("assets", [])
+                ],
                 "asset_types": list(
                     {
                         asset["asset_type"]

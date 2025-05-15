@@ -4,7 +4,7 @@ from os import getenv
 from dotenv import load_dotenv
 
 load_dotenv()
-DATABASE_URL = getenv("DATABASE_URI")  # e.g. postgresql://user:pass@host/db
+DATABASE_URL = getenv("DATABASE_URI")
 
 engine = create_async_engine(DATABASE_URL)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)

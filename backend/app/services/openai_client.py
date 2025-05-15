@@ -4,6 +4,9 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 async def extract_entities(question, summary):
+    print("Extracting entities from question and portfolio summary...")
+    print("Question:", question)
+    print("Portfolio summary:", summary)
     prompt = f"""You are an AI assistant...
 
             User question:
@@ -12,12 +15,11 @@ async def extract_entities(question, summary):
             Portfolio summary:
             {summary}
 
-            Extract and return a JSON object with:
-            - asset_types, sectors, regions, keywords (themes)
-            - keywords (themes) from this list only:
-            ["blockchain", "earnings", "ipo", "mergers_and_acquisitions", "financial_markets",
-            "economy_fiscal", "economy_monetary", "economy_macro", "energy_transportation",
-            "finance", "life_sciences", "manufacturing", "real_estate", "retail_wholesale", "technology"]
+            Extract and return a JSON object with 5 specific keywords (themes) based on the user's goal and portfolio exposure and positions. For each keyword,
+            if it applies to a certain portfolio position in a country, generate the two-letter country code based on the user's portfolio summary. the json should be a list of dictionaries with the following keys:
+            - "keyword": the keyword itself
+            - "country_code": the two-letter country code (if applicable)
+            
             Only return a json object...
             """
     response = openai.chat.completions.create(
@@ -80,5 +82,5 @@ Keep total length under 450 words.
             {"role": "user", "content": user_prompt}
         ]
     )
-
-    return response.choices[0].message["content"]
+    print(response)
+    return response.choices[0].message.content
