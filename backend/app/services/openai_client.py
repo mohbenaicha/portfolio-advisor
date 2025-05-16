@@ -1,41 +1,47 @@
 import json, os, re, openai
+from typing import List, Dict
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-async def extract_entities(question, summary):
-    print("Extracting entities from question and portfolio summary...")
-    print("Question:", question)
-    print("Portfolio summary:", summary)
-    prompt = f"""You are an AI assistant...
+async def extract_entities(question: str, summary: str) -> List[Dict[str, str]]:
+    # print("Extracting entities from question and portfolio summary...")
+    # print("Question:", question)
+    # print("Portfolio summary:", summary)
+    prompt = f"""
+You are an AI assistant...
 
-            User question:
-            "{question}"
+User question:
+"{question}"
 
-            Portfolio summary:
-            {summary}
+Here's the user's portfolio summary and exposures:
+{summary}
 
-            Extract and return a JSON object with 5 specific keywords (themes) based on the user's goal and portfolio exposure and positions. For each keyword,
-            if it applies to a certain portfolio position in a country, generate the two-letter country code based on the user's portfolio summary. the json should be a list of dictionaries with the following keys:
-            - "keyword": the keyword itself
-            - "country_code": the two-letter country code (if applicable)
-            
-            Only return a json object...
-            """
+Instructions:
+Extract and return a JSON list object that is a list of 5 specific themes based on the user's goal and portfolio exposure and positions.
+- "theme": short descriptive theme
+- "keywords": a list of very descriptive keywords for the theme used to store each theme in a database
+- "country_code": the two-letter country code (if applicable, if not applicable, return "NA") based on portfolio exposure
+
+Only return a json object...
+"""
+    # print("Prompt: \n", prompt)
     response = openai.chat.completions.create(
         model="gpt-4o-mini", messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
 
-    # stripping markers needed here
+    # # stripping markers needed here
     cleaned = re.sub(
         r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
     )
 
-    print("OPEN AI's response:\n\n")
-    print(cleaned)
-
-    return json.loads(cleaned)
+    # print("OPEN AI's response:\n\n")
+    # print(cleaned)
+    cleaned_json = json.loads(cleaned)
+    if isinstance(cleaned_json, dict) and "themes" in cleaned_json:
+        cleaned_json = cleaned_json["themes"]  # Extract the list if open ai api returns a key: value pair
+    return cleaned_json
 
 
 async def generate_advice(question, portfolio, articles):
@@ -79,8 +85,8 @@ Keep total length under 450 words.
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
+            {"role": "user", "content": user_prompt},
+        ],
     )
     print(response)
     return response.choices[0].message.content

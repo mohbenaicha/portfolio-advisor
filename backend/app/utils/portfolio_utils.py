@@ -1,3 +1,13 @@
+def get_portfolio_summary(selected_portfolio):
+    return f"""
+Asset names: {list({asset["name"]for asset in selected_portfolio.get("assets", [])})}
+Asset types: {list({asset["asset_type"]for asset in selected_portfolio.get("assets", [])})}
+Sectors: {list({asset["sector"] for asset in selected_portfolio.get("assets", [])})}
+Regions: {list({asset["region"] for asset in selected_portfolio.get("assets", [])})}
+
+"""
+
+
 def get_asset_representation(selected_portfolio):
 
     assets_representation = "\n".join(

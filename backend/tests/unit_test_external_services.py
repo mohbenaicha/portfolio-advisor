@@ -8,7 +8,7 @@ from unittest.mock import patch, AsyncMock
 from app.services.langchain_summary import summarize_articles
 from app.services.openai_client import extract_entities
 from app.services.openai_client import generate_advice
-from app.utils.portfolio_utils import get_asset_representation, get_exposure_summary
+from app.utils.portfolio_utils import get_asset_representation, get_exposure_summary, get_portfolio_summary
 from app.utils.news_utils import news_summary_string_representation
 
 
@@ -43,27 +43,10 @@ async def test_openai_extract_entities():
     response = requests.get("http://localhost:8000/portfolios")
     if response.status_code == 200:
         portfolios = response.json()
+        print("Portoflios: \n", portfolios)
         if portfolios:
             selected_portfolio = choice(portfolios)  # Pick a random portfolio
-            print("Selected Portfolio:", selected_portfolio)
-            summary = {
-                "asset_names": [
-                    asset["name"] for asset in selected_portfolio.get("assets", [])
-                ],
-                "asset_types": list(
-                    {
-                        asset["asset_type"]
-                        for asset in selected_portfolio.get("assets", [])
-                    }
-                ),
-                "sectors": list(
-                    {asset["sector"] for asset in selected_portfolio.get("assets", [])}
-                ),
-                "regions": list(
-                    {asset["region"] for asset in selected_portfolio.get("assets", [])}
-                ),
-            }
-            print("Portfolio Summary:", summary)
+            summary = "\n".join([get_portfolio_summary(selected_portfolio), get_exposure_summary(selected_portfolio)])
         else:
             print("No portfolios available to select.")
             summary = {}

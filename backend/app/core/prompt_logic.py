@@ -4,7 +4,7 @@ from app.services.google_news_scraper import fetch_articles
 from app.services.langchain_summary import summarize_articles
 from app.utils.article_scraper import extract_with_readability
 from app.db.mongo import get_cached_articles, store_article_summaries
-
+from pprint import pprint
 
 async def handle_prompt(request):
     """
@@ -17,31 +17,37 @@ async def handle_prompt(request):
     # 1: Prompt 1 > extract asset_types, sectors, regions, themes, keywords
     entities = await extract_entities(request.question, request.portfolio_summary)
 
-    print("Extracted entities:", entities)
-
+    # print("Extracted entities:", entities)
+    # print()
     # 2: Check MongoDB for recent summaries
-    # start_date = datetime.now(timezone.utc) - timedelta(days=1)
-    # end_date = datetime.now(timezone.utc)
-    # cached_articles = await get_cached_articles(
-    #     entities, start_date=start_date, end_date=end_date
-    # )
+    start_date = datetime.now(timezone.utc) - timedelta(days=1)
+    end_date = datetime.now(timezone.utc)
+    cached_articles = await get_cached_articles(
+        entities, start_date=start_date, end_date=end_date
+    )
 
     # print("Cached articles:", cached_articles)
 
 
-    # if not cached_articles:
-    #     # 3: Fetch articles from Alpha Vantage
-    #     fresh_articles = await fetch_articles(entities)
+    if not cached_articles:
+        # 3: Fetch articles from Alpha Vantage
+        fresh_articles = await fetch_articles(entities)
 
-    #     # 4: Scrape full article content using readability
-    #     for article in fresh_articles:
-    #         article["raw_article"] = extract_with_readability(article["url"])
+        # print("Fresh articles:", fresh_articles)
 
-    #     # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
-    #     summarized = await summarize_articles(fresh_articles)
-
-    #     # 6: Cache summaries in MongoDB
-    #     await store_article_summaries(summarized, entities.get("keywords"))
+        # 4: Scrape full article content using readability
+        for article in fresh_articles:
+            article["raw_article"] = extract_with_readability(article["link"])
+            # print("Article content:", article["raw_article"])
+            # print()
+        
+        print("Starting to summarize articles...")
+        # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
+        summarized = await summarize_articles(fresh_articles)
+        
+        print("Summarized articles:", summarized)
+        # # 6: Cache summaries in MongoDB
+        await store_article_summaries(summarized)
     # else:
     #     summarized = cached_articles
 
