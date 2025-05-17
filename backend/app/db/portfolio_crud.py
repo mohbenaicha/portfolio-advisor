@@ -25,6 +25,11 @@ async def create_portfolio(db: AsyncSession, data: PortfolioCreate):
     await db.refresh(portfolio, attribute_names=["assets"])
     return portfolio
 
+async def get_portfolio_by_id(db: AsyncSession, portfolio_id: int):
+    result = await db.execute(
+        select(Portfolio).options(selectinload(Portfolio.assets)).filter(Portfolio.id == portfolio_id)
+    )
+    return result.scalar_one_or_none()
 
 async def delete_portfolio(db: AsyncSession, portfolio_id: int):
     result = await db.execute(select(Portfolio).filter(Portfolio.id == portfolio_id))

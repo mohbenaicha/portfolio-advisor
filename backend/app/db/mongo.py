@@ -33,7 +33,6 @@ async def store_article_summaries(summaries):
             article.pop("position", None)
             article.pop("body", None)
             
-            
             await db.articles.update_one(
                 {"url": article["link"]},  # Match by URL
                 {"$set": article},

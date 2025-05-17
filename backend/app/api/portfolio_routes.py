@@ -5,6 +5,7 @@ from app.db.portfolio_crud import (
     create_portfolio,
     delete_portfolio,
     update_portfolio,
+    get_portfolio_by_id
 )
 from app.models.schemas import PortfolioCreate, PortfolioOut
 from app.db.session import get_db
@@ -38,3 +39,12 @@ async def update_portfolio_route(
 ):
     updated = await update_portfolio(db, id, portfolio)
     return PortfolioOut.model_validate(updated)
+
+
+@router.get("/portfolios/{id}", response_model=PortfolioOut)
+async def get_portfolio(id: int, db: AsyncSession = Depends(get_db)):
+    portfolio = await get_portfolio_by_id(db, id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    return PortfolioOut.model_validate(portfolio)
+
