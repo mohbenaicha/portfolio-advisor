@@ -47,12 +47,14 @@ async def handle_prompt(request):
         fresh_articles = await fetch_articles(entities)
 
         # 4: Scrape full article content using readability
+        print("------------------------ Extracting Article Content -------------------------------------------")
         for article in fresh_articles:
-            print(
-                "------------------------ Extracting Article Content -------------------------------------------"
-            )
             # key added added to each article dict: raw_article - full scraped article content
-            article["raw_article"] = extract_with_readability(article["link"])
+            try:
+                article["raw_article"] = extract_with_readability(article["link"])
+            except Exception as e:
+                print(f"Error extracting article content: {e}")
+                article["raw_article"] = "Readability extraction failed."
 
         print("Starting to summarize articles...")
         # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
@@ -80,7 +82,7 @@ async def handle_prompt(request):
     )
     article_summaries = "\n\n".join(
         [
-            "\n".join([article["title"], article["summary"]])
+            "\n".join([article["title"], article["summary"], article["link"]])
             for article in summarized
             if article["summary"] != "Readability extraction failed"
         ]
@@ -92,7 +94,4 @@ async def handle_prompt(request):
         request.question, portfolio_summary, article_summaries
     )
 
-    
-    # print("Advice:", advice)
-
-    # return {"summary": advice, "articles": summarized}
+    return {"summary": advice}

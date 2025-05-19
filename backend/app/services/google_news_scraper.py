@@ -1,7 +1,6 @@
 import os
 from outscraper import ApiClient
 from dotenv import load_dotenv
-from app.utils.article_scraper import extract_with_readability
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 client = ApiClient(api_key=os.getenv("OUTSCRAPER_API_KEY"))
@@ -34,17 +33,14 @@ def fetch_news(
 async def fetch_articles(entities):
     if len(entities) == 0:
         return False
-    # TODO: remove break after testing and asyncify
     news_response = []
     for entity in entities:
         response = fetch_news(entity.get("theme", ""), 1, time_range="w")
-        # print("Response:", response)
 
         if response[0] != []:
             for article in response[0]:
                 article["keywords"] = entity.get("keywords", [])    
                 news_response.append(article) 
-        break
 
     if not news_response:
         return False

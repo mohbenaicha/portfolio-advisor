@@ -118,14 +118,33 @@ dummy_responses = [
     }
 ]
 
-for p in dummy_portfolios:
-    res = requests.post(f"{BASE}/portfolios", json=p)
-    res.raise_for_status()
-    print(res.text)
-    print(f"Created portfolio: {p['name']}")
+# for p in dummy_portfolios:
+#     res = requests.post(f"{BASE}/portfolios", json=p)
+#     res.raise_for_status()
+#     print(res.text)
+#     print(f"Created portfolio: {p['name']}")
 
-for r in dummy_responses:
-    res = requests.post(f"{BASE}/archives", json=r)
-    res.raise_for_status()
-    print(res.text)
-    print(f"Created archive for portfolio ID: {r['portfolio_id']}")
+# for r in dummy_responses:
+#     res = requests.post(f"{BASE}/archives", json=r)
+#     res.raise_for_status()
+#     print(res.text)
+#     print(f"Created archive for portfolio ID: {r['portfolio_id']}")
+
+import uuid
+import asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+from app.db.session import AsyncSessionLocal
+
+async def create_demo_users():
+    users = ["User1", "User2"]
+
+    async with AsyncSessionLocal() as session:
+        for name in users:
+            token = str(uuid.uuid4())
+            await session.execute(
+                text("INSERT INTO users (name, token) VALUES (:name, :token)"),
+                {"name": name, "token": token}
+            )
+            print(f"Created user: {name}, token: {token}")
+        await session.commit()

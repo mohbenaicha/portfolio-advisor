@@ -96,14 +96,14 @@ async def generate_advice(question, summary, articles):
                 Respond using **only** the following markdown section headings:
 
                 1. **1‑Sentence Answer** – the punch line.  
-                2. **Portfolio Impact Analysis** – how news items affect key positions/exposures.  
+                2. **Portfolio Impact Analysis** – how news items affect key positions/exposures (News summaries don't make sense, infer from their titles).  
                 3. **Recommendations (Numbered)** – specific trades, hedges, or reallocations; include target weight/size, time frame, and thesis in ≤ 40 words each.  
                 4. **Key Risks & Unknowns** – bullet list.  
                 5. **Confidence (0‑100%)** – single number plus one‑line justification.  
-                6. **References & Assumptions** – cite news snippets or metrics (brief, no URLs).  
-                7. **Compliance Note** – “This information is for educational purposes…”.
+                6. **References & Assumptions** – mention news snippets or metrics (brief).  
+                7. **Citations** – list of news snippets (title, source) used to support your analysis.
 
-                Keep total length under 450 words.
+                Keep total length under 450 words (excluding citations).
                 """
     print(
         "------------------------- Generating Final Advice -------------------------------------------"
@@ -118,7 +118,4 @@ async def generate_advice(question, summary, articles):
             {"role": "user", "content": user_prompt},
         ],
     )
-    print("-------------------------- OPEN AI's response -------------------------------------------")
-    print("Response: \n")
-    print(response)
     return response.choices[0].message.content

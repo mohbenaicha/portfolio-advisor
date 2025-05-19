@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.db.archive import save_archive, list_archives, get_archive_by_id
+from app.db.archive import save_archive, get_archive_by_id, get_archived_responses
+from app.dependencies.user import get_current_user
 from app.models.schemas import ArchiveCreate, ArchiveOut
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
@@ -8,21 +9,27 @@ router = APIRouter()
 
 
 @router.get("/archives", response_model=list[ArchiveOut])
-async def get_all_archives(db: AsyncSession = Depends(get_db)):
-    return await list_archives(db)
+async def get_user_archives(user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    return await get_archived_responses(user_id, db)
 
 
 @router.post("/archives", response_model=ArchiveOut)
 async def create_archive(
-    archive_data: ArchiveCreate, db: AsyncSession = Depends(get_db)
+    archive_data: ArchiveCreate,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_current_user)
 ):
-    archive = await save_archive(db, archive_data)
+    archive = await save_archive(db, archive_data, user_id)
     return ArchiveOut.model_validate(archive)
 
 
 @router.get("/responses/{id}", response_model=ArchiveOut)
-async def get_archive(id: int, db: AsyncSession = Depends(get_db)):
-    record = await get_archive_by_id(db, id)
+async def get_archive(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_current_user)
+):
+    record = await get_archive_by_id(db, id, user_id)
     if not record:
         raise HTTPException(status_code=404, detail="Archive not found")
-    return record
+    return ArchiveOut.model_validate(record)
