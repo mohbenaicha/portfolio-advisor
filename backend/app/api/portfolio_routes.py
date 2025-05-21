@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.portfolio_crud import (
-    get_all_portfolios,
     create_portfolio,
     delete_portfolio,
     update_portfolio,

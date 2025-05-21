@@ -1,4 +1,4 @@
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException
 from app.core.session_state import session_store
 
 def get_current_user(request: Request):

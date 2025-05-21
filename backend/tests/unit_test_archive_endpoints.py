@@ -2,9 +2,9 @@ import asyncio
 import httpx
 
 BASE_URL = "http://localhost:8000"
-USER_ID = "2"
+USER_ID = "1"
 HEADERS = {"x-user-id": USER_ID}
-PORTFOLIO_ID = 2
+PORTFOLIO_ID = 4
 ARCHIVE_ID = 1
 
 def print_response(label, res):

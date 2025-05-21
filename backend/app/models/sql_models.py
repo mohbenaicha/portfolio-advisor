@@ -82,7 +82,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     token = Column(String, unique=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 class ArchivedResponse(Base):
@@ -91,7 +91,7 @@ class ArchivedResponse(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     portfolio_id = Column(Integer, ForeignKey("portfolios.id", ondelete="CASCADE"))
-    timestamp = Column(DateTime, default=datetime.now(timezone.utc))
+    timestamp = Column(DateTime, default=datetime.now(timezone.utc).replace(tzinfo=None))
     original_question = Column(Text)
     openai_response = Column(Text)
 
@@ -102,6 +102,15 @@ class LLMMemory(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     date = Column(Date)
+    assoc_portfolio_id = Column(Integer, ForeignKey("portfolios.id", ondelete="CASCADE"))
     short_term_goal = Column(String)
     long_term_goal = Column(String)
-    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.now(timezone.utc).replace(tzinfo=None))
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, unique=True)  # Each user has one session
+    timestamp = Column(DateTime, nullable=True, default=datetime.utcnow)  # Last activity timestamp
+    total_prompts_used = Column(Integer, nullable=False, default=0)  # Tracks usage

@@ -18,6 +18,7 @@ from tests.auth_unit_tests import run_all_auth_tests
 from app.db.populate_demo_users import populate_users
 from tests.unit_test_portfolio_endpoints import run_all_portfolio_endpoint_unit_tests
 from tests.unit_test_archive_endpoints import run_all_archive_endpoint_unit_tests
+from tests.unit_test_llm_memory import test_llm_memory_evolution, test_multi_user_memory_isolation, get_last_user_memory
 
 if __name__ == "__main__":
     # Run the tests
@@ -32,6 +33,9 @@ if __name__ == "__main__":
     # asyncio.run(run_all_auth_tests())
     # asyncio.run(populate_users())
     # asyncio.run(run_all_portfolio_endpoint_unit_tests())
-    asyncio.run(run_all_archive_endpoint_unit_tests())
+    # asyncio.run(run_all_archive_endpoint_unit_tests())
+    # asyncio.run(test_llm_memory_evolution())
+    # asyncio.run(test_multi_user_memory_isolation())
+    asyncio.run(get_last_user_memory(2))
 
 

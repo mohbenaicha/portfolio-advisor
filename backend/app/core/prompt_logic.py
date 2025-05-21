@@ -2,9 +2,11 @@ from datetime import datetime, timedelta, timezone
 from app.services.openai_client import extract_entities, generate_advice
 from app.services.google_news_scraper import fetch_articles
 from app.services.langchain_summary import summarize_articles
-from app.utils.article_scraper import extract_with_readability
 from app.db.mongo import get_cached_articles, store_article_summaries
+from app.db.user_session import UserSessionManager
 from app.utils.portfolio_utils import get_asset_representation
+from app.utils.article_scraper import extract_with_readability
+from app.db.memory import add_user_memory
 
 
 async def handle_prompt(request):
@@ -23,8 +25,17 @@ async def handle_prompt(request):
         request.question, request.portfolio_id
     )  # portfolio summary does not have detailed asset breakdown
 
-    # print("Extracted entities:", entities)
-    # print()
+    # add latest llm memory to db and update session
+    UserSessionManager.update_session(
+        updates={
+            "llm_memory": {
+                "short_term": entities["short_term_objective"],
+                "long_term": entities["long_term_objective"],
+                "portfolio_id": request.portfolio_id,
+            }
+        }
+    )
+
     # 2: Check MongoDB for recent summaries
     start_date = datetime.now(timezone.utc) - timedelta(days=1)
     end_date = datetime.now(timezone.utc)
@@ -34,7 +45,7 @@ async def handle_prompt(request):
     )
     # keys: link, posted (date published), query, query_tags, source (publisher), stored_at (d/t), summary, title
     cached_articles = await get_cached_articles(
-        entities, start_date=start_date, end_date=end_date
+        entities["entities"], start_date=start_date, end_date=end_date
     )
 
     if len(cached_articles) < 10:
@@ -47,7 +58,9 @@ async def handle_prompt(request):
         fresh_articles = await fetch_articles(entities)
 
         # 4: Scrape full article content using readability
-        print("------------------------ Extracting Article Content -------------------------------------------")
+        print(
+            "------------------------ Extracting Article Content -------------------------------------------"
+        )
         for article in fresh_articles:
             # key added added to each article dict: raw_article - full scraped article content
             try:
@@ -94,4 +107,12 @@ async def handle_prompt(request):
         request.question, portfolio_summary, article_summaries
     )
 
+    UserSessionManager.update_session(
+        updates={
+            "total_prompts_used": UserSessionManager.get_session(request.user_id)[
+                "total_prompts_used"
+            ]
+            + 1
+        }
+    )
     return {"summary": advice}

@@ -26,7 +26,7 @@ async def store_article_summaries(summaries):
     for article in summaries:
         if article:
             article["query_tags"] = article.get("keywords", [])
-            article["stored_at"] = datetime.now(timezone.utc)
+            article["stored_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
             # Remove unnecessary fields
             article.pop("keywords", None)
             article.pop("raw_article", None)

@@ -7,7 +7,7 @@ import asyncio, os
 
 # production model
 llm = ChatOpenAI(
-    model="gpt-4o-mini", temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")
+    model="gpt-4.1-mini", temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")
 )
 
 
