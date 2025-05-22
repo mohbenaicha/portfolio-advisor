@@ -33,10 +33,10 @@ async def add_user_memory(
 
 # Get all memory entries for a user and associated portfolio
 async def get_user_memory(
-    user_id: int = Depends(get_current_user), portfolio_id: int = None, db: AsyncSession = Depends(get_db)
+    user_id: int = Depends(get_current_user), portfolio_id: int = None, db: AsyncSession = None
 ):
-    if portfolio_id is None:
-        raise ValueError("Memory must be associated with a portfolio_id")
+    if db is None:
+        raise ValueError("Database session is required")
     result = await db.execute(
         select(LLMMemory).where(
             LLMMemory.user_id == user_id

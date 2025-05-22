@@ -1,3 +1,5 @@
 .env
 **/__pycache__/
 .zip
+write_code_to_txt.py
+project.txt

@@ -32,14 +32,14 @@ async def authenticate_user(payload: TokenAuth, request: Request, db: AsyncSessi
     # returns object list(LLMMemory) for the user
     # access attribute of LLMMemory using llm_memory[i].attribute
     # accessible members: id, user_id, date, short_term_goal, long_term_goal, created_at, assoc_portfolio_i
-    llm_memories = await get_user_memory(user_id=user.id)
+    llm_memories = await get_user_memory(user_id=user.id, db = db)
 
     # Load session from database if it exists (hypothetical: server crash)
-    session = await UserSessionManager.load_session_from_db(llm_memory=llm_memories)
+    session = await UserSessionManager.load_session_from_db(user_id=user.id, llm_memory=llm_memories, db=db)
     if session:
         return {"message": "Session loaded from database", "user_id": user.id}
 
     # Otherwise, create a new session
-    UserSessionManager.create_session(llm_memory = llm_memories, timestamp=request.headers.get("x-client-time"))
+    UserSessionManager.create_session(user_id = user.id, llm_memory = llm_memories, db = db, timestamp=request.headers.get("x-client-time"))
 
     return {"message": f"User {user.id} authenticated; new session created", "user_id": user.id}

@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.get("/portfolios", response_model=list[PortfolioOut])
 async def read_user_portfolios(user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    portfolios = await get_user_portfolios(user_id, db)
+    portfolios = await get_user_portfolios(user_id=user_id, db=db)
     return [PortfolioOut.model_validate(p) for p in portfolios]
 
 @router.post("/portfolios", response_model=PortfolioOut)
@@ -25,7 +25,7 @@ async def add_portfolio(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_current_user)
 ):
-    created = await create_portfolio(db, portfolio, user_id)
+    created = await create_portfolio(db=db, data=portfolio, user_id=user_id)
     return PortfolioOut.model_validate(created)
 
 

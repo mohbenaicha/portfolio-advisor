@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.openai_client import extract_entities, generate_advice
 from app.services.google_news_scraper import fetch_articles
 from app.services.langchain_summary import summarize_articles
@@ -6,10 +7,9 @@ from app.db.mongo import get_cached_articles, store_article_summaries
 from app.db.user_session import UserSessionManager
 from app.utils.portfolio_utils import get_asset_representation
 from app.utils.article_scraper import extract_with_readability
-from app.db.memory import add_user_memory
 
 
-async def handle_prompt(request):
+async def handle_prompt(request, db: AsyncSession, user_id: int):
     """
     Pipeline to handle user prompt through RAG including:
      1. extracting entities usin gpt-4o-mini,
@@ -22,18 +22,24 @@ async def handle_prompt(request):
         "------------------------ Extracting Entities using GPT-4o -------------------------------------------"
     )
     entities, portfolio, portfolio_summary = await extract_entities(
-        request.question, request.portfolio_id
+        question=request.question, portfolio_id=request.portfolio_id, db=db
     )  # portfolio summary does not have detailed asset breakdown
 
+    if db is None or user_id is None:
+        raise ValueError(
+            "error in prompt_logic.py/handle_prompt: Database session or user id is missing"
+        )
     # add latest llm memory to db and update session
     UserSessionManager.update_session(
+        user_id=user_id,
+        db=db,
         updates={
             "llm_memory": {
                 "short_term": entities["short_term_objective"],
                 "long_term": entities["long_term_objective"],
                 "portfolio_id": request.portfolio_id,
             }
-        }
+        },
     )
 
     # 2: Check MongoDB for recent summaries
@@ -108,6 +114,8 @@ async def handle_prompt(request):
     )
 
     UserSessionManager.update_session(
+        user_id=user_id,
+        db=db,
         updates={
             "total_prompts_used": UserSessionManager.get_session(request.user_id)[
                 "total_prompts_used"

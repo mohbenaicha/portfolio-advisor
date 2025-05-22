@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezonew
+from datetime import datetime, timedelta, timezone
 from fastapi import Depends
 from typing import List, Dict, Union
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,8 +8,7 @@ from app.core.session_state import session_store
 from app.models.sql_models import (
     UserSession,
     LLMMemory,
-)  # Assuming a UserSession table exists
-from app.db.session import get_db
+)
 from app.db.memory import add_user_memory
 from app.dependencies.user import get_current_user
 
@@ -25,9 +24,11 @@ class UserSessionManager:
     @staticmethod
     async def load_session_from_db(
         user_id: int = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = None,
         llm_memory: List[LLMMemory] = [],
     ) -> Dict[str, Union[int, str, List[LLMMemory]]]:
+        if db is None:
+            raise ValueError("error in user_session.py/UserSessionManager::load_session_from_db: Database session is required")
         result = await db.execute(
             select(UserSession).where(UserSession.user_id == user_id)
         )
@@ -42,10 +43,18 @@ class UserSessionManager:
 
     @staticmethod
     async def update_session(
-        user_id: int = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db),
+        user_id: int = None,
+        db: AsyncSession = None,
         updates: Dict[str, Union[int, str]] = {},
     ):
+        if db is None:
+            raise ValueError("error in user_session.py/UserSessionManager::update_session: Database session is required")
+        if not user_id:
+            try:
+                user_id = get_current_user()
+            except Exception as e:
+                raise ValueError("error in user_session.py/UserSessionManager::update_session: User ID is required") from e
+
         for k, v in updates.items():
             if k == "llm_memory": 
                 # writes memory to db and updates session store
@@ -74,10 +83,12 @@ class UserSessionManager:
     @staticmethod
     async def create_session(
         user_id: int = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = None,
         llm_memory: List[LLMMemory] = [],
         timestamp: str = "",
     ):
+        if db is None:
+            raise ValueError("error in user_session.py/UserSessionManager::create_session: Database session is required")
         session_store[user_id] = {
             "llm_memory": llm_memory,
             "timestamp": timestamp,
@@ -95,11 +106,12 @@ class UserSessionManager:
         await db.commit()
 
     @staticmethod
-    async def cleanup_sessions(db: AsyncSession = Depends(get_db)):
-        """Remove expired sessions from session_store and database."""
+    async def cleanup_sessions(db: AsyncSession = None):
+        if db is None:
+            raise ValueError("Error in user_session.py/UserSessionManager::cleanup_sessions: Database session is required")
+        
         current_time = datetime.now()
 
-        # Clean up in-memory session_store
         expired_users = [
             user_id
             for user_id, session in session_store.items()
@@ -111,7 +123,6 @@ class UserSessionManager:
         for user_id in expired_users:
             del session_store[user_id]
 
-        # Clean up expired sessions in the database
         await db.execute(
             delete(UserSession).where(
                 UserSession.timestamp

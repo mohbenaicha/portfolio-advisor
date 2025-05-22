@@ -14,12 +14,21 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 async def extract_entities(
-    question: str, portfolio_id: str, db: AsyncSession = Depends(get_db)
+    question: str, portfolio_id: str, db: AsyncSession = None
 ) -> Tuple[
     List[Dict[str, str]],
     Dict[str, Union[int, str, List[Dict[str, Union[int, str, float, bool]]]]],
     str,
 ]:
+    if db is None:
+        raise ValueError(
+            "error in openai_client.py/extract_entities: Database session is required"
+        )
+    if not db:
+        raise ValueError(
+            "error in openai_client.py/extract_entities: Database session is required"
+        )
+    
     portfolio = None
     summary = ""
 
@@ -56,7 +65,7 @@ async def extract_entities(
             
             Here's how the user's investment objectives have shifted over time:
             {
-                memories
+                memories if memories else "[No previous memory found, this is the first time]"
             }
 
             Instructions:
