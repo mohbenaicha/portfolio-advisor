@@ -29,8 +29,8 @@ async def test_session_created_and_updated():
     _, headers = await authenticate(TOKENS["user3"])
     # Assuming session timestamp stored, simulate prompt to update session
     async with httpx.AsyncClient() as client:
-        before = datetime.utcnow().isoformat()
+        before = datetime.utcnow() 
         await client.post(f"{BASE_URL}/auth", json={"token": TOKENS["user3"]})
-        after = datetime.utcnow().isoformat()
+        after = datetime.utcnow() 
         # Can't verify directly from outside, but absence of crash means success
     print("✅ Session creation handled correctly")

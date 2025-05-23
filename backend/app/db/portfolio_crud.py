@@ -109,16 +109,6 @@ async def update_portfolio(
     data: PortfolioCreate = None,
     user_id: int = Depends(get_current_user),
 ):
-    if db is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Error in portfolio_crud.py/update_portfolio: db is None",
-        )
-    if not portfolio_id or not data:
-        raise HTTPException(
-            status_code=400, detail="Portfolio ID and data are required"
-        )
-
     result = await db.execute(
         select(Portfolio)
         .options(selectinload(Portfolio.assets))

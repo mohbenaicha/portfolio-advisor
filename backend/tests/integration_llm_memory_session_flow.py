@@ -19,42 +19,42 @@ OTHER_PORTFOLIO_ID = 3
 
 async def test_user1_memory_flow():
     async for db in get_db():
-        print("\n=== ✅ User1: OWNED DATA ===")
+        print("\n===  User1: OWNED DATA ===")
 
-        print("\n📦 Portfolios:")
+        print("\n Portfolios:")
         portfolios = await get_user_portfolios(db, user_id=USER_ID)
         for p in portfolios:
             print(f"- {p.name} (id={p.id})")
 
-        print("\n🧠 Memories:")
+        print("\n Memories:")
         memories = await get_user_memory(user_id=USER_ID, portfolio_id=PORTFOLIO_ID, db=db)
         for m in memories:
             print(f"- {m.date}: {m.short_term_goal} | {m.long_term_goal}")
 
-        print("\n📚 Archives:")
+        print("\n Archives:")
         archives = await get_archived_responses(user_id=USER_ID, db=db)
         for a in archives:
             print(f"- {a.timestamp}: {a.original_question[:60]}")
 
-        print("\n=== 🚫 Attempt to Access User2 Data ===")
+        print("\n===  Attempt to Access User2 Data ===")
         try:
             other_mem = await get_user_memory(user_id=OTHER_USER_ID, portfolio_id=OTHER_PORTFOLIO_ID, db=db)
-            print(f"❌ Should not access memories: {other_mem}")
+            print(f"X Should not access memories: {other_mem}")
         except Exception as e:
-            print(f"✅ Access to other user’s memory blocked: {e}")
+            print(f" Access to other user’s memory blocked: {e}")
 
         try:
             other_arch = await get_archived_responses(user_id=OTHER_USER_ID, db=db)
-            print(f"❌ Should not access archives: {other_arch}")
+            print(f"X Should not access archives: {other_arch}")
         except Exception as e:
-            print(f"✅ Access to other user’s archives blocked: {e}")
+            print(f" Access to other user’s archives blocked: {e}")
 
-        print("\n=== 🤖 Extracting New Memory with LLM ===")
+        print("\n===  Extracting New Memory with LLM ===")
         json_result, _, _ = await extract_entities(QUESTION, PORTFOLIO_ID, db)
         print("Extracted entities:", json_result["entities"])
 
-        print("\n=== 🧠 Adding Memory to Session Store ===")
-        UserSessionManager.create_session(user_id=USER_ID, db=db, llm_memory=[], timestamp=datetime.now(timezone.utc).isoformat())
+        print("\n===  Adding Memory to Session Store ===")
+        UserSessionManager.create_session(user_id=USER_ID, db=db, llm_memory=[], timestamp=datetime.now(timezone.utc).replace(tzinfo=None))
         await UserSessionManager.update_session(
             user_id=USER_ID,
             db=db,
@@ -68,10 +68,10 @@ async def test_user1_memory_flow():
             }
         )
 
-        print("🧠 Session Store In-Memory:")
+        print(" Session Store In-Memory:")
         print(session_store[USER_ID])
 
-        print("\n=== 💾 Verifying DB Backup of Session ===")
+        print("\n===  Verifying DB Backup of Session ===")
         result = await db.execute(select(UserSession).where(UserSession.user_id == USER_ID))
         record = result.scalar_one_or_none()
         print(f"UserSession DB record: ts={record.timestamp}, total_prompts={record.total_prompts_used}")

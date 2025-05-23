@@ -13,10 +13,6 @@ async def add_user_memory(
     portfolio_id: int = None,
     db: AsyncSession = Depends(get_db),
 ):
-    if short_term is None and long_term is None:
-        raise ValueError("At least one of short_term or long_term must be provided")
-    if portfolio_id is None:
-        raise ValueError("Memory must be associated with a portfolio_id")
     memory = LLMMemory(
         user_id=user_id,
         date=date,
@@ -35,8 +31,6 @@ async def add_user_memory(
 async def get_user_memory(
     user_id: int = Depends(get_current_user), portfolio_id: int = None, db: AsyncSession = None
 ):
-    if db is None:
-        raise ValueError("Database session is required")
     result = await db.execute(
         select(LLMMemory).where(
             LLMMemory.user_id == user_id
@@ -50,8 +44,6 @@ async def get_user_memory(
 async def get_latest_user_memory(
     user_id: int = Depends(get_current_user), portfolio_id: int = None, db: AsyncSession = Depends(get_db)
 ):
-    if portfolio_id is None:
-        raise ValueError("Memory must be associated with a portfolio_id")
     result = await db.execute(
         select(LLMMemory)
         .where(

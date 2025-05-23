@@ -9,17 +9,19 @@ router = APIRouter()
 
 
 @router.get("/archives", response_model=list[ArchiveOut])
-async def get_user_archives(user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    return await get_archived_responses(user_id, db)
+async def get_user_archives(
+    user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    return await get_archived_responses(user_id=user_id, db=db)
 
 
 @router.post("/archives", response_model=ArchiveOut)
 async def create_archive(
     archive_data: ArchiveCreate,
     db: AsyncSession = Depends(get_db),
-    user_id: int = Depends(get_current_user)
+    user_id: int = Depends(get_current_user),
 ):
-    archive = await save_archive(db, archive_data, user_id)
+    archive = await save_archive(db=db, archive_data=archive_data, user_id=user_id)
     return ArchiveOut.model_validate(archive)
 
 
@@ -27,9 +29,9 @@ async def create_archive(
 async def get_archive(
     id: int,
     db: AsyncSession = Depends(get_db),
-    user_id: int = Depends(get_current_user)
+    user_id: int = Depends(get_current_user),
 ):
-    record = await get_archive_by_id(db, id, user_id)
+    record = await get_archive_by_id(db=db, archive_id=id, user_id=user_id)
     if not record:
         raise HTTPException(status_code=404, detail="Archive not found")
     return ArchiveOut.model_validate(record)
