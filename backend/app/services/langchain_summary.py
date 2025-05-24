@@ -27,7 +27,7 @@ async def summarize_articles(articles, llm=llm):
 
     # Process articles concurrently
     summarized = await asyncio.gather(*[process_article(a) for a in articles])
-    return summarized
+    return summarized[:2]
 
 # async def summarize_articles(articles, predefined_keywords, llm=llm):
 #     splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)

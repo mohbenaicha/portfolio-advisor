@@ -22,7 +22,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
         "------------------------ Extracting Entities using GPT-4o -------------------------------------------"
     )
     entities, portfolio, portfolio_summary = await extract_entities(
-        question=request.question, portfolio_id=request.portfolio_id, db=db
+        question=request.question, portfolio_id=request.portfolio_id, db=db, user_id=user_id
     )  # portfolio summary does not have detailed asset breakdown
 
     if db is None or user_id is None:
@@ -30,18 +30,25 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
             "error in prompt_logic.py/handle_prompt: Database session or user id is missing"
         )
     # add latest llm memory to db and update session
-    UserSessionManager.update_session(
-        user_id=user_id,
-        db=db,
-        updates={
-            "llm_memory": {
-                "short_term": entities["short_term_objective"],
-                "long_term": entities["long_term_objective"],
-                "portfolio_id": request.portfolio_id,
-            }
-        },
+    if entities["short_term_objective"] != "" or entities["long_term_objective"] != "":
+        await UserSessionManager.update_session(
+            user_id=user_id,
+            db=db,
+            updates={
+                "llm_memory": {
+                    "short_term": entities["short_term_objective"],
+                    "long_term": entities["long_term_objective"],
+                    "portfolio_id": request.portfolio_id,
+                }
+            },
+        )
+    print(
+        "------------------------ Entities Extracted -------------------------------------------"
     )
-
+    print("Entities: \n", entities)
+    print("short_term_objective: \n", entities["short_term_objective"])
+    print("long_term_objective: \n", entities["long_term_objective"])
+    print("Sessions: \n", UserSessionManager.get_session(user_id))
     # 2: Check MongoDB for recent summaries
     start_date = datetime.now(timezone.utc) - timedelta(days=1)
     end_date = datetime.now(timezone.utc)
@@ -61,7 +68,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
 
         # 3: Fetch articles from Alpha Vantage
         # list of dicts; keys: query, position, title, body, posted, source, link
-        fresh_articles = await fetch_articles(entities)
+        fresh_articles = await fetch_articles(entities["entities"])
 
         # 4: Scrape full article content using readability
         print(
@@ -70,7 +77,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
         for article in fresh_articles:
             # key added added to each article dict: raw_article - full scraped article content
             try:
-                article["raw_article"] = extract_with_readability(article["link"])
+                article["raw_article"] = await extract_with_readability(article["link"])
             except Exception as e:
                 print(f"Error extracting article content: {e}")
                 article["raw_article"] = "Readability extraction failed."
@@ -91,6 +98,8 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
         await store_article_summaries(summarized)
     else:
         summarized = cached_articles
+    
+
     print(
         "------------------------ Generating Final Advice -------------------------------------------"
     )
@@ -104,20 +113,23 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
             "\n".join([article["title"], article["summary"], article["link"]])
             for article in summarized
             if article["summary"] != "Readability extraction failed"
-        ]
+        ][:3]
     )
+
+    print("Summaries:::::\n\n\n", article_summaries)    
+
     print(
         "------------------------ Generating Final Advice -------------------------------------------"
     )
     advice = await generate_advice(
-        request.question, portfolio_summary, article_summaries
+        request.question, portfolio_summary, article_summaries, user_id
     )
 
-    UserSessionManager.update_session(
+    await UserSessionManager.update_session(
         user_id=user_id,
         db=db,
         updates={
-            "total_prompts_used": UserSessionManager.get_session(request.user_id)[
+            "total_prompts_used": UserSessionManager.get_session(user_id)[
                 "total_prompts_used"
             ]
             + 1

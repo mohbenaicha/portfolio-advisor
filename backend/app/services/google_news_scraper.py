@@ -41,6 +41,7 @@ async def fetch_articles(entities):
             for article in response[0]:
                 article["keywords"] = entity.get("keywords", [])    
                 news_response.append(article) 
+        break
 
     if not news_response:
         return False

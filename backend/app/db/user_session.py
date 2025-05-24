@@ -49,12 +49,6 @@ class UserSessionManager:
         db: AsyncSession = None,
         updates: Dict[str, Union[int, str]] = {},
     ):
-        if not user_id:
-            try:
-                user_id = get_current_user()
-            except Exception as e:
-                raise ValueError("error in user_session.py/UserSessionManager::update_session: User ID is required") from e
-            
         
         for k, v in updates.items():
             if k == "llm_memory": 

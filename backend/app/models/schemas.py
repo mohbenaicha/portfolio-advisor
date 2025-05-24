@@ -28,10 +28,7 @@ class Portfolio(BaseModel):
 
 class PromptRequest(BaseModel):
     question: str
-    portfolio_data: List[Asset]
-    portfolio_summary: (
-        dict  # {"asset_types": [...], "sectors": [...], "regions": [...]}
-    )
+    portfolio_id: int
 
 
 class PromptResponse(BaseModel):

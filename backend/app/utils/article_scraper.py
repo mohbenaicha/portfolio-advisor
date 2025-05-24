@@ -4,7 +4,7 @@ from readability import Document
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-def extract_with_readability(url: str) -> str:
+async def extract_with_readability(url: str) -> str:
     try:
         response = requests.get(url, headers=HEADERS, timeout=10)
         doc = Document(response.text)

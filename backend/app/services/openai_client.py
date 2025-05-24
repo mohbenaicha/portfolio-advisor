@@ -1,38 +1,29 @@
 import json, os, re, openai
+from datetime import datetime, timezone
 from typing import List, Dict, Tuple, Union
-from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import get_exposure_summary, get_portfolio_summary
-from app.db.session import get_db, AsyncSession
+from app.db.session import AsyncSession
 from app.db.user_session import UserSessionManager
 from app.dependencies.user import get_current_user
-from datetime import datetime, timezone
-
+from app.utils.memory_utils import parse_memories
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 async def extract_entities(
-    question: str, portfolio_id: str, db: AsyncSession = None
+    question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
 ) -> Tuple[
     List[Dict[str, str]],
     Dict[str, Union[int, str, List[Dict[str, Union[int, str, float, bool]]]]],
     str,
 ]:
-    if db is None:
-        raise ValueError(
-            "error in openai_client.py/extract_entities: Database session is required"
-        )
-    if not db:
-        raise ValueError(
-            "error in openai_client.py/extract_entities: Database session is required"
-        )
-    
+
     portfolio = None
     summary = ""
 
-    portfolio = jsonable_encoder(await get_portfolio_by_id(db, portfolio_id))
+    portfolio = jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     summary = "\n".join(
         [
             get_portfolio_summary(portfolio),
@@ -40,19 +31,8 @@ async def extract_entities(
         ]
     )
 
-    memories = "\n".join(
-        [
-            "\n".join(
-                [
-                    f"date: {memory.date}",
-                    f"short_term: {memory.short_term_goal}",
-                    f"long_term: {memory.long_term_goal}",
-                ]
-            )
-            for memory in UserSessionManager.get_session(get_current_user()).get(
-                "llm_memory"
-            )[-3:]
-        ]
+    memories = parse_memories(
+        UserSessionManager.get_session(user_id).get("llm_memory")[-3:]
     )
     prompt = f"""
             You are an AI assistant. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
@@ -70,12 +50,14 @@ async def extract_entities(
 
             Instructions:
             Extract and return a JSON object with:
-             1. A key "entities" whose value is a list of 5 specific themes based on the user's goal and portfolio exposure and positions.
-                - "theme": short descriptive theme
-                - "keywords": a list of very descriptive keywords for the theme used to store each theme in a database
-                - "country_code": the two-letter country code (if applicable, if not applicable, return "NA") based on portfolio exposure
-             2. A key "short_term_objective"  : value as the short-term investment objective indicated by the user's question and portfolio if it has changed from the last time
-             3. A key "long_term_objective" : value as the long-term investment objective indicated by the user's question and portfolio if it has changed from the last time
+             1. A key "entities" whose value is a list of 5 specific, focused search themes suitable as Google News search queries.  
+                Each theme must include:  
+                - "theme": a concise, descriptive phrase reflecting a current news topic or trend tied to the user's question and portfolio (e.g., "US renewable energy policy", "emerging biotech startups in Europe")  
+                - "keywords": a list of targeted keywords and phrases to support news search relevance  
+                - "country_code": two-letter country code related to portfolio exposure or "NA" if none applies
+             2. A key "short_term_objective"  : infer the investment objective indicated by the user's question and portfolio if it has changed from the last time, or leave blank if it has not changed
+             3. A key "long_term_objective" : infer the investment objective indicated by the user's question and portfolio if it has changed from the last time, or leave blank if it has not changed
+             4. a key "justification": a short justification for inferred invest objectives if they have changed, or leave blank if they have not changed
 
             Only return a json object...
             """
@@ -98,8 +80,7 @@ async def extract_entities(
     return cleaned_json, portfolio, summary
 
 
-async def generate_advice(question, summary, articles):
-
+async def generate_advice(question, summary, articles, user_id):
     system_prompt = """
     You are “Atlas”, a senior buy‑side investment strategist (CFA, 15 yrs experience).
     Duty: synthesize news + portfolio data and produce *actionable* portfolio guidance.
@@ -109,6 +90,10 @@ async def generate_advice(question, summary, articles):
     - Cite assumptions you rely on.
     - Write in clear, executive‑level English (no jargon unless defined).
     """
+
+    memories = UserSessionManager.get_session(user_id).get("llm_memory")[-3:]
+    print("memories in generate advice: \n", memories)
+    memories = parse_memories(memories)
 
     user_prompt = f"""
                 ### User Question
@@ -120,12 +105,15 @@ async def generate_advice(question, summary, articles):
                 ### Recent News & Data (already pre‑filtered for relevance)
                 {articles}
 
+                ### User's Investment Objective
+                {memories if memories else "[No previous memory found, this is the first time]"}
+                
                 ### Deliverable
                 Respond using **only** the following markdown section headings:
 
                 1. **1‑Sentence Answer** – the punch line.  
                 2. **Portfolio Impact Analysis** – how news items affect key positions/exposures (News summaries don't make sense, infer from their titles).  
-                3. **Recommendations (Numbered)** – specific trades, hedges, or reallocations; include target weight/size, time frame, and thesis in ≤ 40 words each.  
+                 3. **Recommendations (Numbered)** – specific trades, hedges, or reallocations; include target weight/size, time frame, and thesis in ≤ 40 words each, taking into consideration the user's short-term and long-term objectives.
                 4. **Key Risks & Unknowns** – bullet list.  
                 5. **Confidence (0‑100%)** – single number plus one‑line justification.  
                 6. **References & Assumptions** – mention news snippets or metrics (brief).  
