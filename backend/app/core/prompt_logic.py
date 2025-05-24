@@ -124,7 +124,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
     advice = await generate_advice(
         request.question, portfolio_summary, article_summaries, user_id
     )
-
+    print("Advice:::::\n\n\n", advice)
     await UserSessionManager.update_session(
         user_id=user_id,
         db=db,

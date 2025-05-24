@@ -31,8 +31,10 @@ async def extract_entities(
         ]
     )
 
+    memories = UserSessionManager.get_session(user_id).get("llm_memory")
+    length = len(memories)
     memories = parse_memories(
-        UserSessionManager.get_session(user_id).get("llm_memory")[-3:]
+        memories[-min(3, length):]
     )
     prompt = f"""
             You are an AI assistant. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
@@ -91,9 +93,11 @@ async def generate_advice(question, summary, articles, user_id):
     - Write in clear, executive‑level English (no jargon unless defined).
     """
 
-    memories = UserSessionManager.get_session(user_id).get("llm_memory")[-3:]
-    print("memories in generate advice: \n", memories)
-    memories = parse_memories(memories)
+    memories = UserSessionManager.get_session(user_id).get("llm_memory")
+    length = len(memories)
+    memories = parse_memories(
+        memories[-min(3, length):]
+    )
 
     user_prompt = f"""
                 ### User Question
@@ -111,15 +115,15 @@ async def generate_advice(question, summary, articles, user_id):
                 ### Deliverable
                 Respond using **only** the following markdown section headings:
 
-                1. **1‑Sentence Answer** – the punch line.  
-                2. **Portfolio Impact Analysis** – how news items affect key positions/exposures (News summaries don't make sense, infer from their titles).  
-                 3. **Recommendations (Numbered)** – specific trades, hedges, or reallocations; include target weight/size, time frame, and thesis in ≤ 40 words each, taking into consideration the user's short-term and long-term objectives.
-                4. **Key Risks & Unknowns** – bullet list.  
-                5. **Confidence (0‑100%)** – single number plus one‑line justification.  
-                6. **References & Assumptions** – mention news snippets or metrics (brief).  
-                7. **Citations** – list of news snippets (title, source) used to support your analysis.
+                ##1‑Sentence Answer – the punch line.  
+                ##Portfolio Impact Analysis – how news items affect key positions/exposures (News summaries don't make sense, infer from their titles).  
+                ##Recommendations (Numbered) – specific trades, hedges, or reallocations; include target weight/size, time frame, and thesis in ≤ 40 words each, taking into consideration the user's short-term and long-term objectives.
+                ##Key Risks & Unknowns – bullet list.  
+                ##Confidence (0‑100%) – single number plus one‑line justification.  
+                ##References & Assumptions – mention news snippets or metrics (brief).  
+                ##Citations – list of news snippets (title, source) used to support your analysis.
 
-                Keep total length under 450 words (excluding citations).
+                Keep total length under 450 words (excluding citations) and format the response in an appropriate markdown of headings, paragraphs and lists.
                 """
     print(
         "------------------------- Generating Final Advice -------------------------------------------"

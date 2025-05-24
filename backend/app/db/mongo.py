@@ -7,8 +7,10 @@ load_dotenv()
 client = AsyncIOMotorClient(getenv("MONGO_URI"))
 db = client["news_cache"]
 
+
 async def get_cached_articles(entities, start_date=None, end_date=None):
     tags = [keyword for entity in entities for keyword in entity.get("keywords", [])]
+   
     print("Checking for cached articles with tags:", tags)
     query = {"query_tags": {"$in": tags}}
 
@@ -22,6 +24,7 @@ async def get_cached_articles(entities, start_date=None, end_date=None):
 
     return await db.articles.find(query).to_list(length=20)
 
+
 async def store_article_summaries(summaries):
     for article in summaries:
         if article:
@@ -32,9 +35,7 @@ async def store_article_summaries(summaries):
             article.pop("raw_article", None)
             article.pop("position", None)
             article.pop("body", None)
-            
+
             await db.articles.update_one(
-                {"url": article["link"]},  # Match by URL
-                {"$set": article},
-                upsert=True
+                {"url": article["link"]}, {"$set": article}, upsert=True  # Match by URL
             )
