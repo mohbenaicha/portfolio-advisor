@@ -2,9 +2,9 @@ import httpx, markdown, webbrowser, tempfile
 
 BASE_URL = "http://localhost:8000"
 USER_TOKEN = (
-    "df77c9be-67fb-44b9-a15c-8146131e2d14"  # Replace with actual token for user 1
+    "d5a80990-4c1b-442e-af01-6a868e074e93"  # Replace with actual token for user 1
 )
-USER_ID = "1"
+USER_ID = "2"
 
 HEADERS = {
     "Authorization": f"Bearer {USER_TOKEN}",
@@ -25,8 +25,9 @@ async def test_analyze_endpoint():
         # Step 2: Call analyze with x-user-id header
         analyze_payload = {
             "question": "I want to fully shift my portfolio to renewable energy. Can you recommend some well performing assets?",
-            "portfolio_id": 9,
+            "portfolio_id": 38,
         }
+        
         headers = {"x-user-id": str(user_id)}
         analyze_resp = await client.post(
             f"{BASE_URL}/analyze", json=analyze_payload, headers=headers

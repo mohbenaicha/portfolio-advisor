@@ -50,7 +50,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
     print("long_term_objective: \n", entities["long_term_objective"])
     print("Sessions: \n", UserSessionManager.get_session(user_id))
     # 2: Check MongoDB for recent summaries
-    start_date = datetime.now(timezone.utc) - timedelta(days=1)
+    start_date = datetime.now(timezone.utc) - timedelta(days=5)
     end_date = datetime.now(timezone.utc)
 
     print(
@@ -60,6 +60,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
     cached_articles = await get_cached_articles(
         entities["entities"], start_date=start_date, end_date=end_date
     )
+    print("Found {} chached acicles".format(len(cached_articles)))
 
     if len(cached_articles) < 10:
         print(
@@ -98,7 +99,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
         await store_article_summaries(summarized)
     else:
         summarized = cached_articles
-    
+    print("|--------------------------------------Finished fetching and summarizing articles.--------- -------------------|")
 
     print(
         "------------------------ Generating Final Advice -------------------------------------------"
@@ -113,10 +114,8 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
             "\n".join([article["title"], article["summary"], article["link"]])
             for article in summarized
             if article["summary"] != "Readability extraction failed"
-        ][:3]
+        ][:10]  # TODO: remove limit of 10 articles
     )
-
-    print("Summaries:::::\n\n\n", article_summaries)    
 
     print(
         "------------------------ Generating Final Advice -------------------------------------------"

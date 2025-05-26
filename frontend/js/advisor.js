@@ -1,10 +1,31 @@
-import { getPortfolios, analyzePrompt, saveArchive } from "./api.js";
+import {
+  authenticateUser,
+  getPortfolios,
+  analyzePrompt,
+  saveArchive,
+} from "./api.js";
+
+async function login() {
+  let token = localStorage.getItem("authToken");
+  if (!token) {
+    token = prompt("Enter your auth token:");
+    if (!token) return alert("Token required");
+    localStorage.setItem("authToken", token);
+  }
+  try {
+    await authenticateUser(token);
+    await loadPortfolioOptions();
+  } catch (err) {
+    alert("Authentication failed: " + err.message);
+    localStorage.removeItem("authToken");
+  }
+}
 
 async function loadPortfolioOptions() {
   const portfolios = await getPortfolios();
   const select = document.getElementById("portfolio-select");
   select.innerHTML = "";
-  portfolios.forEach(p => {
+  portfolios.forEach((p) => {
     const opt = document.createElement("option");
     opt.value = p.id;
     opt.textContent = p.name;
@@ -17,26 +38,16 @@ async function submitPrompt() {
   const question = document.getElementById("question").value.trim();
   const portfolioId = parseInt(select.value);
 
-  const portfolios = await getPortfolios();
-  const selected = portfolios.find(p => p.id === portfolioId);
-  if (!selected || !question) return;
+  if (!portfolioId || !question) return;
 
-  const summary = {
-    asset_types: [...new Set(selected.assets.map(a => a.asset_type))],
-    sectors: [...new Set(selected.assets.map(a => a.sector))],
-    regions: [...new Set(selected.assets.map(a => a.region))]
-  };
-
-  const result = await analyzePrompt(question, selected.assets, summary);
+  const result = await analyzePrompt(question, portfolioId);
   renderResponse(result);
 
   try {
     await saveArchive({
-      portfolio_id: selected.id,
+      portfolio_id: portfolioId,
       original_question: question,
       openai_response: result.summary,
-      article_ids: result.articles.map(a => a.url),
-      summary_tags: [...new Set([...summary.asset_types, ...summary.sectors, ...summary.regions])]
     });
   } catch (err) {
     console.warn("Archiving failed:", err.message);
@@ -46,10 +57,12 @@ async function submitPrompt() {
 function renderResponse(data) {
   const div = document.getElementById("response");
   div.innerHTML = `<h2>Summary</h2><p>${data.summary}</p><h3>Citations</h3>`;
-  data.articles.forEach(a => {
-    div.innerHTML += `<p>• <a href="${a.url}" target="_blank">${a.title}</a> — ${a.source}</p>`;
-  });
+  if (data.articles) {
+    data.articles.forEach((a) => {
+      div.innerHTML += `<p>• <a href="${a.url}" target="_blank">${a.title}</a> — ${a.source}</p>`;
+    });
+  }
 }
 
-document.addEventListener("DOMContentLoaded", loadPortfolioOptions);
+document.addEventListener("DOMContentLoaded", login);
 window.submitPrompt = submitPrompt;
