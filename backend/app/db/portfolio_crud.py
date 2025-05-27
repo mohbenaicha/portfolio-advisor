@@ -109,6 +109,7 @@ async def update_portfolio(
     data: PortfolioCreate = None,
     user_id: int = Depends(get_current_user),
 ):
+    print(f"Update portfolio called with portfolio_id: {portfolio_id}")
     result = await db.execute(
         select(Portfolio)
         .options(selectinload(Portfolio.assets))
@@ -121,9 +122,12 @@ async def update_portfolio(
 
     portfolio.name = data.name
 
-    # Load current assets
-    current_assets = {(a.ticker, a.asset_type): a for a in portfolio.assets}
+    # Normalize asset_type to string for comparison
+    current_assets = {(a.ticker, a.asset_type.value): a for a in portfolio.assets}
     new_assets_dict = {(a.ticker, a.asset_type): a for a in data.assets}
+
+    print(f"Current assets: {list(current_assets.keys())}")
+    print(f"New assets: {list(new_assets_dict.keys())}")
 
     current_keys = set(current_assets.keys())
     new_keys = set(new_assets_dict.keys())
@@ -131,20 +135,28 @@ async def update_portfolio(
     # Calculate sets for update, add, delete
     assets_to_update = current_keys & new_keys
     assets_to_add = new_keys - current_keys
+    assets_to_delete = current_keys - new_keys
+
+    print(f"Assets to update: {assets_to_update}")
+    print(f"Assets to add: {assets_to_add}")
 
     # Update existing assets
     for key in assets_to_update:
         existing_asset = current_assets[key]
         new_data = new_assets_dict[key].model_dump()
-        # (Optional: Only update fields that changed)
         for attr, value in new_data.items():
             setattr(existing_asset, attr, value)
 
     # Add new assets
     for key in assets_to_add:
         new_asset_data = new_assets_dict[key].model_dump()
+        print(f"Adding asset: {key} with data: {new_asset_data}")
         asset = Asset(**new_asset_data, portfolio_id=portfolio_id)
         db.add(asset)
+
+    for key in assets_to_delete:
+        asset_to_delete = current_assets[key]
+        await db.delete(asset_to_delete)
 
     await db.commit()
     await db.refresh(portfolio, attribute_names=["assets"])

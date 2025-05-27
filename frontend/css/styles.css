@@ -1,54 +1,410 @@
-body {
-  background-color: #111;
-  color: #0ff;
-  font-family: 'Inter', sans-serif;
+/* === DARK THEME BASE === */
+:root {
+  --bg: #0d1117; /* Dark grey/black background */
+  --bg-light: #161b22; /* Navy blue background */
+  --bg-panel: rgb(7, 17, 32); /* Slightly lighter navy blue for panels */
+  --text: #faff00; /* Neon yellow text */
+  --accent: #0d0d0c; /* Neon yellow for accents */
+  --accent-hover: #e6e600; /* Slightly darker yellow for hover states */
+  --danger: #ff4d4d; /* Bright red for danger */
+  --danger-hover: #e60000; /* Darker red for hover */
+  --success: #faff00; /* Neon yellow for success */
+  --success-hover: #e6e600; /* Slightly darker yellow for hover */
+  --border: #faff00; /* Neon yellow for borders */
+  --input-bg: #20304900; /* Dark grey for input backgrounds */
+}
+
+/* Reset + Base */
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Login */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.login-box {
+  background: var(--bg-panel);
   padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  width: 320px;
+  text-align: center;
 }
 
-nav {
-  margin-bottom: 2rem;
+.login-box h1 {
+  margin-bottom: 1rem;
 }
 
-button {
-  margin: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #0ff;
-  color: #000;
+.login-box input {
+  width: 100%;
+  padding: 0.6rem;
+  background: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.login-box button {
+  width: 100%;
+  padding: 0.6rem;
+  background: var(--accent);
+  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
-button:hover {
-  background: #0cc;
+.login-box button:hover {
+  background: var(--accent-hover);
 }
 
-textarea,
-input,
-select {
-  width: 100%;
-  margin-top: 1rem;
+.error-msg {
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
+/* App Layout */
+.app {
+  display: flex;
+  height: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar h2 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.sidebar select {
+  height: 100%;
   padding: 0.5rem;
-  background: #222;
-  border: 1px solid #0ff;
-  color: #0ff;
+  margin-bottom: 1rem;
   border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
 }
 
-table {
-  width: 100%;
+/* Button Styling */
+button,
+.primary-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.primary-btn {
+  background: var(--success);
+  color: white;
+}
+
+.primary-btn:hover {
+  background: var(--success-hover);
+}
+
+button.save {
+  background: var(--accent);
+  color: white;
+}
+button.save:hover {
+  background: var(--accent-hover);
+}
+
+button.delete {
+  background: var(--danger);
+  color: white;
+}
+button.delete:hover {
+  background: var(--danger-hover);
+}
+
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  max-width: 95%;
+}
+
+/* Top Bar */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-panel);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs button {
+  margin-right: 1rem;
+  background: none;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.tabs button:hover {
+  text-decoration: underline;
+  color: var(--accent);
+}
+
+.topbar select {
+  padding: 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+/* Advisor Tab */
+.advisor-box {
+  display: flex;
+  padding: 1rem;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.advisor-box textarea {
+  flex: 1;
+  padding: 0.75rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 80px;
+  resize: vertical;
+  color: var(--text);
+}
+
+.advisor-box button {
+  background: var(--accent);
+  color: white;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.response-box {
+  padding: 1rem;
+}
+
+.response-box h2,
+.response-box h3 {
   margin-top: 1rem;
-  border-collapse: collapse;
+  margin-bottom: 0.5rem;
 }
 
-th,
-td {
-  border: 1px solid #0ff;
+.response-box a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.response-box a:hover {
+  text-decoration: underline;
+}
+
+/* Portfolio Tab */
+.portfolio-controls {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border);
+}
+
+#portfolio-name {
+  width: 50%;
+  margin: 1rem;
+  padding: 0.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.asset-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0 1rem 1rem;
+  background: var(--bg);
+}
+
+#asset-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  margin: 0 1rem 1rem;
+  
+}
+
+#asset-table th,
+#asset-table td {
+  border: 1px solid var(--border);
   padding: 0.5rem;
   text-align: left;
+  background: var(--bg-light);
+  color: var(--text);
 }
 
-.hidden {
-  display: none;
+#asset-table th {
+  font-weight: bold;
+}
+
+#asset-table button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* Archive Viewer */
+.viewer-box {
+  padding: 1.5rem;
+}
+
+.viewer-box p {
+  margin-bottom: 0.75rem;
+}
+
+.archive-list {
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--text);
+}
+
+.archive-item {
+  background: var(--bg-light);
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.archive-item.active {
+  background-color: #334155;
+}
+
+.archive-title-wrapper {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+.archive-title {
+  display: inline-block;
+  transition: none;
+  will-change: auto;
+}
+
+/* Expand popup input on focus */
+#asset-table td {
+  position: relative;
+  overflow: visible;
+  z-index: 0;
+}
+
+#asset-table td input,
+#asset-table td select {
+  width: 100%;
+  box-sizing: border-box;
+  transition: 0.2s ease;
+  position: relative;
+  z-index: 1;
+  background: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+#asset-table tr td:nth-child(1) input:focus,
+#asset-table tr td:nth-child(2) input:focus,
+#asset-table tr td:nth-child(4) input:focus,
+#asset-table tr td:nth-child(5) input:focus,
+#asset-table tr td:nth-child(9) input:focus {
+  position: absolute;
+  top: -2.5rem;
+  left: 0;
+  width: max-content;
+  min-width: 300px;
+  max-width: 90vw;
+  background: var(--bg-light);
+  z-index: 1000;
+  padding: 0.4rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--accent);
+}
+
+
+/* Center the Add Asset button below the table */
+#add-asset-btn {
+  display: block;
+  margin: 1rem auto;
+  padding: 0.6rem 1.2rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  border-color: var(--border);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+#add-asset-btn:hover {
+  background: var(--success-hover);
+}
+
+/* Portfolio Tab Buttons */
+.portfolio-controls button {
+  background: var(--accent);
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.portfolio-controls button:hover {
+  background: var(--accent-hover);
 }

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 import uuid
+from sqlalchemy import cast
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import select
 from fastapi import Depends
 from app.db.session import get_db, AsyncSession
@@ -20,8 +22,8 @@ async def authenticate_user(
         token = uuid.UUID(payload.token)
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid token format")
-
-    result = await db.execute(select(User).where(User.token == token))
+    
+    result = await db.execute(select(User).where(cast(User.token, UUID) == token))
     user = result.scalar_one_or_none()
 
     if not user:

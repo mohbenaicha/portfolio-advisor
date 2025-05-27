@@ -34,7 +34,19 @@ export async function loadPortfolio() {
     const row = createAssetRow(a);
     tbody.appendChild(row);
   });
+
+  calculateTotals(selected.assets);
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const dropdown = document.getElementById("portfolio-dropdown");
+
+  if (dropdown) {
+    dropdown.addEventListener("change", () => {
+      loadPortfolio();
+    });
+  }
+});
 
 export async function createPortfolio() {
   const name = document.getElementById("portfolio-name").value;
@@ -45,7 +57,7 @@ export async function createPortfolio() {
     await loadPortfolioDropdown();
     await loadPortfolio();
   } catch (err) {
-    alert('Failed to save portfolio: ' + err.message);
+    console.log('Failed to save portfolio: ' + err.message);
   }
 }
 
@@ -57,7 +69,7 @@ export async function deletePortfolio() {
     await loadPortfolioDropdown();
     document.querySelector("#asset-table tbody").innerHTML = "";
   } catch (err) {
-    alert('Failed to delete portfolio: ' + err.message);
+    console.log('Failed to delete portfolio: ' + err.message);
   }
 }
 
@@ -120,6 +132,21 @@ function createAssetRow(data = {}) {
   return tr;
 }
 
+function calculateTotals(assets) {
+  let total = assets.reduce((acc, a) => acc + (a.market_price * a.units_held), 0);
+  assets.forEach(a => {
+    a.total_value = a.market_price * a.units_held;
+    a.percentage_of_total = ((a.total_value / total) * 100).toFixed(2);
+  });
+
+  // Update DOM display
+  const tableRows = document.querySelectorAll("#asset-table tbody tr");
+  tableRows.forEach((row, i) => {
+    row.querySelector(".auto-total").textContent = assets[i].total_value.toFixed(2);
+    row.querySelector(".auto-pct").textContent = assets[i].percentage_of_total;
+  });
+}
+
 export async function saveAssets() {
   const name = document.getElementById("portfolio-name").value;
   const rows = document.querySelectorAll("#asset-table tbody tr");
@@ -137,17 +164,13 @@ export async function saveAssets() {
   const tickerSet = new Set();
   for (const a of assets) {
     if (tickerSet.has(a.ticker)) {
-      alert(`Duplicate ticker found: ${a.ticker}`);
+      console.log(`Duplicate ticker found: ${a.ticker}`);
       return;
     }
     tickerSet.add(a.ticker);
   }
 
-  let total = assets.reduce((acc, a) => acc + (a.market_price * a.units_held), 0);
-  assets.forEach(a => {
-    a.total_value = a.market_price * a.units_held;
-    a.percentage_of_total = ((a.total_value / total) * 100).toFixed(2);
-  });
+  calculateTotals(assets);
 
   // Update DOM display
   const tableRows = document.querySelectorAll("#asset-table tbody tr");
@@ -160,9 +183,41 @@ export async function saveAssets() {
     await createPortfolioAPI(name, assets, selectedPortfolioId);
     await loadPortfolioDropdown();
   } catch (err) {
-    alert('Failed to save portfolio: ' + err.message);
+    console.log('Failed to save portfolio: ' + err.message);
   }
 }
+
+// Handle input pop-up on click
+document.addEventListener("DOMContentLoaded", () => {
+  const table = document.querySelector("table");
+
+  table.addEventListener("click", (event) => {
+    const target = event.target;
+
+    // Check if the clicked element is an input, textarea, or select
+    if (
+      (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT") &&
+      !["price", "units"].includes(target.id) // Exclude elements with id="price" or id="units"
+    ) {
+      // Remove the 'active' class from all inputs
+      document.querySelectorAll("table td input, table td textarea, table td select").forEach((el) => {
+        el.classList.remove("active");
+      });
+
+      // Add the 'active' class to the clicked element
+      target.classList.add("active");
+    }
+  });
+
+  // Remove the 'active' class when clicking outside the table
+  document.addEventListener("click", (event) => {
+    if (!table.contains(event.target)) {
+      document.querySelectorAll("table td input, table td textarea, table td select").forEach((el) => {
+        el.classList.remove("active");
+      });
+    }
+  });
+});
 
 // Expose key functions to window if needed
 window.createPortfolio = createPortfolio;
