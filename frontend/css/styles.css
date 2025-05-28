@@ -1,29 +1,41 @@
-/* === DARK THEME BASE === */
 :root {
-  --bg: #0d1117; /* Dark grey/black background */
-  --bg-light: #161b22; /* Navy blue background */
-  --bg-panel: rgb(7, 17, 32); /* Slightly lighter navy blue for panels */
-  --text: #faff00; /* Neon yellow text */
-  --accent: #0d0d0c; /* Neon yellow for accents */
-  --accent-hover: #e6e600; /* Slightly darker yellow for hover states */
-  --danger: #ff4d4d; /* Bright red for danger */
-  --danger-hover: #e60000; /* Darker red for hover */
-  --success: #faff00; /* Neon yellow for success */
-  --success-hover: #e6e600; /* Slightly darker yellow for hover */
-  --border: #faff00; /* Neon yellow for borders */
-  --input-bg: #20304900; /* Dark grey for input backgrounds */
+  --bg: #202328;
+
+  --bg-light: #202328;
+
+  --bg-panel: #141517;
+
+  --text: #e6e6e6;
+
+  --accent: #0d0d0c;
+
+  --accent-hover: #3d3d3b;
+
+  --danger: #ff4d4d;
+
+  --danger-hover: #e69d00;
+
+  --success: #77d0e8;
+
+  --success-hover: #e6e600;
+
+  --border: #888888;
+
+  --input-bg: #20304900;
+
 }
 
-/* Reset + Base */
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Lato', sans-serif;
   background: var(--bg);
   color: var(--text);
 }
@@ -32,35 +44,151 @@ html, body {
   display: none !important;
 }
 
-/* Login */
-.login-container {
+
+
+#login-screen {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  height: auto;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  background-color: var(--bg);
+  z-index: 900;
 }
 
 .login-box {
-  background: var(--bg-panel);
+  background: rgba(0, 0, 0, 0.0);
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  width: 320px;
+  width: 700px;
+  height: auto;
   text-align: center;
 }
 
 .login-box h1 {
-  margin-bottom: 1rem;
+  margin-bottom: 1px;
+  font-size: 70px;
+}
+
+.subline {
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+
+.disclaimer {
+  font-size: 12px;
+
+  color: var(--text);
+  margin-top: 20px;
+  text-align: center;
+  padding: 5px;
+
+  background: var(--bg-light);
+
+  border: 1px solid var(--border);
+
+  border-radius: 8px;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  max-width: 80%;
+
+  margin: 20px auto;
+
 }
 
 .login-box input {
   width: 100%;
+  max-width: 500px;
   padding: 0.6rem;
   background: var(--input-bg);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 25px;
   margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  #login-screen {
+    width: 90%;
+
+    height: auto;
+
+    top: 50%;
+
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+  }
+
+  .login-box {
+    width: 100%;
+
+    padding: 1rem;
+
+  }
+
+
+
+  .footer .social-icons {
+    margin-top: 0.5rem;
+  }
+
+  #login-screen {
+    top: 40%;
+
+    transform: translate(-50%, -40%);
+
+  }
+
+  .subline {
+    font-size: 12px;
+
+  }
+}
+
+#token-input::placeholder {
+  font-family: 'Lato', sans-serif;
+
+  font-size: 16px;
+
+  color: grey;
+
+}
+
+#login-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+#login-btn .arrow {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+#login-btn:hover {
+  color: var(--accent-hover);
+}
+
+#login-btn:hover .arrow {
+  transform: translateX(10px);
 }
 
 .login-box button {
@@ -82,20 +210,40 @@ html, body {
   font-size: 0.875rem;
 }
 
-/* App Layout */
+
 .app {
   display: flex;
   height: 100%;
 }
 
-/* Sidebar */
+
 .sidebar {
-  width: 260px;
+  width: 300px;
+
+  max-width: 600px;
+
+  min-width: 100px;
+
   background: var(--bg-panel);
   border-right: 1px solid var(--border);
   padding: 1rem;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -5px;
+
+  width: 10px;
+  height: 100%;
+  cursor: ew-resize;
+
+  background: rgba(255, 255, 255, 0.1);
+
 }
 
 .sidebar h2 {
@@ -110,11 +258,19 @@ html, body {
   margin-bottom: 1rem;
   border-radius: 4px;
   border: 1px solid var(--border);
-  background: var(--input-bg);
+  background: var(--bg-light);
   color: var(--text);
 }
 
-/* Button Styling */
+#portfolio-dropdown {
+  padding: 0.5rem;
+  background: var(--bg-light);
+  color: var(--text);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+
 button,
 .primary-btn {
   padding: 0.5rem 0.75rem;
@@ -128,7 +284,7 @@ button,
 
 .primary-btn {
   background: var(--success);
-  color: white;
+  color: var(--accent);
 }
 
 .primary-btn:hover {
@@ -139,6 +295,7 @@ button.save {
   background: var(--accent);
   color: white;
 }
+
 button.save:hover {
   background: var(--accent-hover);
 }
@@ -147,20 +304,39 @@ button.delete {
   background: var(--danger);
   color: white;
 }
+
 button.delete:hover {
   background: var(--danger-hover);
 }
 
-/* Main */
+
 .main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
   max-width: 95%;
+  min-width: 400px;
 }
 
-/* Top Bar */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+
+}
+
+
+#app-screen {
+  flex: 1;
+
+  display: flex;
+
+  overflow: auto;
+
+}
+
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -172,27 +348,35 @@ button.delete:hover {
 
 .tabs button {
   margin-right: 1rem;
-  background: none;
-  border: none;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+
+  padding: 0.5rem 1rem;
   font-weight: bold;
   cursor: pointer;
   color: var(--text);
+  transition: background 0.3s ease, transform 0.2s ease;
 }
 
 .tabs button:hover {
-  text-decoration: underline;
-  color: var(--accent);
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+
+  text-decoration: none;
 }
 
 .topbar select {
   padding: 0.4rem;
   border-radius: 4px;
   border: 1px solid var(--border);
-  background: var(--input-bg);
+  background: var(--bg-light);
+
   color: var(--text);
+
 }
 
-/* Advisor Tab */
+
 .advisor-box {
   display: flex;
   padding: 1rem;
@@ -235,11 +419,12 @@ button.delete:hover {
   color: var(--accent);
   text-decoration: none;
 }
+
 .response-box a:hover {
   text-decoration: underline;
 }
 
-/* Portfolio Tab */
+
 .portfolio-controls {
   display: flex;
   gap: 0.5rem;
@@ -263,7 +448,8 @@ button.delete:hover {
   overflow-x: auto;
   overflow-y: visible;
   padding: 0 1rem 1rem;
-  background: var(--bg);
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 #asset-table {
@@ -271,13 +457,10 @@ button.delete:hover {
   min-width: 100%;
   table-layout: auto;
   border-collapse: collapse;
-  margin: 0 1rem 1rem;
-  
 }
 
 #asset-table th,
 #asset-table td {
-  border: 1px solid var(--border);
   padding: 0.5rem;
   text-align: left;
   background: var(--bg-light);
@@ -296,7 +479,7 @@ button.delete:hover {
   color: var(--text);
 }
 
-/* Archive Viewer */
+
 .viewer-box {
   padding: 1.5rem;
 }
@@ -338,7 +521,7 @@ button.delete:hover {
   will-change: auto;
 }
 
-/* Expand popup input on focus */
+
 #asset-table td {
   position: relative;
   overflow: visible;
@@ -348,35 +531,26 @@ button.delete:hover {
 #asset-table td input,
 #asset-table td select {
   width: 100%;
-  box-sizing: border-box;
-  transition: 0.2s ease;
+  padding: 5px;
   position: relative;
   z-index: 1;
-  background: var(--input-bg);
+  background: var(--bg-panel);
   color: var(--text);
-  border: 1px solid var(--border);
+  border-radius: 5px;
+  box-shadow: none; /* Remove shadow */
+  border: none; /* Remove border */
+  outline: none; /* Remove focus outline */
 }
 
-#asset-table tr td:nth-child(1) input:focus,
-#asset-table tr td:nth-child(2) input:focus,
-#asset-table tr td:nth-child(4) input:focus,
-#asset-table tr td:nth-child(5) input:focus,
-#asset-table tr td:nth-child(9) input:focus {
-  position: absolute;
-  top: -2.5rem;
-  left: 0;
-  width: max-content;
-  min-width: 300px;
-  max-width: 90vw;
-  background: var(--bg-light);
-  z-index: 1000;
-  padding: 0.4rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--accent);
+#col-ticker, #col-price, #col-units, #col-hedges {
+  width: 100px;
+}
+
+#col-delete{
+  color: red;
 }
 
 
-/* Center the Add Asset button below the table */
 #add-asset-btn {
   display: block;
   margin: 1rem auto;
@@ -394,7 +568,7 @@ button.delete:hover {
   background: var(--success-hover);
 }
 
-/* Portfolio Tab Buttons */
+
 .portfolio-controls button {
   background: var(--accent);
   color: white;
@@ -407,4 +581,108 @@ button.delete:hover {
 
 .portfolio-controls button:hover {
   background: var(--accent-hover);
+}
+
+hr {
+  border: none;
+  height: 0.5px;
+  background: linear-gradient(to right, transparent, var(--border), transparent);
+  background-size: 200% auto;
+
+  margin: 6px auto;
+  display: block;
+  width: 45%;
+  text-align: center;
+  animation: hover-shadow 4s infinite ease-in-out;
+}
+
+@keyframes hover-shadow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+a {
+  text-decoration: none;
+  color: var(--text);
+}
+
+a:hover {
+  text-decoration: underline;
+  color: var(--accent-hover);
+}
+
+.footer {
+  flex-shrink: 0;
+  background: var(--bg-light);
+  color: var(--text);
+  text-align: center;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 997;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.footer p {
+  margin: 0;
+  font-size: 15px;
+}
+
+.footer .social-icons {
+  display: flex;
+  gap: 1rem;
+}
+
+.footer .social-icons img {
+  width: 20px;
+  height: 20px;
+}
+
+.footer .social-icons a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1.2rem;
+}
+
+.footer .social-icons a:hover {
+  color: var(--accent);
+}
+
+#archive-list,
+.asset-table-wrapper {
+  scrollbar-width: 20px;
+  scrollbar-color: var(--accent-hover) var(--bg-light);
+}
+
+#archive-list::-webkit-scrollbar,
+.asset-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+#archive-list::-webkit-scrollbar-track,
+.asset-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+#archive-list::-webkit-scrollbar-thumb,
+.asset-table-wrapper::-webkit-scrollbar-thumb {
+  background-color: var(--bg-light);
+  border: 2px solid #f1f1f1;
+}
+
+#archive-list::-webkit-scrollbar-thumb:hover,
+.asset-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
 }

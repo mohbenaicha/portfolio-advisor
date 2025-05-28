@@ -7,3 +7,25 @@ export async function safeFetch(url, options = {}) {
   }
   return res.json();
 }
+
+
+const sidebar = document.querySelector('.sidebar');
+const resizeHandle = sidebar.querySelector('.sidebar-resize-handle');
+
+resizeHandle.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  document.addEventListener('mousemove', resizeSidebar);
+  document.addEventListener('mouseup', stopResizing);
+});
+
+function resizeSidebar(e) {
+  const newWidth = e.clientX - sidebar.getBoundingClientRect().left; // Calculate width from the left edge
+  if (newWidth >= 100 && newWidth <= 600) {
+    sidebar.style.width = `${newWidth}px`;
+  }
+}
+
+function stopResizing() {
+  document.removeEventListener('mousemove', resizeSidebar);
+  document.removeEventListener('mouseup', stopResizing);
+}

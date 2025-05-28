@@ -9,88 +9,113 @@
 </head>
 
 <body>
+  <div class="background-overlay"></div> <!-- Add this overlay -->
   <!-- LOGIN SCREEN -->
-  <div id="login-screen" class="login-container">
+  <div id="login-screen">
     <div class="login-box">
-      <h1>Sign In</h1>
+      <h1>💼 Briefly </h1>
+      <hr />
+      <p class="subline">An LLM-Powered Investment Advisor*</p>
       <input type="text" id="token-input" placeholder="Enter your token" />
-      <button id="login-btn">Login</button>
+      <button id="login-btn">Login <span class="arrow">→</span></button>
       <p id="login-error" class="error-msg hidden"></p>
+      <div class="disclaimer">
+        <p>
+          <span class="disclaimer-title">Disclaimer:</span> LLMs make mistakes and do <b>NOT</b> provide professional
+          investment advice.
+        </p>
+      </div>
     </div>
   </div>
 
   <!-- APP LAYOUT -->
-  <div id="app-screen" class="app hidden">
-    <aside class="sidebar">
-      <h2>Archives</h2>
-      <div id="archive-list" class="archive-list"></div> <button onclick="loadArchive()"
-        class="primary-btn">Load</button>
-    </aside>
-
-    <main class="main">
-      <!-- Top Navigation -->
-      <div class="topbar">
-        <div class="tabs">
-          <button data-tab="advisor">Advisor</button>
-          <button data-tab="portfolio">Portfolio</button>
-          <button data-tab="archive">Archive</button>
+  <div class="app-layout">
+    <div id="app-screen" class="app hidden">
+      <aside class="sidebar">
+        <div class="sidebar-resize-handle"></div> <!-- Add this -->
+        <h2>Previous chats</h2>
+        <div id="archive-list" class="archive-list"></div>
+      </aside>
+      <main class="main">
+        <!-- Top Navigation -->
+        <div class="topbar">
+          <div class="tabs">
+            <button data-tab="advisor">Advisor</button>
+            <button data-tab="portfolio">Portfolio</button>
+            <button data-tab="archive">Archive</button>
+          </div>
+          <select id="portfolio-select"></select>
         </div>
-        <select id="portfolio-select"></select>
+
+        <!-- Tabs -->
+        <section id="advisor" class="tab hidden">
+          <div class="advisor-box">
+            <textarea id="question" placeholder="Ask your question..."></textarea>
+            <button onclick="submitPrompt()">Submit</button>
+          </div>
+          <div id="response" class="response-box"></div>
+        </section>
+
+        <section id="portfolio" class="tab hidden">
+          <div class="portfolio-controls">
+            <select id="portfolio-dropdown"></select>
+            <button onclick="createPortfolio()">✚ New</button>
+            <button onclick="saveAssets()">💾 Save</button>
+            <button onclick="deletePortfolio()">🗑 Delete</button>
+          </div>
+          <input id="portfolio-name" placeholder="Portfolio name" />
+          <div class="asset-table-wrapper">
+            <table id="asset-table">
+              <thead>
+                <tr>
+                  <th id="col-ticker">Ticker</th>
+                  <th id="col-name">Name</th>
+                  <th>Type</th>
+                  <th id="col-sector">Sector</th>
+                  <th id="col-region">Region</th>
+                  <th id="col-price">Price</th>
+                  <th id="col-units">Units</th>
+                  <th>Hedge?</th>
+                  <th id="col-hedges">Hedges (Ticker)</th>
+                  <th>Total Value</th>
+                  <th>Weight</th>
+                  <th id="col-delete">Delete</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <button id="add-asset-btn" onclick="addAssetRow()">+ Add Asset</button>
+        </section>
+
+        <section id="archive" class="tab">
+          <div id="archive-viewer" class="viewer-box">
+            <p>Select an archive to view its details.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer class="footer">
+      <p>© 2025 <a href="https://www.mohamedbenaicha.ca" target="_blank" title="Website">Mohamed Benaicha</a></p>
+      <div class="social-icons">
+        <a href="https://www.mohamedbenaicha.ca" target="_blank" title="Website">
+          <img src="assets/website-icon.png" alt="Website" />
+        </a>
+        <a href="https://github.com/mohbenaicha" target="_blank" title="GitHub">
+          <img src="assets/github-icon.png" alt="GitHub" />
+        </a>
+        <a href="https://www.linkedin.com/in/mohamedbenaicha/" target="_blank" title="LinkedIn">
+          <img src="assets/linkedin-icon.png" alt="LinkedIn" />
+        </a>
       </div>
-
-      <!-- Tabs -->
-      <section id="advisor" class="tab hidden">
-        <div class="advisor-box">
-          <textarea id="question" placeholder="Ask your question..."></textarea>
-          <button onclick="submitPrompt()">Submit</button>
-        </div>
-        <div id="response" class="response-box"></div>
-      </section>
-
-      <section id="portfolio" class="tab hidden">
-        <div class="portfolio-controls">
-          <select id="portfolio-dropdown"></select>
-          <button onclick="createPortfolio()">✚ New</button>
-          <button onclick="saveAssets()">💾 Save</button>
-          <button onclick="deletePortfolio()">🗑 Delete</button>
-        </div>
-        <input id="portfolio-name" placeholder="Portfolio name" />
-        <div class="asset-table-wrapper">
-          <table id="asset-table">
-            <thead>
-              <tr>
-                <th id="col-ticker">Ticker</th>
-                <th id="col-name">Name</th>
-                <th>Type</th>
-                <th id="col-sector">Sector</th>
-                <th id="col-region">Region</th>
-                <th>Price</th>
-                <th>Units</th>
-                <th>Hedge?</th>
-                <th id="col-hedges">Hedges</th>
-                <th>Total Value</th>
-                <th>Weight</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <button id="add-asset-btn" onclick="addAssetRow()">+ Add Asset</button>
-      </section>
-
-      <section id="archive" class="tab">
-        <div id="archive-viewer" class="viewer-box">
-          <p>Select an archive to view its details.</p>
-        </div>
-      </section>
-    </main>
+    </footer>
   </div>
-
   <script src="./js/login.js" type="module"></script>
   <script src="./js/archive.js" type="module"></script>
   <script src="./js/main.js" type="module"></script>
   <script src="./js/portfolio.js" type="module"></script>
   <script src="./js/advisor.js" type="module"></script>
+  <script src="./js/utils.js" type="module"></script>
 </body>
 
 </html>

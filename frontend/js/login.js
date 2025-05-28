@@ -30,6 +30,7 @@ async function login(token) {
 
     loginScreen.classList.add("hidden");
     appScreen.classList.remove("hidden");
+    appScreen.style.display = "flex";
     loginError.textContent = "";
     loginError.style.display = "none";
 
