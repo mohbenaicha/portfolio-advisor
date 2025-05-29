@@ -10,15 +10,21 @@ window.selectedPortfolioId = selectedPortfolioId;
 
 export async function loadPortfolioDropdown() {
   const portfolios = await getPortfolios();
-  const dropdown = document.getElementById("portfolio-dropdown");
-  dropdown.innerHTML = "";
-  portfolios.forEach(p => {
-    const opt = document.createElement("option");
-    opt.value = p.id;
-    opt.textContent = p.name;
-    dropdown.appendChild(opt);
+  const dropdownIds = ["portfolio-dropdown", "portfolio-select"]; // List of dropdown IDs
+
+  dropdownIds.forEach((id) => {
+    const dropdown = document.getElementById(id);
+    if (dropdown) {
+      dropdown.innerHTML = "";
+      portfolios.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        dropdown.appendChild(opt);
+      });
+      dropdown.value = selectedPortfolioId;
+    }
   });
-  dropdown.value = selectedPortfolioId;
 }
 
 export async function loadPortfolio() {
@@ -76,13 +82,14 @@ export async function createPortfolio() {
     console.log("New portfolio created:", newPortfolio);
     selectedPortfolioId = newPortfolio.id;
 
-    await loadPortfolioDropdown(); // repopulates the dropdown
+    await loadPortfolioDropdown();
 
     const dropdown = document.getElementById("portfolio-dropdown");
     if (dropdown && selectedPortfolioId) {
-      dropdown.value = selectedPortfolioId.toString();
-      await loadPortfolio(); // now loads the correct one
+      dropdown.value = selectedPortfolioId.toString(); // force string match
+      await loadPortfolio();
     }
+
   } catch (err) {
     console.log('Failed to save portfolio: ' + err.message);
   }
@@ -202,13 +209,36 @@ export async function saveAssets() {
   });
 
   const tickerSet = new Set();
+  const nameSet = new Set();
+  const errorOutput = document.getElementById("portfolio-err-pout");
+  errorOutput.style.color = "red"; // Set font color to bright red
+
+
   for (const a of assets) {
+    if (!a.ticker || !a.name) {
+      errorOutput.textContent = "Error: Ticker and Name cannot be empty.";
+      return;
+    }
     if (tickerSet.has(a.ticker)) {
-      console.log(`Duplicate ticker found: ${a.ticker}`);
+      errorOutput.textContent = `Error: Duplicate ticker found: ${a.ticker}`;
+      return;
+    }
+    if (nameSet.has(a.name)) {
+      errorOutput.textContent = `Error: Duplicate name found: ${a.name}`;
+      return;
+    }
+    if (!a.asset_type || !a.sector || !a.region) {
+      errorOutput.textContent = "Error: Type, Sector, and Region must have values.";
+      return;
+    }
+    if (a.market_price <= 0 || a.units_held <= 0) {
+      errorOutput.textContent = "Error: Price and Units must be greater than 0.";
       return;
     }
     tickerSet.add(a.ticker);
+    nameSet.add(a.name);
   }
+  errorOutput.textContent = ""; // Clear error message if no issues
 
   calculateTotals(assets);
 

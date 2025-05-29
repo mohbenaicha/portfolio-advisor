@@ -40,20 +40,25 @@
         <!-- Top Navigation -->
         <div class="topbar">
           <div class="tabs">
-            <button data-tab="advisor">Advisor</button>
-            <button data-tab="portfolio">Portfolio</button>
-            <button data-tab="archive">Archive</button>
+            <button class="tab-button active-tab" data-tab="advisor">Advisor</button>
+            <button class="tab-button" data-tab="portfolio">Portfolio</button>
+            <button class="tab-button" data-tab="archive">Archive</button>
           </div>
-          <select id="portfolio-select"></select>
+          <div></div>
         </div>
 
         <!-- Tabs -->
         <section id="advisor" class="tab hidden">
           <div class="advisor-box">
-            <textarea id="question" placeholder="Ask your question..."></textarea>
-            <button onclick="submitPrompt()">Submit</button>
+            <div class="textarea-wrapper">
+              <textarea id="question" placeholder="Ask a question about your portfolio..."></textarea>
+              <div class="input-footer">
+                <select id="portfolio-select"></select>
+                <button onclick="submitPrompt()">Ask</button>
+              </div>
+            </div>
           </div>
-          <div id="response" class="response-box"></div>
+          <div id="response" class="response-box scrollable"></div>
         </section>
 
         <section id="portfolio" class="tab hidden">
@@ -63,7 +68,10 @@
             <button onclick="saveAssets()">💾 Save</button>
             <button onclick="deletePortfolio()">🗑 Delete</button>
           </div>
-          <input id="portfolio-name" placeholder="Portfolio name" />
+          <div class="portfolio-name-field">
+            <span class="prefix">Rename portfolio:</span>
+            <input id="portfolio-name" type="text" />
+          </div>
           <div class="asset-table-wrapper">
             <table id="asset-table">
               <thead>
@@ -85,11 +93,12 @@
               <tbody></tbody>
             </table>
           </div>
+          <div id="portfolio-err-pout" class="error-font"></div>
           <button id="add-asset-btn" onclick="addAssetRow()">+ Add Asset</button>
         </section>
 
         <section id="archive" class="tab">
-          <div id="archive-viewer" class="viewer-box">
+          <div id="archive-viewer" class="viewer-box scrollable">
             <p>Select an archive to view its details.</p>
           </div>
         </section>

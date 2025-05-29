@@ -18,7 +18,6 @@ async function loadArchive() {
     viewer.innerHTML = `
       <h2>Question</h2><p>${archive.original_question}</p>
       <h2>Response</h2><p>${archive.openai_response}</p>
-      <h3>Citations</h3>
     `;
   } catch (err) {
     console.log("Failed to load archive: " + err.message);

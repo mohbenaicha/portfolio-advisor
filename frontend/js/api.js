@@ -1,4 +1,5 @@
 import { safeFetch } from "./utils.js";
+import { showTab } from "./main.js";
 
 const BASE_URL = "http://localhost:8000"; // Update for production
 
@@ -82,24 +83,28 @@ export async function loadArchives() {
       </div>
     `;
     div.onclick = async () => {
+      showTab("archive");
       document.querySelectorAll(".archive-item").forEach(el => el.classList.remove("active"));
       div.classList.add("active");
 
       const archive = await getArchivedResponse(a.id);
       const viewer = document.getElementById("archive-viewer");
-
       if (!archive) {
         viewer.innerHTML = "<p>Failed to load archive.</p>";
         return;
       }
 
+      const portfolios = await getPortfolios();
+      const portfolio = portfolios.find(p => p.id === archive.portfolio_id);
+
       viewer.innerHTML = `
     <h2>${archive.original_question}</h2>
     <p class="timestamp">${new Date(archive.timestamp).toLocaleString()}</p>
-    <h3>Response</h3>
+    <p class="portfolio-name"><strong>Portfolio:</strong> ${portfolio?.name || 'Unknown'}</p>
+    <h3>Advice</h3>
     <p>${archive.openai_response}</p>
-    <h4>Citations</h4>
-  `;
+`;
+
     };
     archiveSelect.appendChild(div);
   });
@@ -111,7 +116,7 @@ export async function loadArchives() {
     item.addEventListener("mouseenter", () => {
       const overflow = title.scrollWidth - wrapper.clientWidth;
       if (overflow > 0) {
-        title.style.transition = "transform 4s linear";
+        title.style.transition = "transform 1s linear";
         title.style.transform = `translateX(-${overflow}px)`;
       }
     });

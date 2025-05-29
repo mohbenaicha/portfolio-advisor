@@ -12,4 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
 export function showTab(tabId) {
   document.querySelectorAll(".tab").forEach(el => el.classList.add("hidden"));
   document.getElementById(tabId).classList.remove("hidden");
+
+  // highlight active button
+  document.querySelectorAll(".tab-button").forEach(btn =>
+    btn.classList.remove("active-tab")
+  );
+  const activeBtn = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+  if (activeBtn) activeBtn.classList.add("active-tab");
 }
+
+showTab('advisor');

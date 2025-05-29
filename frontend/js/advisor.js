@@ -5,29 +5,17 @@ import {
   saveArchive,
 } from "./api.js";
 
-// async function login() {
-//   let token = localStorage.getItem("authToken");
-//   if (!token) {
-//     token = prompt("Enter your auth token:");
-//     if (!token) return alert("Token required");
-//     localStorage.setItem("authToken", token);
-//   }
-//   try {
-//     await authenticateUser(token);
-//     await loadPortfolioOptions();
-//   } catch (err) {
-//     alert("Authentication failed: " + err.message);
-//     localStorage.removeItem("authToken");
-//   }
-// }
 
 
+// handles submitting the prompt to the backend
 async function submitPrompt() {
   const select = document.getElementById("portfolio-select");
   const question = document.getElementById("question").value.trim();
   const portfolioId = parseInt(select.value);
 
   if (!portfolioId || !question) return;
+
+  console.log("Submitting question:", question, "for portfolio ID:", portfolioId);
 
   const result = await analyzePrompt(question, portfolioId);
   renderResponse(result);
@@ -43,13 +31,27 @@ async function submitPrompt() {
   }
 }
 
+// Render the response in the designated advisor panel div
 function renderResponse(data) {
   const div = document.getElementById("response");
-  div.innerHTML = `<h2>Summary</h2><p>${data.summary}</p><h3>Citations</h3>`;
-  if (data.articles) {
-    data.articles.forEach((a) => {
-      div.innerHTML += `<p>• <a href="${a.url}" target="_blank">${a.title}</a> — ${a.source}</p>`;
-    });
+  div.innerHTML = data.summary;
+}
+
+
+// update placeholder text in question box based on selected advisor
+const advisorDropdown = document.getElementById("portfolio-select");
+const questionBox = document.getElementById("question");
+
+if (advisorDropdown && questionBox) {
+  advisorDropdown.addEventListener("change", function () {
+    const selectedName = this.options[this.selectedIndex].text;
+    questionBox.placeholder = `Ask something about ${selectedName}...`;
+  });
+
+  // Optional: set initial placeholder based on current selection
+  if (advisorDropdown.options.length > 0) {
+    const selectedName = advisorDropdown.options[advisorDropdown.selectedIndex].text;
+    questionBox.placeholder = `Ask something about ${selectedName}...`;
   }
 }
 
