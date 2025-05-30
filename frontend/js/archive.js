@@ -1,4 +1,4 @@
-import { getArchives, getArchivedResponse } from "./api.js";
+import { getArchives, getArchivedResponse, loadArchives } from "./api.js";
 
 console.log('archive.js loaded');
 
@@ -9,7 +9,7 @@ async function loadArchive() {
 
   try {
     const archive = await getArchivedResponse(id);
-    console.log("archive from backend:", archive); // <--- Add this line
+    console.log("archive from backend:", archive);
     const viewer = document.getElementById("archive-viewer");
     if (!archive) {
       viewer.innerHTML = "<p>Failed to load archive.</p>";
@@ -42,9 +42,12 @@ async function loadArchiveDropdown() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadArchiveDropdown);
 
 document.addEventListener("DOMContentLoaded", loadArchiveDropdown);
+document.getElementById("refresh-archives-btn").addEventListener("click", () => {
+  console.log("Refresh archives button clicked");
+  loadArchives();
+});
 window.loadArchive = loadArchive;
 window.loadArchiveDropdown = loadArchiveDropdown;
 

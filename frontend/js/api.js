@@ -79,9 +79,12 @@ export async function loadArchives() {
     div.dataset.id = a.id;
     div.innerHTML = `
       <div class="archive-title-wrapper">
+        <button class="delete-archive-btn">❌</button>  
         <span class="archive-title">${a.original_question}</span>
       </div>
     `;
+
+    // Handle archive item click
     div.onclick = async () => {
       showTab("archive");
       document.querySelectorAll(".archive-item").forEach(el => el.classList.remove("active"));
@@ -98,39 +101,64 @@ export async function loadArchives() {
       const portfolio = portfolios.find(p => p.id === archive.portfolio_id);
 
       viewer.innerHTML = `
-    <h2>${archive.original_question}</h2>
-    <p class="timestamp">${new Date(archive.timestamp).toLocaleString()}</p>
-    <p class="portfolio-name"><strong>Portfolio:</strong> ${portfolio?.name || 'Unknown'}</p>
-    <h3>Advice</h3>
-    <p>${archive.openai_response}</p>
-`;
-
+        <h2>${archive.original_question}</h2>
+        <p class="timestamp">${new Date(archive.timestamp).toLocaleString()}</p>
+        <p class="portfolio-name"><strong>Portfolio:</strong> ${portfolio?.name || 'Unknown'}</p>
+        <h3>Advice</h3>
+        <p>${archive.openai_response}</p>
+      `;
     };
+
+    // Handle delete button click
+    const deleteButton = div.querySelector(".delete-archive-btn");
+    deleteButton.addEventListener("click", async (event) => {
+      event.stopPropagation(); // Prevent triggering the archive item click event
+      if (confirm("Are you sure you want to delete this archive?")) {
+        try {
+          const response = await safeFetch(`${BASE_URL}/archives/${a.id}`, {
+            method: "DELETE",
+            headers: getAuthHeaders(),
+          });
+          loadArchives(); // Refresh the sidebar
+          const viewer = document.getElementById("archive-viewer");
+          viewer.innerHTML = "<p>Select an archive to view its details.</p>"; // Reset viewer box content
+          if (response.deleted) {
+            div.remove(); // Remove the archive item from the DOM
+          } else {
+            alert("Failed to delete archive.");
+          }
+        } catch (error) {
+          console.error("Error deleting archive:", error);
+          alert("An error occurred while deleting the archive.");
+        }
+      }
+    });
+
     archiveSelect.appendChild(div);
   });
 
-  document.querySelectorAll(".archive-item").forEach(item => {
+  document.querySelectorAll(".archive-item").forEach((item) => {
     const title = item.querySelector(".archive-title");
     const wrapper = item.querySelector(".archive-title-wrapper");
+    const deleteButton = item.querySelector(".delete-archive-btn");
 
-    item.addEventListener("mouseenter", () => {
-      const overflow = title.scrollWidth - wrapper.clientWidth;
+    title.addEventListener("mouseenter", () => {
+      const deleteButtonWidth = deleteButton.offsetWidth; // Get the width of the delete button
+      const availableSpace = wrapper.clientWidth - deleteButtonWidth; // Calculate space for the title
+      const overflow = title.scrollWidth - availableSpace; // Calculate overflow distance
+
       if (overflow > 0) {
-        title.style.transition = "transform 1s linear";
-        title.style.transform = `translateX(-${overflow}px)`;
+        title.style.transition = "transform 1.5s linear";
+        title.style.transform = `translateX(-${overflow + 2}px)`;
       }
     });
 
     item.addEventListener("mouseleave", () => {
       title.style.transition = "none";
       title.style.transform = "translateX(0)";
-      requestAnimationFrame(() => {
-        title.style.transition = "";
-      });
     });
   });
 }
-
 
 export async function createPortfolioAPI(name, assets, id = null) {
   const method = id ? "PUT" : "POST";

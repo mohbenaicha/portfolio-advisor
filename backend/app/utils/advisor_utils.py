@@ -1,34 +1,31 @@
 import markdown
 
+
+def preprocess_markdown(markdown_text):
+    # Example: Normalize spacing and fix common issues
+    markdown_text = markdown_text.strip()
+    markdown_text = markdown_text.replace("**;", "**")  # Fix malformed bold syntax
+    markdown_text = markdown_text.replace("\n\n", "\n")  # Remove excessive newlines
+    return markdown_text
+
+
 def convert_markdown_to_html(markdown_text):
+    markdown_text = preprocess_markdown(markdown_text)  # Preprocess markdown
+
     html_content = markdown.markdown(markdown_text, extensions=["extra", "smarty"])
     styled_html = f"""
     <html>
-    <head>
         <style>
-            body {{
-                background-color: black;
-                color: yellow;
-                font-family: 'Inter', sans-serif;
-                margin: 20px;
+            ul, ol {{
+                margin-left: 30px; /* Indent list items */
             }}
-            h1, h2, h3, h4, h5, h6 {{
-                font-family: 'Oswald', sans-serif;
-                color: orange;
-                font-size: 24px;
-                margin-bottom: 10px;
-
+            li {{
+                margin-bottom: 10px; /* Add spacing between items */
             }}
-            p, li {{
-                font-family: 'Inter', sans-serif;
-                color: yellow;
-                font-size: 12px;
-                line-height: 1.5;
-                margin-bottom: 10px;
+            p {{
+                margin-left: 10px;
             }}
         </style>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
-    </head>
     <body>
         {html_content}
     </body>

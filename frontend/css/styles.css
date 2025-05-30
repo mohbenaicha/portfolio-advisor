@@ -13,6 +13,7 @@
   --input-bg: #20304900;
   --para-font-size: 16px;
   --button-font-size: 18px;
+  --title-font-size: 24px;
   --portfolio-select-bg: #0f172a;
 
 }
@@ -66,6 +67,10 @@ body {
   font-size: 70px;
 }
 
+.login-box sup {
+  font-size: 20px;
+}
+
 .subline {
   font-size: 15px;
   color: var(--text);
@@ -76,24 +81,14 @@ body {
 
 .disclaimer {
   font-size: 12px;
-
-  color: var(--text);
+  color: red;
   margin-top: 20px;
   text-align: center;
   padding: 5px;
-
   background: var(--bg-light);
-
-  border: 1px solid var(--border);
-
   border-radius: 8px;
-
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-
   max-width: 80%;
-
   margin: 20px auto;
-
 }
 
 .login-box input {
@@ -110,21 +105,15 @@ body {
 @media (max-width: 600px) {
   #login-screen {
     width: 90%;
-
     height: auto;
-
     top: 50%;
-
     left: 50%;
-
     transform: translate(-50%, -50%);
   }
 
   .login-box {
     width: 100%;
-
     padding: 16px;
-
   }
 
 
@@ -135,22 +124,17 @@ body {
 
   #login-screen {
     top: 40%;
-
     transform: translate(-50%, -40%);
-
   }
 
   .subline {
     font-size: 12px;
-
   }
 }
 
 #token-input::placeholder {
   font-family: 'Lato', sans-serif;
-
   font-size: 16px;
-
   color: grey;
 
 }
@@ -251,6 +235,12 @@ body {
   border: 1px solid var(--border);
   background: var(--bg-light);
   color: var(--text);
+}
+
+#portfolio.tab {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 #portfolio-dropdown {
@@ -402,11 +392,11 @@ button.delete:hover {
 
 .textarea-wrapper {
   position: relative;
-  border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--input-bg);
+  border: 1px solid var(--border);
+  background: var(--bg);
   padding: 5px;
-  /* reserve space for dropdown */
+  
   padding-bottom: 60px;
   width: 700px;
 }
@@ -416,7 +406,7 @@ button.delete:hover {
   height: 150px;
   padding: 0.75rem;
   padding-bottom: 3rem;
-  /* make room for dropdown */
+  
   background: transparent;
   border: none;
   color: var(--text);
@@ -440,13 +430,13 @@ button.delete:hover {
 .input-footer select {
   flex: 2;
   min-width: 150px;
+  border: none;
 }
 
 .input-footer select {
   flex: 2;
   padding: 0.5rem;
   background: var(--portfolio-select-bg);
-  border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   font-size: 0.95rem;
@@ -501,6 +491,7 @@ button.delete:hover {
   width: 50%;
   background: var(--input-bg);
   color: var(--text);
+  margin-bottom: -5px;
 }
 
 .portfolio-name-field {
@@ -534,16 +525,17 @@ button.delete:hover {
   outline: none;
   color: var(--text);
   font-size: inherit;
+  margin-bottom: -5px;
 }
 
 
 .asset-table-wrapper {
-  width: 100%;
+  max-width: 1500px;
+  max-height: 550px;
   overflow-x: auto;
-  overflow-y: visible;
-  padding: 0 16px 16px;
-  margin-left: 5px;
-  margin-right: 5px;
+  overflow-y: auto;
+  margin: 20px !important;
+  padding: 16px 16px 16px 16px;
 }
 
 #asset-table {
@@ -551,6 +543,7 @@ button.delete:hover {
   min-width: 100%;
   table-layout: auto;
   border-collapse: collapse;
+  border-radius: 18px;
 }
 
 #asset-table th,
@@ -577,13 +570,15 @@ button.delete:hover {
 .viewer-box {
   padding: 24px;
   background: var(--bg-light);
-  border-radius: 6px;
   color: #f1f5f9;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   line-height: 1.6;
   font-size: 16px;
-  margin-left: 5px;
-  margin-right: 5px;
+  margin: 10px;
+  overflow-y: auto;
+  height: calc(100vh - 130px);
+  scrollbar-width: 20px;
+  scrollbar-color: var(--accent-hover) var(--bg-light);
 }
 
 .viewer-box h2 {
@@ -634,15 +629,44 @@ button.delete:hover {
 }
 
 .archive-title-wrapper {
+  display: flex;
+  
+  align-items: center;
+  
   overflow: hidden;
+  
   white-space: nowrap;
   position: relative;
+  z-index: inherit;
 }
 
 .archive-title {
-  display: inline-block;
+  flex-grow: 1;
+  
+  text-align: left;
+  
   transition: none;
   will-change: auto;
+  z-index: 1;
+}
+
+.delete-archive-btn {
+  flex-shrink: 0;
+  background: var(--danger);
+  color: rgb(255, 255, 255);
+  border: 5px rgba(0, 0, 0, 0);
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 8px;
+  z-index: 2;
+  transition: transform 0.5s ease, background-color 0.5s ease;
+}
+
+.delete-archive-btn:hover {
+  background: var(--danger-hover);
+  transform: scale(1.01);
 }
 
 
@@ -655,7 +679,7 @@ button.delete:hover {
 #asset-table td input,
 #asset-table td select {
   width: 100%;
-  padding: 5px;
+  padding: 5px 5px 2px 5px;
   position: relative;
   z-index: 1;
   background: var(--bg-panel);
@@ -665,6 +689,7 @@ button.delete:hover {
   border: none;
   outline: none;
 }
+
 
 #col-ticker,
 #col-price,
@@ -787,6 +812,24 @@ a:hover {
   color: var(--accent);
 }
 
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-center {
+  text-align: center;
+  flex-grow: 1;
+  font-size: var(--title-font-size) !important;
+}
+
+.footer-center sup {
+  text-align: center;
+  flex-grow: 1;
+  font-size: 12px;
+}
+
 #archive-list,
 .asset-table-wrapper {
   scrollbar-width: 20px;
@@ -815,27 +858,32 @@ a:hover {
 }
 
 #response {
-  max-height: 600px; /* Adjust the height as needed */
-  overflow-y: auto; /* Enable vertical scrolling */
-  scrollbar-width: 20px; /* Same as asset-table-wrapper */
-  scrollbar-color: var(--accent-hover) black; /* Same colors */
+  height: calc(100vh - 365px);
+  overflow-y: auto;
+  overflow-x: auto;
+  font-size: var(--para-font-size);
+  scrollbar-width: 20px;
+  scrollbar-color: var(--accent-hover) var(--bg-light);
 }
 
-#response::-webkit-scrollbar {
-  width: 8px; /* Width of the vertical scrollbar */
+#response::-webkit-scrollbar, .viewer-box::-webkit-scrollbar {
+  width: 8px;
 }
 
-#response::-webkit-scrollbar-track {
-  background: #f1f1f1; /* Scrollbar track color */
+#response::-webkit-scrollbar-track, .viewer-box::-webkit-scrollbar-track {
+  background: #f1f1f1;
 }
 
-#response::-webkit-scrollbar-thumb {
-  background-color: var(--accent); /* Scrollbar thumb color */
-  border: 2px solid #f1f1f1; /* Optional: Add border for thumb */
+#response::-webkit-scrollbar-thumb, .viewer-box::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  
+  border: 2px solid #f1f1f1;
+  
 }
 
-#response::-webkit-scrollbar-thumb:hover {
-  background-color: #555; /* Scrollbar thumb hover color */
+#response::-webkit-scrollbar-thumb:hover, .viewer-box::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+  
 }
 
 
@@ -844,4 +892,23 @@ a:hover {
   font-size: var(--para-font-size);
   margin-top: 8px;
   text-align: center;
+}
+
+
+.refresh-arch-btn {
+  display: block;
+  margin: 10px auto;
+  padding: 10px 15px 8px 15px;
+  font-size: var(--button-font-size);
+  border: solid 1px white !important;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.refresh-arch-btn:hover {
+  background-color: var(--accent-hover);
 }

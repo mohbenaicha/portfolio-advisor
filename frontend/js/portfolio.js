@@ -22,7 +22,18 @@ export async function loadPortfolioDropdown() {
         opt.textContent = p.name;
         dropdown.appendChild(opt);
       });
-      dropdown.value = selectedPortfolioId;
+
+      // Ensure the dropdown has options before accessing them
+      if (dropdown.options.length > 0) {
+        dropdown.selectedIndex = 0; // Select the first option
+        if (id === "portfolio-select") {
+          const questionBox = document.getElementById("question");
+          if (questionBox) {
+            const selectedName = dropdown.options[dropdown.selectedIndex].text;
+            questionBox.placeholder = `Ask something about ${selectedName}...`;
+          }
+        }
+      }
     }
   });
 }
@@ -127,6 +138,13 @@ export function addAssetRow() {
 
 function createAssetRow(data = {}) {
   const tr = document.createElement("tr");
+  const tdDel = document.createElement("td");
+  const btn = document.createElement("button");
+  btn.textContent = "✖";
+  btn.onclick = () => tr.remove();
+  tdDel.appendChild(btn);
+  tr.appendChild(tdDel);
+
   const fields = ["ticker", "name", "asset_type", "sector", "region", "market_price", "units_held", "is_hedge", "hedges_asset"];
   const types = {
     asset_type: ["stock", "bond", "option", "future", "swap"],
@@ -169,12 +187,7 @@ function createAssetRow(data = {}) {
   tdPct.textContent = data.percentage_of_total || "";
   tr.appendChild(tdPct);
 
-  const tdDel = document.createElement("td");
-  const btn = document.createElement("button");
-  btn.textContent = "✖";
-  btn.onclick = () => tr.remove();
-  tdDel.appendChild(btn);
-  tr.appendChild(tdDel);
+
 
   return tr;
 }
@@ -195,7 +208,18 @@ function calculateTotals(assets) {
 }
 
 export async function saveAssets() {
-  const name = document.getElementById("portfolio-name").value;
+  const name = document.getElementById("portfolio-name").value.trim();
+  const nameErr = document.getElementById("portfolio-name-error"); // Access error container
+
+  // Clear previous error
+  nameErr.textContent = "";
+
+  if (!name) {
+    nameErr.textContent = "Portfolio name cannot be empty.";
+    nameErr.style.color = "red"; // Display error in red
+    return;
+  }
+
   const rows = document.querySelectorAll("#asset-table tbody tr");
   const assets = [];
 

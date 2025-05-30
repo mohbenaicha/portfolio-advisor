@@ -13,7 +13,7 @@
   <!-- LOGIN SCREEN -->
   <div id="login-screen">
     <div class="login-box">
-      <h1>💼 Briefly </h1>
+      <h1>💼 Briefly<sup>©</sup> </h1>
       <hr />
       <p class="subline">An LLM-Powered Investment Advisor*</p>
       <input type="text" id="token-input" placeholder="Enter your token" />
@@ -21,7 +21,8 @@
       <p id="login-error" class="error-msg hidden"></p>
       <div class="disclaimer">
         <p>
-          <span class="disclaimer-title">Disclaimer:</span> LLMs make mistakes and do <b>NOT</b> provide professional
+          <span class="disclaimer-title"><b>Disclaimer</b>:</span> LLMs make mistakes and do <b>NOT</b> constitute
+          professional
           investment advice.
         </p>
       </div>
@@ -35,6 +36,7 @@
         <div class="sidebar-resize-handle"></div> <!-- Add this -->
         <h2>Previous chats</h2>
         <div id="archive-list" class="archive-list"></div>
+        <button id="refresh-archives-btn" class="refresh-arch-btn">⟳</button>
       </aside>
       <main class="main">
         <!-- Top Navigation -->
@@ -69,13 +71,17 @@
             <button onclick="deletePortfolio()">🗑 Delete</button>
           </div>
           <div class="portfolio-name-field">
-            <span class="prefix">Rename portfolio:</span>
+            <span class="prefix"><span style="font-size: 15px !important;">✏️</span> Name:</span>
             <input id="portfolio-name" type="text" />
           </div>
+          <div id="portfolio-name-error" class="error-font"></div>
+
           <div class="asset-table-wrapper">
             <table id="asset-table">
               <thead>
                 <tr>
+                  <th id="col-delete"></th>
+
                   <th id="col-ticker">Ticker</th>
                   <th id="col-name">Name</th>
                   <th>Type</th>
@@ -87,7 +93,6 @@
                   <th id="col-hedges">Hedges (Ticker)</th>
                   <th>Total Value</th>
                   <th>Weight</th>
-                  <th id="col-delete">Delete</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -106,6 +111,8 @@
     </div>
     <footer class="footer">
       <p>© 2025 <a href="https://www.mohamedbenaicha.ca" target="_blank" title="Website">Mohamed Benaicha</a></p>
+      <p class="footer-center">💼 Briefly<sup>©</sup></p> <!-- Added this -->
+
       <div class="social-icons">
         <a href="https://www.mohamedbenaicha.ca" target="_blank" title="Website">
           <img src="assets/website-icon.png" alt="Website" />

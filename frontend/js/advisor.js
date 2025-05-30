@@ -37,22 +37,17 @@ function renderResponse(data) {
   div.innerHTML = data.summary;
 }
 
-
-// update placeholder text in question box based on selected advisor
-const advisorDropdown = document.getElementById("portfolio-select");
 const questionBox = document.getElementById("question");
+const advisorDropdown = document.getElementById("portfolio-select");
+// update placeholder text in question box based on selected advisor
 
 if (advisorDropdown && questionBox) {
   advisorDropdown.addEventListener("change", function () {
     const selectedName = this.options[this.selectedIndex].text;
     questionBox.placeholder = `Ask something about ${selectedName}...`;
   });
-
-  // Optional: set initial placeholder based on current selection
-  if (advisorDropdown.options.length > 0) {
-    const selectedName = advisorDropdown.options[advisorDropdown.selectedIndex].text;
-    questionBox.placeholder = `Ask something about ${selectedName}...`;
-  }
 }
 
+
 window.submitPrompt = submitPrompt;
+

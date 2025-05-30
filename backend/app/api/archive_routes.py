@@ -4,6 +4,7 @@ from app.dependencies.user import get_current_user
 from app.models.schemas import ArchiveCreate, ArchiveOut
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
+from app.db.archive_crud import delete_archive_by_id
 
 router = APIRouter()
 
@@ -37,3 +38,17 @@ async def get_archive(
     if not record:
         raise HTTPException(status_code=404, detail="Archive not found")
     return ArchiveOut.model_validate(record)
+
+
+@router.delete("/archives/{id}")
+async def delete_archive(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_current_user),
+):
+    success = await delete_archive_by_id(db=db, archive_id=id, user_id=user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Archive not found")
+    return {"deleted": True}
+
+
