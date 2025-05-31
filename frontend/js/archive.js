@@ -15,9 +15,32 @@ async function loadArchive() {
       return;
     }
     viewer.innerHTML = `
-      <h2>Question</h2><p>${archive.original_question}</p>
-      <h2>Response</h2><div>${archive.openai_response}</div>
-    `;
+  <h2>Question</h2><p>${archive.original_question}</p>
+  <h2>Response</h2>
+`;
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(archive.openai_response, "text/html");
+
+    const style = doc.querySelector("style");
+    const body = doc.querySelector("body");
+
+    if (style) {
+      // Optional: remove existing archive styles if you want to avoid stacking
+      const oldStyle = document.getElementById("archive-style");
+      if (oldStyle) oldStyle.remove();
+
+      const styleEl = document.createElement("style");
+      styleEl.id = "archive-style";
+      styleEl.textContent = style.textContent;
+      document.head.appendChild(styleEl);
+    }
+
+    if (body) {
+      const container = document.createElement("div");
+      container.innerHTML = body.innerHTML;
+      viewer.appendChild(container);
+    }
   } catch (err) {
     console.log("Failed to load archive: " + err.message);
   }

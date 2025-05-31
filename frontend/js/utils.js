@@ -29,3 +29,9 @@ function stopResizing() {
   document.removeEventListener('mousemove', resizeSidebar);
   document.removeEventListener('mouseup', stopResizing);
 }
+
+export function decodeHTML(str) {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = str;
+  return textarea.value;
+}

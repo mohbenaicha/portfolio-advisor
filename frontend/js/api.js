@@ -1,4 +1,4 @@
-import { safeFetch } from "./utils.js";
+import { safeFetch, decodeHTML } from "./utils.js";
 import { showTab } from "./main.js";
 import { BASE_URL } from "./config.js";
 
@@ -104,9 +104,31 @@ export async function loadArchives() {
         <p class="timestamp">${new Date(archive.timestamp).toLocaleString()}</p>
         <p class="portfolio-name"><strong>Portfolio:</strong> ${portfolio?.name || 'Unknown'}</p>
         <h3>Advice</h3>
-        <p>${archive.openai_response}</p>
       `;
-    };
+      const raw = decodeHTML(archive.openai_response); // Decode escaped HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(raw, "text/html");
+
+      // Apply style if needed
+      const style = doc.querySelector("style");
+      if (style) {
+        const existing = document.getElementById("archive-style");
+        if (existing) existing.remove();
+
+        const styleEl = document.createElement("style");
+        styleEl.id = "archive-style";
+        styleEl.textContent = style.textContent;
+        document.head.appendChild(styleEl);
+      }
+
+      // Inject content
+      const body = doc.querySelector("body");
+      if (body) {
+        const container = document.createElement("div");
+        container.innerHTML = body.innerHTML;
+        viewer.appendChild(container);
+      }
+    }
 
     // Handle delete button click
     const deleteButton = div.querySelector(".delete-archive-btn");
