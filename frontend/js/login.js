@@ -1,6 +1,9 @@
-import { authenticateUser, loadPortfolioOptions, loadArchives, initApiToken } from "./api.js";
+import { getAuthHeaders, authenticateUser, loadPortfolioOptions, loadArchives, initApiToken } from "./api.js";
+import { loadArchiveDropdown } from "./archive.js";
+import { initialUpdateQuestionPlaceholder } from "./portfolio.js";
 
-const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+import { safeFetch } from "./utils.js";
+import { TOKEN_EXPIRY_MS, BASE_URL } from "./config.js";
 
 const loginScreen = document.getElementById("login-screen");
 const appScreen = document.getElementById("app-screen");
@@ -33,12 +36,17 @@ async function login(token) {
     appScreen.style.display = "flex";
     loginError.textContent = "";
     loginError.style.display = "none";
-
-    await loadPortfolioOptions();
+    console.log("---------------User authenticated successfully");
+    await loadArchiveDropdown();
     await loadArchives();
+    await initialUpdateQuestionPlaceholder();
+    await loadPortfolioOptions();
+
   } catch (err) {
-    loginError.textContent = "Authentication failed: " + err.message;
+    loginError.textContent = "Invalid token or authentication failed.";
     loginError.style.display = "block";
+    loginError.classList.remove("hidden");
+    console.error("Login error:", err.message); // Log the error for debugging
   }
 }
 
@@ -61,8 +69,39 @@ async function init() {
   }
 }
 
+
+async function logout() {
+  try {
+    const response = await safeFetch(`${BASE_URL}/logout`, {
+      method: "POST",
+      headers: getAuthHeaders(), // Use the same authentication headers as other API calls
+    });
+
+    if (response.message === "Logout successful") {
+      console.log("User logged out successfully");
+      localStorage.clear(); // Clear local storage
+      // window.location.href = "/"; // Redirect to login screen
+
+      // Reverse the visual process of login
+      appScreen.classList.add("hidden");
+      appScreen.style.display = "none";
+      loginScreen.classList.remove("hidden");
+      loginScreen.style.display = "block";
+
+      // Clear any input fields or error messages
+      tokenInput.value = "";
+      loginError.textContent = "";
+      loginError.style.display = "none";
+    } else {
+      console.error("Logout failed:", response.message);
+    }
+  } catch (err) {
+    console.error("Error during logout:", err.message);
+  }
+}
+
 loginBtn.addEventListener("click", handleLoginClick);
 window.addEventListener("DOMContentLoaded", init);
 
-
-export { login };
+window.logout = logout;
+export { login, logout };

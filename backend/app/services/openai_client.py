@@ -52,14 +52,15 @@ async def extract_entities(
 
             Instructions:
             Extract and return a JSON object with:
-             1. A key "entities" whose value is a list of 5 specific, focused search themes suitable as Google News search queries.  
+             1. A key "valid" whose value is a boolean indicating whether the user's question is valid and relevant investment question (values: "yes", "no").
+             2. A key "entities" whose value is a list of 5 specific, focused search themes suitable as Google News search queries.  
                 Each theme must include:  
                 - "theme": a concise, descriptive phrase reflecting a current news topic or trend tied to the user's question and portfolio (e.g., "US renewable energy policy", "emerging biotech startups in Europe")  
                 - "keywords": a list of targeted keywords and phrases to support news search relevance  
                 - "country_code": two-letter country code related to portfolio exposure or "NA" if none applies
-             2. A key "short_term_objective"  : infer the investment objective indicated by the user's question and portfolio if it has changed from the last time, or leave blank if it has not changed
-             3. A key "long_term_objective" : infer the investment objective indicated by the user's question and portfolio if it has changed from the last time, or leave blank if it has not changed
-             4. a key "justification": a short justification for inferred invest objectives if they have changed, or leave blank if they have not changed
+             3. A key "short_term_objective"  : infer the investment objective indicated by the user's question and portfolio if it has changed from the last time, or leave blank if it has not changed
+             4. A key "long_term_objective" : infer the investment objective indicated by the user's question and portfolio if it has changed from the last time, or leave blank if it has not changed
+             5. a key "justification": a short justification for inferred invest objectives if they have changed, or leave blank if they have not changed
 
             Only return a json object...
             """

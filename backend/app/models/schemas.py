@@ -33,6 +33,7 @@ class PromptRequest(BaseModel):
 
 class PromptResponse(BaseModel):
     summary: str
+    archived: bool
 
 
 class ArchiveCreate(BaseModel):

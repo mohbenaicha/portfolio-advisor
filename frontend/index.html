@@ -15,10 +15,10 @@
     <div class="login-box">
       <h1>💼 Briefly<sup>©</sup> </h1>
       <hr />
-      <p class="subline">An LLM-Powered Investment Advisor*</p>
+      <p class="subline">An LLM-Powered Investment Advisor</p>
       <input type="text" id="token-input" placeholder="Enter your token" />
+      <p id="login-error" class="error-msg hidden">Could not authenticate token</p>
       <button id="login-btn">Login <span class="arrow">→</span></button>
-      <p id="login-error" class="error-msg hidden"></p>
       <div class="disclaimer">
         <p>
           <span class="disclaimer-title"><b>Disclaimer</b>:</span> LLMs make mistakes and do <b>NOT</b> constitute
@@ -46,7 +46,7 @@
             <button class="tab-button" data-tab="portfolio">Portfolio</button>
             <button class="tab-button" data-tab="archive">Archive</button>
           </div>
-          <div></div>
+          <button id="logout-btn" onclick="logout()" class="logout-button">Logout</button>
         </div>
 
         <!-- Tabs -->
@@ -74,7 +74,7 @@
             <span class="prefix"><span style="font-size: 15px !important;">✏️</span> Name:</span>
             <input id="portfolio-name" type="text" />
           </div>
-          <div id="portfolio-name-error" class="error-font"></div>
+          <div id="portfolio-name-error" class="error-font-portfolio-name"></div>
 
           <div class="asset-table-wrapper">
             <table id="asset-table">

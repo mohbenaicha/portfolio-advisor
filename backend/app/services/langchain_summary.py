@@ -2,13 +2,12 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_openai import ChatOpenAI
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
-import asyncio, os
+import asyncio
+from app.config import OPEN_AI_API_KEY
 
 
 # production model
-llm = ChatOpenAI(
-    model="gpt-4.1-mini", temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")
-)
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0, openai_api_key=OPEN_AI_API_KEY)
 
 
 async def summarize_articles(articles, llm=llm):

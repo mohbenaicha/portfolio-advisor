@@ -1,6 +1,5 @@
 import { getArchives, getArchivedResponse, loadArchives } from "./api.js";
 
-console.log('archive.js loaded');
 
 async function loadArchive() {
   console.log("loadArchive triggered");
@@ -17,14 +16,14 @@ async function loadArchive() {
     }
     viewer.innerHTML = `
       <h2>Question</h2><p>${archive.original_question}</p>
-      <h2>Response</h2><p>${archive.openai_response}</p>
+      <h2>Response</h2><div>${archive.openai_response}</div>
     `;
   } catch (err) {
     console.log("Failed to load archive: " + err.message);
   }
 }
 
-async function loadArchiveDropdown() {
+export async function loadArchiveDropdown() {
   try {
     const archives = await getArchives();
     const select = document.getElementById("archive-list");
@@ -43,7 +42,6 @@ async function loadArchiveDropdown() {
 }
 
 
-document.addEventListener("DOMContentLoaded", loadArchiveDropdown);
 document.getElementById("refresh-archives-btn").addEventListener("click", () => {
   console.log("Refresh archives button clicked");
   loadArchives();

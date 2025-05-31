@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from datetime import datetime, timezone
 from app.models.sql_models import ArchivedResponse, Portfolio
-
+from html import escape
 
 # TODO: order arguments consitently
 async def save_archive(db: AsyncSession = None, archive_data=None, user_id: int = None):
@@ -23,7 +23,7 @@ async def save_archive(db: AsyncSession = None, archive_data=None, user_id: int 
             portfolio_id=archive_data.portfolio_id,
             user_id=user_id,
             original_question=archive_data.original_question,
-            openai_response=archive_data.openai_response,
+            openai_response=escape(archive_data.openai_response),
             timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
         )
 

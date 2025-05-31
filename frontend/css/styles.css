@@ -194,31 +194,41 @@ body {
 
 .sidebar {
   width: 300px;
-
   max-width: 600px;
-
   min-width: 100px;
-
   background: var(--bg-panel);
-  border-right: 1px solid var(--border);
-  padding: 16px;
+  padding: 10px 5px 10px 10px;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1;
+  overflow-x: hidden;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+  scrollbar-width: 10px;
+  scrollbar-color: var(--accent-hover) var(--bg-light);
 }
 
 .sidebar-resize-handle {
   position: absolute;
-  top: 0;
+  top: 50%;
+  transform: translateY(-50%);
   right: -5px;
-
   width: 10px;
-  height: 100%;
+  height: 30px;
   cursor: ew-resize;
-
   background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
+.sidebar-resize-handle::before {
+  content: "⋮";
+  font-size: 16px;
+  margin-right: 4px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .sidebar h2 {
@@ -368,6 +378,9 @@ button.delete:hover {
 
 }
 
+.advisor-tab {
+  border: none;
+}
 
 .advisor-box {
   display: flex;
@@ -396,7 +409,7 @@ button.delete:hover {
   border: 1px solid var(--border);
   background: var(--bg);
   padding: 5px;
-  
+
   padding-bottom: 60px;
   width: 700px;
 }
@@ -406,7 +419,7 @@ button.delete:hover {
   height: 150px;
   padding: 0.75rem;
   padding-bottom: 3rem;
-  
+
   background: transparent;
   border: none;
   color: var(--text);
@@ -536,6 +549,8 @@ button.delete:hover {
   overflow-y: auto;
   margin: 20px !important;
   padding: 16px 16px 16px 16px;
+  scrollbar-width: 20px;
+  scrollbar-color: var(--accent-hover) var(--bg-light);
 }
 
 #asset-table {
@@ -606,13 +621,12 @@ button.delete:hover {
 
 
 .archive-list {
-  overflow-y: auto;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   color: var(--text);
 }
+
 
 .archive-item {
   background: none;
@@ -630,11 +644,11 @@ button.delete:hover {
 
 .archive-title-wrapper {
   display: flex;
-  
+
   align-items: center;
-  
+
   overflow: hidden;
-  
+
   white-space: nowrap;
   position: relative;
   z-index: inherit;
@@ -642,9 +656,9 @@ button.delete:hover {
 
 .archive-title {
   flex-grow: 1;
-  
+
   text-align: left;
-  
+
   transition: none;
   will-change: auto;
   z-index: 1;
@@ -830,29 +844,19 @@ a:hover {
   font-size: 12px;
 }
 
-#archive-list,
-.asset-table-wrapper {
-  scrollbar-width: 20px;
-  scrollbar-color: var(--accent-hover) var(--bg-light);
-}
-
-#archive-list::-webkit-scrollbar,
 .asset-table-wrapper::-webkit-scrollbar {
   width: 8px;
 }
 
-#archive-list::-webkit-scrollbar-track,
 .asset-table-wrapper::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
 
-#archive-list::-webkit-scrollbar-thumb,
 .asset-table-wrapper::-webkit-scrollbar-thumb {
   background-color: var(--bg-light);
   border: 2px solid #f1f1f1;
 }
 
-#archive-list::-webkit-scrollbar-thumb:hover,
 .asset-table-wrapper::-webkit-scrollbar-thumb:hover {
   background-color: #555;
 }
@@ -866,26 +870,6 @@ a:hover {
   scrollbar-color: var(--accent-hover) var(--bg-light);
 }
 
-#response::-webkit-scrollbar, .viewer-box::-webkit-scrollbar {
-  width: 8px;
-}
-
-#response::-webkit-scrollbar-track, .viewer-box::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-#response::-webkit-scrollbar-thumb, .viewer-box::-webkit-scrollbar-thumb {
-  background-color: var(--accent);
-  
-  border: 2px solid #f1f1f1;
-  
-}
-
-#response::-webkit-scrollbar-thumb:hover, .viewer-box::-webkit-scrollbar-thumb:hover {
-  background-color: #555;
-  
-}
-
 
 .error-font {
   color: var(--danger);
@@ -894,21 +878,120 @@ a:hover {
   text-align: center;
 }
 
+.error-font-portfolio-name {
+  color: red;
+  text-align: left;
+  margin: 5px 0px 0px 25px;
+  font-size: var(--para-font-size);
+}
 
 .refresh-arch-btn {
-  display: block;
-  margin: 10px auto;
-  padding: 10px 15px 8px 15px;
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  padding: 10px 15px;
+  margin-right: auto;
+  margin-right: auto;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: var(--button-font-size);
-  border: solid 1px white !important;
+  border: solid 1px var(--border) !important;
   background-color: var(--accent);
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  z-index: 10;
 }
 
 .refresh-arch-btn:hover {
   background-color: var(--accent-hover);
+}
+
+.loading-animation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  color: #555;
+}
+
+.ellipsis span {
+  display: inline-block;
+  animation: waveAnimation 1.5s infinite ease-in-out;
+}
+
+.ellipsis span:nth-child(1) {
+  animation-delay: 0.2s;
+}
+
+.ellipsis span:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.ellipsis span:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+@keyframes waveAnimation {
+
+  0%,
+  20% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.logout-button {
+  color: white;
+  border: solid 1px var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: var(--button-font-size);
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-left: auto;
+  background-color: var(--accent);
+  transition: background-color 0.3s ease;
+}
+
+
+.logout-button:hover {
+  background: var(--accent-hover);
+}
+
+#response::-webkit-scrollbar,
+.viewer-box::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+#response::-webkit-scrollbar-track,
+.viewer-box::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track {
+  background: #f54e4e;
+}
+
+#response::-webkit-scrollbar-thumb,
+.viewer-box::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+
+  border: 2px solid #f1f1f1;
+
+}
+
+#response::-webkit-scrollbar-thumb:hover,
+.viewer-box::-webkit-scrollbar-thumb:hover,
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
 }

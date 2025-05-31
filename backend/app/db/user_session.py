@@ -3,7 +3,7 @@ from fastapi import Depends
 from typing import List, Dict, Union
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, insert, delete
+from sqlalchemy import update, insert, delete, text
 from app.core.session_state import session_store
 from app.models.sql_models import (
     UserSession,
@@ -11,11 +11,12 @@ from app.models.sql_models import (
 )
 from app.db.memory import add_user_memory
 from app.dependencies.user import get_current_user
+from app.config import SESSION_EXPIRY_HOURS
 
 
 class UserSessionManager:
 
-    SESSION_EXPIRY_HOURS = 24
+    session_expiry_hours = SESSION_EXPIRY_HOURS
 
     @staticmethod
     def get_session(user_id: int):
@@ -27,14 +28,15 @@ class UserSessionManager:
         db: AsyncSession = None,
         llm_memory: List[LLMMemory] = [],
     ) -> Dict[str, Union[int, str, List[LLMMemory]]]:
+        print(f"Loading session for user {user_id} from database")
         if db is None:
             raise ValueError("error in user_session.py/UserSessionManager::load_session_from_db: Database session is required")
         
         result = await db.execute(
             select(UserSession).where(UserSession.user_id == user_id)
         )
-        session = result.scalar_one_or_none()
 
+        session = result.scalar_one_or_none()
         if session:
             session_store[user_id] = {
                 "llm_memory": llm_memory,
@@ -42,6 +44,9 @@ class UserSessionManager:
                 "total_prompts_used": session.total_prompts_used,
             }
             return session_store[user_id]
+        else:
+            print(f"No session found for user {user_id} in database")
+            return None
 
     @staticmethod
     async def update_session(
@@ -99,6 +104,18 @@ class UserSessionManager:
         await db.commit()
 
     @staticmethod
+    async def delete_session(user_id: int, db: AsyncSession):
+        if user_id in session_store:
+            del session_store[user_id]
+            print(f"Session removed from in-memory store for user {user_id}")
+
+        await db.execute(
+            delete(UserSession).where(UserSession.user_id == user_id)
+        )
+        await db.commit()
+        print(f"Session removed from database for user {user_id}")
+        
+    @staticmethod
     async def cleanup_sessions(db: AsyncSession = None):
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -107,7 +124,7 @@ class UserSessionManager:
             for user_id, session in session_store.items()
             if session["timestamp"]
             and datetime.fromisoformat(session["timestamp"])
-            + timedelta(hours=UserSessionManager.SESSION_EXPIRY_HOURS)
+            + timedelta(hours=UserSessionManager.session_expiry_hours)
             < current_time
         ]
         for user_id in expired_users:
@@ -116,7 +133,7 @@ class UserSessionManager:
         await db.execute(
             delete(UserSession).where(
                 UserSession.timestamp
-                + timedelta(hours=UserSessionManager.SESSION_EXPIRY_HOURS)
+                + timedelta(hours=UserSessionManager.session_expiry_hours)
                 < current_time
             )
         )

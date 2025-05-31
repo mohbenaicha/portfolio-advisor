@@ -1,10 +1,7 @@
-import os
 from outscraper import ApiClient
-from dotenv import load_dotenv
+from app.config import OUTSCRAPER_API_KEY
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
-client = ApiClient(api_key=os.getenv("OUTSCRAPER_API_KEY"))
-
+client = ApiClient(api_key=OUTSCRAPER_API_KEY)
 
 def fetch_news(
     query: str = "options volatility", pages_per_query: int = 1, time_range: str = "w"

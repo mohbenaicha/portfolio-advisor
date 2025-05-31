@@ -1,7 +1,6 @@
 import { safeFetch } from "./utils.js";
 import { showTab } from "./main.js";
-
-const BASE_URL = "http://localhost:8000"; // Update for production
+import { BASE_URL } from "./config.js";
 
 let currentToken = null;
 
@@ -27,7 +26,7 @@ export async function authenticateUser(token) {
 
 
 // Get headers including x-user-id if authenticated
-function getAuthHeaders() {
+export function getAuthHeaders() {
   console.log("Using auth headers with token:", currentToken);
   return {
     "Content-Type": "application/json",
@@ -143,13 +142,14 @@ export async function loadArchives() {
     const deleteButton = item.querySelector(".delete-archive-btn");
 
     title.addEventListener("mouseenter", () => {
-      const deleteButtonWidth = deleteButton.offsetWidth; // Get the width of the delete button
-      const availableSpace = wrapper.clientWidth - deleteButtonWidth; // Calculate space for the title
-      const overflow = title.scrollWidth - availableSpace; // Calculate overflow distance
+      const deleteButtonWidth = deleteButton.offsetWidth;
+      const availableSpace = wrapper.clientWidth - deleteButtonWidth - 10; // Subtract padding/margin (e.g., 10px)
+      const overflow = title.scrollWidth - availableSpace;
 
       if (overflow > 0) {
-        title.style.transition = "transform 1.5s linear";
-        title.style.transform = `translateX(-${overflow + 2}px)`;
+        const duration = Math.min(overflow / 50, 5); // Calculate duration (e.g., 50px per second, max 5 seconds)
+        title.style.transition = `transform ${duration}s linear`;
+        title.style.transform = `translateX(-${overflow}px)`;
       }
     });
 
@@ -206,3 +206,5 @@ export async function saveArchive(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export { BASE_URL };

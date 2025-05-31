@@ -5,6 +5,7 @@ from app.models.schemas import ArchiveCreate, ArchiveOut
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.db.archive_crud import delete_archive_by_id
+from html import escape
 
 router = APIRouter()
 

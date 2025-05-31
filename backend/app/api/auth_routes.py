@@ -10,6 +10,7 @@ from app.models.schemas import TokenAuth
 from app.core.session_state import session_store
 from app.db.user_session import UserSessionManager
 from app.db.memory import get_user_memory
+from app.dependencies.user import get_current_user
 
 router = APIRouter()
 
@@ -22,7 +23,7 @@ async def authenticate_user(
         token = uuid.UUID(payload.token)
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid token format")
-    
+
     result = await db.execute(select(User).where(cast(User.token, UUID) == token))
     user = result.scalar_one_or_none()
 
@@ -59,3 +60,17 @@ async def authenticate_user(
         "message": f"User {user.id} authenticated; new session created",
         "user_id": user.id,
     }
+
+
+@router.post("/logout")
+async def logout_user(
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_current_user),
+):
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID missing")
+
+    if user_id in session_store:
+        del session_store[user_id]
+
+    return {"message": "Logout successful"}

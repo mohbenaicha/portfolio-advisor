@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends
 from app.core.session_state import session_store
 from app.db.user_session import UserSessionManager
 from app.db.session import get_db
-router = APIRouter()
 
+
+router = APIRouter()
 
 @router.get("/state")
 async def get_session_state():

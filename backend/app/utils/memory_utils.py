@@ -1,6 +1,4 @@
 from typing import List, Dict, Union
-from app.db.user_session import UserSessionManager
-from app.dependencies.user import get_current_user
 
 def parse_memories(memories: List[Dict[str, Union[str, int]]]) -> str:
     parsed_memories = "\n".join(

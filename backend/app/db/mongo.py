@@ -1,10 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from datetime import datetime, timedelta, timezone
-from os import getenv
-from dotenv import load_dotenv
+from datetime import datetime, timezone
+from app.config import MONGO_URI
 
-load_dotenv()
-client = AsyncIOMotorClient(getenv("MONGO_URI"))
+client = AsyncIOMotorClient(MONGO_URI)
 db = client["news_cache"]
 
 

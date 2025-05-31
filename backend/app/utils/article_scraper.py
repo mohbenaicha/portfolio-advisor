@@ -1,8 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from readability import Document
-
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+from app.config import SCRAPER_HEADERS as HEADERS
 
 async def extract_with_readability(url: str) -> str:
     try:

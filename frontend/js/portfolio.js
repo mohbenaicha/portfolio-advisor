@@ -63,7 +63,7 @@ export async function loadPortfolio() {
   calculateTotals(selected.assets);
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+export async function initialUpdateQuestionPlaceholder() {
   const dropdown = document.getElementById("portfolio-dropdown");
   if (dropdown) {
     dropdown.addEventListener("change", loadPortfolio);
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await loadPortfolio(); // load first portfolio
     }
   }
-});
+}
 
 export async function createPortfolio() {
   const name = document.getElementById("portfolio-name").value;
@@ -108,6 +108,11 @@ export async function createPortfolio() {
 
 export async function deletePortfolio() {
   if (!selectedPortfolioId) return;
+
+  const confirmDelete = window.confirm("Are you sure you want to delete this portfolio?");
+  if (!confirmDelete) return; // Cancel deletion if user clicks "Cancel"
+
+
   try {
     // delete the portfolio
     await deletePortfolioAPI(selectedPortfolioId);
@@ -214,9 +219,9 @@ export async function saveAssets() {
   // Clear previous error
   nameErr.textContent = "";
 
-  if (!name) {
-    nameErr.textContent = "Portfolio name cannot be empty.";
-    nameErr.style.color = "red"; // Display error in red
+  if (!name || name.replace(/[^a-zA-Z0-9]/g, "").trim() === "") {
+    nameErr.textContent = "Invalid portfolio name...";
+
     return;
   }
 
