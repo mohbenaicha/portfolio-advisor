@@ -44,7 +44,6 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
             "archived": False,
             "summary": "<p>Invalid question. Please ask a relevant investment question.</p>",
         }
- 
 
     if db is None or user_id is None:
         raise ValueError(
@@ -121,12 +120,14 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
         await store_article_summaries(summarized)
     else:
         summarized = cached_articles
-    print("|--------------------------------------Finished fetching and summarizing articles.--------- -------------------|")
+    print(
+        "|--------------------------------------Finished fetching and summarizing articles.--------- -------------------|"
+    )
 
     print(
         "------------------------ Generating Final Advice -------------------------------------------"
     )
-    # # 7: Prompt 3 > generate advice using gpt-4o-mini
+    # 7: Prompt 3 > generate advice using gpt-4o-mini
 
     portfolio_summary = "\n".join(
         [get_asset_representation(portfolio), portfolio_summary]
@@ -136,7 +137,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
             "\n".join([article["title"], article["summary"], article["link"]])
             for article in summarized
             if article["summary"] != "Readability extraction failed"
-        ][:10]  # TODO: remove limit
+        ]
     )
 
     print(
@@ -157,10 +158,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
         },
     )
 
-    return {
-        "archived": True,
-        "summary": convert_markdown_to_html(advice)}
-
+    return {"archived": True, "summary": convert_markdown_to_html(advice)}
 
 
 #     return {

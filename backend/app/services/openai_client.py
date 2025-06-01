@@ -6,9 +6,8 @@ from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import get_exposure_summary, get_portfolio_summary
 from app.db.session import AsyncSession
 from app.db.user_session import UserSessionManager
-from app.dependencies.user import get_current_user
 from app.utils.memory_utils import parse_memories
-
+from app.config import EXTRACTION_MODEL, ADVICE_MODEL
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
@@ -53,7 +52,7 @@ async def extract_entities(
             Instructions:
             Extract and return a JSON object with:
              1. A key "valid" whose value is a boolean indicating whether the user's question is valid and relevant investment question (values: "yes", "no").
-             2. A key "entities" whose value is a list of 5 specific, focused search themes suitable as Google News search queries.  
+             2. A key "entities" whose value is a list of 3 specific, focused search themes suitable as Google News search queries.  
                 Each theme must include:  
                 - "theme": a concise, descriptive phrase reflecting a current news topic or trend tied to the user's question and portfolio (e.g., "US renewable energy policy", "emerging biotech startups in Europe")  
                 - "keywords": a list of targeted keywords and phrases to support news search relevance  
@@ -67,7 +66,7 @@ async def extract_entities(
     print("Prompt: \n", prompt)
 
     response = openai.chat.completions.create(
-        model="gpt-4.1-mini", messages=[{"role": "user", "content": prompt}]
+        model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
 
@@ -133,7 +132,7 @@ async def generate_advice(question, summary, articles, user_id):
     print(user_prompt)
 
     response = openai.chat.completions.create(
-        model="gpt-4.1-mini",
+        model=ADVICE_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
