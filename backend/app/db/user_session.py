@@ -57,6 +57,8 @@ class UserSessionManager:
         
         for k, v in updates.items():
             if k == "llm_memory": 
+                print(f"Updating session_store[{user_id}][{k}] to {v}")
+
                 # writes memory to db and updates session store
                 user_memory = await add_user_memory(
                     user_id=user_id,
@@ -66,16 +68,14 @@ class UserSessionManager:
                     portfolio_id=v.get("portfolio_id"),
                     db=db,
                 )
-                session_store[user_id]["llm_memory"].append(user_memory)
+                session_store[user_id]["llm_memory"] = user_memory
             else:
-                print(f"Updating session_store[{user_id}][{k}] to {v}")
                 session_store[user_id][k] = v
 
         await db.execute(
             update(UserSession)
             .where(UserSession.user_id == user_id)
             .values(
-                timestamp=session_store[user_id]["timestamp"],
                 total_prompts_used=session_store[user_id]["total_prompts_used"],
             )
         )
@@ -114,7 +114,46 @@ class UserSessionManager:
         )
         await db.commit()
         print(f"Session removed from database for user {user_id}")
-        
+
+    @staticmethod
+    async def fix_null_sessions(db: AsyncSession):
+        """
+        Fixes sessions with null, None, or empty timestamps by creating new sessions.
+        """
+        current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        # Query sessions with null or None timestamps
+        result = await db.execute(
+            select(UserSession).where(UserSession.timestamp == None)
+        )
+        null_sessions = result.scalars().all()
+
+        for session in null_sessions:
+            print(f"Fixing session for user {session.user_id} with null timestamp")
+            # Update the session store
+            await UserSessionManager.update_session(
+                user_id=session.user_id,
+                db=db,
+                updates={
+                    "timestamp": current_time,
+                    "total_prompts_used": session.total_prompts_used or 0,
+                },
+            )
+
+
+            # Update the database
+            await db.execute(
+                update(UserSession)
+                .where(UserSession.user_id == session.user_id)
+                .values(
+                    timestamp=current_time,
+                    total_prompts_used=session.total_prompts_used or 0,
+                )
+            )
+
+        await db.commit()
+        print(f"Fixed {len(null_sessions)} sessions with null timestamps.") 
+    
     @staticmethod
     async def cleanup_sessions(db: AsyncSession = None):
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -123,11 +162,12 @@ class UserSessionManager:
             user_id
             for user_id, session in session_store.items()
             if session["timestamp"]
-            and datetime.fromisoformat(session["timestamp"])
+            and session["timestamp"]
             + timedelta(hours=UserSessionManager.session_expiry_hours)
             < current_time
         ]
         for user_id in expired_users:
+            print(f"Cleaning up expired session for user {user_id}")
             del session_store[user_id]
 
         await db.execute(

@@ -109,7 +109,7 @@ export async function createPortfolio() {
 export async function deletePortfolio() {
   if (!selectedPortfolioId) return;
 
-  const confirmDelete = window.confirm("Are you sure you want to delete this portfolio?");
+  const confirmDelete = window.confirm("Are you sure you want to delete this portfolio? You cannot undo this action. Archived advice associated with this portfolio will be deleted.");
   if (!confirmDelete) return; // Cancel deletion if user clicks "Cancel"
 
 
@@ -243,6 +243,13 @@ export async function saveAssets() {
   errorOutput.style.color = "red"; // Set font color to bright red
 
 
+  // Ensure at least one asset is present
+  if (assets.length === 0) {
+    errorOutput.textContent = "Error: Add at least 1 valid asset to save portfolio.";
+    return;
+  }
+
+  // Validate assets
   for (const a of assets) {
     if (!a.ticker || !a.name) {
       errorOutput.textContent = "Error: Ticker and Name cannot be empty.";
@@ -260,8 +267,8 @@ export async function saveAssets() {
       errorOutput.textContent = "Error: Type, Sector, and Region must have values.";
       return;
     }
-    if (a.market_price <= 0 || a.units_held <= 0) {
-      errorOutput.textContent = "Error: Price and Units must be greater than 0.";
+    if (!a.market_price || !a.units_held || a.market_price <= 0 || a.units_held <= 0 || !Number.isInteger(a.units_held)) {
+      errorOutput.textContent = "Error: Price must be greater than 0, and Units must be a whole number greater than 0.";
       return;
     }
     tickerSet.add(a.ticker);
@@ -269,6 +276,7 @@ export async function saveAssets() {
   }
   errorOutput.textContent = ""; // Clear error message if no issues
 
+  // Populate total values and weights
   calculateTotals(assets);
 
   // Update DOM display

@@ -1,9 +1,4 @@
-import {
-  authenticateUser,
-  getPortfolios,
-  analyzePrompt,
-  saveArchive,
-} from "./api.js";
+import { analyzePrompt, saveArchive } from "./api.js";
 
 
 
@@ -15,20 +10,24 @@ async function submitPrompt() {
   const question = document.getElementById("question").value.trim();
   const portfolioId = parseInt(select.value);
   const responseDiv = document.getElementById("response");
+  console.log("Selected portfolio ID:", portfolioId);
 
 
 
   if (!portfolioId) {
-    questionError.textContent = "Please select a portfolio.";
-    questionError.style.color = "red"; // Display error in red
+    questionInput.value = "Please select a portfolio.";
+    questionInput.style.color = "red";
+    questionInput.addEventListener("input", () => {
+      questionInput.style.color = "";
+    });
     return;
   }
 
-  if (!question || question.replace(/[^a-zA-Z0-9]/g, "").trim() === "") {
-    questionInput.value = "Please enter a valid question."; // Clear the textarea
+  if (!question || question.replace(/[^a-zA-Z0-9]/g, "").trim() === "" || question.length > 1000) {
+    questionInput.value = "Please enter a valid question.";
     questionInput.style.color = "red";
     questionInput.addEventListener("input", () => {
-      questionInput.style.color = ""; // Reset text color when user starts typing
+      questionInput.style.color = "";
     });
     return;
   }
@@ -55,9 +54,9 @@ async function submitPrompt() {
     }
 
     const result = await analyzePrompt(question, portfolioId);
-    
+
     renderResponse(result);
-    
+
     if (!result) {
       throw new Error("No summary returned from the backend or prompt limit reached.");
     }
@@ -67,7 +66,7 @@ async function submitPrompt() {
       console.log("Archive flag is false, not saving archive.");
       return; // donn't save if archive flag is false
     }
-    
+
     console.log("Saving archive for portfolio ID:", portfolioId, "with question:", question);
     await saveArchive({
       portfolio_id: portfolioId,

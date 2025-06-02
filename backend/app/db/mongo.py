@@ -8,8 +8,7 @@ db = client["news_cache"]
 
 async def get_cached_articles(entities, start_date=None, end_date=None):
     tags = [keyword for entity in entities for keyword in entity.get("keywords", [])]
-    
-    
+ 
     print("Checking for cached articles with tags:", tags)
     query = {"query_tags": {"$in": tags}}
 

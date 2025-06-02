@@ -1,18 +1,29 @@
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import select, update
 from app.models.sql_models import LLMMemory
 from app.db.session import get_db, AsyncSession
 from app.dependencies.user import get_current_user
 
+
 # Add a new memory entry
 async def add_user_memory(
     user_id: int = Depends(get_current_user),
-    date = None,
+    date=None,
     short_term: str = None,
     long_term: str = None,
     portfolio_id: int = None,
     db: AsyncSession = Depends(get_db),
 ):
+    # Overwrite the memory entry if it exists
+    await db.execute(
+        update(LLMMemory)
+        .where(
+            LLMMemory.user_id == user_id, LLMMemory.assoc_portfolio_id == portfolio_id
+        )
+        .values(date=date, short_term_goal=short_term, long_term_goal=long_term)
+    )
+
+    # Create a new memory entry if no rows were updated
     memory = LLMMemory(
         user_id=user_id,
         date=date,
@@ -20,16 +31,15 @@ async def add_user_memory(
         short_term_goal=short_term,
         long_term_goal=long_term,
     )
+    db.add(memory)
+    await db.commit()
 
-    if db:
-        db.add(memory)
-        await db.commit()
-    else:
-        return memory
 
 # Get all memory entries for a user and associated portfolio
 async def get_user_memory(
-    user_id: int = Depends(get_current_user), portfolio_id: int = None, db: AsyncSession = None
+    user_id: int = Depends(get_current_user),
+    portfolio_id: int = None,
+    db: AsyncSession = None,
 ):
     result = await db.execute(
         select(LLMMemory).where(
@@ -42,7 +52,9 @@ async def get_user_memory(
 
 # Get the latest memory entry for a user and associated portfolio
 async def get_latest_user_memory(
-    user_id: int = Depends(get_current_user), portfolio_id: int = None, db: AsyncSession = Depends(get_db)
+    user_id: int = Depends(get_current_user),
+    portfolio_id: int = None,
+    db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(LLMMemory)

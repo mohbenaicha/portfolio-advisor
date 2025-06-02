@@ -7,6 +7,7 @@ scheduler = AsyncIOScheduler()
 
 async def cleanup_sessions_job():
     async with AsyncSessionLocal() as db_session:
+        await UserSessionManager.fix_null_sessions(db_session)
         await UserSessionManager.cleanup_sessions(db_session)
 
 def start_scheduler():
