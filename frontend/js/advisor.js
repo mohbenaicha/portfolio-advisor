@@ -10,8 +10,6 @@ async function submitPrompt() {
   const question = document.getElementById("question").value.trim();
   const portfolioId = parseInt(select.value);
   const responseDiv = document.getElementById("response");
-  console.log("Selected portfolio ID:", portfolioId);
-
 
 
   if (!portfolioId) {

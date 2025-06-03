@@ -27,3 +27,4 @@ SESSION_EXPIRY_HOURS = 24
 SCRAPER_HEADERS = {"User-Agent": "Mozilla/5.0"}
 EXTRACTION_MODEL = "gpt-4.1-mini"
 ADVICE_MODEL = "gpt-4.1-mini"
+EMAIL_ADDRESS = "mohamed.benaicha@hotmail.com"

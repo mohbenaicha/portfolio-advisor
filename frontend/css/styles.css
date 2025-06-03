@@ -320,14 +320,10 @@ button.delete:hover {
 
 }
 
-
 #app-screen {
   flex: 1;
-
   display: flex;
-
   overflow: auto;
-
 }
 
 .topbar {
@@ -387,7 +383,7 @@ button.delete:hover {
   padding: 16px;
   gap: 16px;
   align-items: center;
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   width: 100%;
 }
 
@@ -399,7 +395,8 @@ button.delete:hover {
   border: 1px solid var(--border);
   border-radius: 6px;
   min-height: 80px;
-  resize: vertical;
+  max-height: 150px;
+  resize: horizontal;
   color: var(--text);
 }
 
@@ -419,7 +416,6 @@ button.delete:hover {
   height: 150px;
   padding: 0.75rem;
   padding-bottom: 3rem;
-
   background: transparent;
   border: none;
   color: var(--text);

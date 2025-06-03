@@ -2,7 +2,6 @@ import markdown
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import get_asset_representation, get_exposure_summary, get_portfolio_summary
 from fastapi.encoders import jsonable_encoder
-from app.utils.advisor_utils import convert_markdown_to_html, preprocess_final_prompt
 
 def preprocess_markdown(markdown_text):
     # Example: Normalize spacing and fix common issues

@@ -30,8 +30,10 @@ class UserSessionManager:
     ) -> Dict[str, Union[int, str, List[LLMMemory]]]:
         print(f"Loading session for user {user_id} from database")
         if db is None:
-            raise ValueError("error in user_session.py/UserSessionManager::load_session_from_db: Database session is required")
-        
+            raise ValueError(
+                "error in user_session.py/UserSessionManager::load_session_from_db: Database session is required"
+            )
+
         result = await db.execute(
             select(UserSession).where(UserSession.user_id == user_id)
         )
@@ -54,12 +56,14 @@ class UserSessionManager:
         db: AsyncSession = None,
         updates: Dict[str, Union[int, str]] = {},
     ):
-        
+
         for k, v in updates.items():
-            if k == "llm_memory": 
+            if k == "llm_memory":
                 print(f"Updating session_store[{user_id}][{k}] to {v}")
 
-                # writes memory to db and updates session store
+                # Remove existing memory with matching portfolio ID
+
+                # Add new memory to session_store
                 user_memory = await add_user_memory(
                     user_id=user_id,
                     date=datetime.now(timezone.utc).replace(tzinfo=None),
@@ -68,7 +72,9 @@ class UserSessionManager:
                     portfolio_id=v.get("portfolio_id"),
                     db=db,
                 )
-                session_store[user_id]["llm_memory"] = user_memory
+                session_store[user_id]["llm_memory"][
+                    v.get("portfolio_id")
+                ] = user_memory
             else:
                 session_store[user_id][k] = v
 
@@ -109,9 +115,7 @@ class UserSessionManager:
             del session_store[user_id]
             print(f"Session removed from in-memory store for user {user_id}")
 
-        await db.execute(
-            delete(UserSession).where(UserSession.user_id == user_id)
-        )
+        await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
         await db.commit()
         print(f"Session removed from database for user {user_id}")
 
@@ -140,7 +144,6 @@ class UserSessionManager:
                 },
             )
 
-
             # Update the database
             await db.execute(
                 update(UserSession)
@@ -152,8 +155,8 @@ class UserSessionManager:
             )
 
         await db.commit()
-        print(f"Fixed {len(null_sessions)} sessions with null timestamps.") 
-    
+        print(f"Fixed {len(null_sessions)} sessions with null timestamps.")
+
     @staticmethod
     async def cleanup_sessions(db: AsyncSession = None):
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -178,3 +181,14 @@ class UserSessionManager:
             )
         )
         await db.commit()
+
+    @staticmethod
+    async def get_llm_memory(
+        user_id: int, portfolio_id: int
+    ) -> List[LLMMemory]:
+        print(f"Retrieving LLM memory for user {user_id} and portfolio {portfolio_id}")
+        return (
+            session_store[user_id]["llm_memory"].get(portfolio_id, {})
+            if user_id in session_store
+            else False
+        )
