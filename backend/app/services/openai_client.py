@@ -21,17 +21,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 async def validate_prompt(question: str, portfolio_id: int, user_id: int, db: AsyncSession) -> Dict[str, bool]:
     """
     Validates if the user's prompt is a valid investment question and the user's investment objective is clear.
-
-    Args:
-        question (str): The user's investment-related question to validate.
-    Returns:
-        Dict[str, bool]: A dictionary containing a single key "valid" with a boolean value indicating whether the question is valid and relevant.
-    Raises:
-        ValueError: If the response from the OpenAI API cannot be parsed into a valid JSON object.
-        openai.error.OpenAIError: If there is an error while interacting with the OpenAI API.
-    Example:
-        >>> await validate_prompt("What are the best stocks to invest in for long-term growth?")
-        {'valid': True}
     """
     portfolio_summary = get_portfolio_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
