@@ -47,7 +47,9 @@ async def get_user_memory(
             and (LLMMemory.assoc_portfolio_id == portfolio_id if portfolio_id else True)
         )
     )
-    return result.scalars().all()
+    result = result.scalars().all()
+    memory_dict = {row.assoc_portfolio_id: row for row in result}
+    return memory_dict
 
 
 # Get the latest memory entry for a user and associated portfolio

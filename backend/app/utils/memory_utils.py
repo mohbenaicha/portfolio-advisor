@@ -2,8 +2,9 @@ from typing import Dict
 from app.db.user_session import UserSessionManager
 
 
-def get_investment_objective(user_id: int, portfolio_id: int) -> str:
-    llm_memory: Dict[str, str] = UserSessionManager.get_llm_memory(
+async def get_investment_objective(user_id: int, portfolio_id: int) -> str:
+    print("User session: \n", UserSessionManager.get_session(user_id))
+    llm_memory: Dict[str, str] = await UserSessionManager.get_llm_memory(
         user_id, portfolio_id
     )
     st_obj = llm_memory.get("short_term", "") if llm_memory else ""

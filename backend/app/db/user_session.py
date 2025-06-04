@@ -26,8 +26,8 @@ class UserSessionManager:
     async def load_session_from_db(
         user_id: int = Depends(get_current_user),
         db: AsyncSession = None,
-        llm_memory: List[LLMMemory] = [],
-    ) -> Dict[str, Union[int, str, List[LLMMemory]]]:
+        llm_memory: Dict[str, LLMMemory] = {},
+    ) -> Dict[str, Union[int, str, Dict[str, LLMMemory]]]:
         print(f"Loading session for user {user_id} from database")
         if db is None:
             raise ValueError(
@@ -91,7 +91,7 @@ class UserSessionManager:
     async def create_session(
         user_id: int = Depends(get_current_user),
         db: AsyncSession = None,
-        llm_memory: List[LLMMemory] = [],
+        llm_memory: Dict[str, LLMMemory] = {},
         timestamp: str = None,
     ):
         session_store[user_id] = {
@@ -185,10 +185,11 @@ class UserSessionManager:
     @staticmethod
     async def get_llm_memory(
         user_id: int, portfolio_id: int
-    ) -> List[LLMMemory]:
+    ) -> LLMMemory:
         print(f"Retrieving LLM memory for user {user_id} and portfolio {portfolio_id}")
+        print("Session store contents:", session_store)
         return (
-            session_store[user_id]["llm_memory"].get(portfolio_id, {})
+            session_store[user_id].get("llm_memory").get(portfolio_id, {})
             if user_id in session_store
             else False
         )

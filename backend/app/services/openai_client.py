@@ -13,6 +13,7 @@ from app.services.google_news_scraper import fetch_articles
 from app.services.langchain_summary import summarize_articles
 from app.utils.article_scraper import extract_with_readability
 from app.utils.advisor_utils import preprocess_final_prompt
+from app.utils.advisor_utils import build_advice_prompt
 
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -64,7 +65,8 @@ async def validate_investment_goal(
     portfolio_id: int = None,
     db: AsyncSession = None,
 ) -> Dict[str, bool]:
-    memory = get_investment_objective(user_id, portfolio_id)
+    print("Validating investment goal for user_id:", user_id, "portfolio_id:", portfolio_id)
+    memory = await get_investment_objective(user_id, portfolio_id)
 
     prompt = f"""
             You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
@@ -100,7 +102,7 @@ async def validate_investment_goal(
     st_obj = cleaned_json.get("short_term_objective", "")
     lt_obj = cleaned_json.get("long_term_objective", "")
 
-    UserSessionManager.update_session(
+    await UserSessionManager.update_session(
         user_id=user_id,
         db=db,
         updates={
@@ -118,13 +120,14 @@ async def validate_investment_goal(
 async def determine_if_augmentation_required(
     question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
 ) -> bool:
+    print("Determining if augmentation is required for question:", question)
     exporsure_summary = get_exposure_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     )
     portfolio_summary = get_portfolio_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     )
-    memory = get_investment_objective(user_id, portfolio_id)
+    memory = await get_investment_objective(user_id, portfolio_id)
     prompt = f"""
             You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")}
             User question:
@@ -168,6 +171,7 @@ async def extract_entities(
     Dict[str, Union[int, str, List[Dict[str, Union[int, str, float, bool]]]]],
     str,
 ]:
+    print("Extracting entities for question:", question)
 
     portfolio_assets = None
     portfolio_summary = ""
@@ -182,7 +186,7 @@ async def extract_entities(
         ]
     )
 
-    memory = get_investment_objective(user_id, portfolio_id)
+    memory = await get_investment_objective(user_id, portfolio_id)
     prompt = f"""
             You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
 
@@ -224,6 +228,7 @@ async def extract_entities(
 async def retrieve_news(
     question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
 ):
+    print("Retrieving news for question:", question)
     themes = await extract_entities(
         question=question,
         portfolio_id=portfolio_id,
@@ -268,14 +273,17 @@ async def retrieve_news(
         # 6: Cache summaries in MongoDB
         await store_article_summaries(summarized)
     else:
+        for article in cached_articles:
+            article["_id"] = str(article["_id"])
+            article["stored_at"] = article["stored_at"].isoformat()
         summarized = cached_articles
-
+    
     return summarized
 
 
 async def generate_advice(question, db, portfolio_id, user_id, article_summaries):
     system_prompt = """
-    You are “Atlas”, a senior buy‑side investment strategist (CFA, 15 yrs experience).
+    You are “Titan”, a senior buy‑side investment strategist (CFA, 15 yrs experience).
     Duty: synthesize news + portfolio data and produce *actionable* portfolio guidance.
     Constraints:
     - Stay within classical asset‑allocation & risk‑management best practice.
@@ -283,11 +291,12 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
     - Cite assumptions you rely on.
     - Write in clear, executive‑level English (no jargon unless defined).
     """
+    print("Generating advice for question:", question)
 
-    portfolio_summary, article_summaries = preprocess_final_prompt(
+    portfolio_summary, article_summaries = await preprocess_final_prompt(
         db, portfolio_id, user_id, article_summaries
     )
-    memory = get_investment_objective(user_id, portfolio_id)
+    memory = await get_investment_objective(user_id, portfolio_id)
 
     user_prompt = f"""
                 You are a professional investment advisor with expertise in financial markets, portfolio management, and risk assessment. You have 
@@ -332,3 +341,17 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
     )
     print("generate_advice response: \n", response.choices[0].message.content)
     return response.choices[0].message.content
+
+
+async def prepare_advice_prompt(question: str, portfolio_id: int, db: AsyncSession, article_summaries: List[Dict[str, str]], **kwargs):
+    portfolio_summary, article_summaries = await preprocess_final_prompt(db, portfolio_id, user_id=kwargs.get("user_id"))
+    memory = await UserSessionManager.get_llm_memory(
+        user_id=kwargs.get("user_id"), portfolio_id=portfolio_id)
+    
+    prompt = build_advice_prompt(
+        question=question,
+        portfolio_summary=portfolio_summary,
+        objectives=memory,
+        article_summaries=article_summaries,
+    )
+    return {"advice_prompt": prompt}

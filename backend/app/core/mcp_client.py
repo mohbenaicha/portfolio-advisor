@@ -1,15 +1,12 @@
 # app/core/mcp_client.py
 
 import json
-from fastapi.encoders import jsonable_encoder
 from openai import OpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.openai_client import validate_prompt, validate_investment_goal
 from app.models.tool_schemas import tools
 from app.core.tool_function_map import TOOL_FUNCTION_MAP
-from app.utils.memory_utils import get_investment_objective
-from app.db.portfolio_crud import get_portfolio_by_id
-from app.utils.portfolio_utils import get_exposure_summary, get_portfolio_summary
+from app.utils.advisor_utils import build_system_prompt, convert_markdown_to_html
 
 openai = OpenAI()
 
@@ -41,33 +38,12 @@ async def run_mcp_client_pipeline(
             "summary": "<p>Unable to determine your investment objective. Please clarify your goals.</p>",
         }
 
-    # Step 2: Initial context for the LLM
-    exporsure_summary = get_exposure_summary(
-        jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
-    )
-    portfolio_summary = get_portfolio_summary(
-        jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
-    )
-    objectives = get_investment_objective(user_id, portfolio_id)
-
     messages = [
         {
             "role": "system",
-            "content": (
-                "You are a professional investment advisor. "
-                "Given the user's question, portfolio information, and investment objectives, "
-                "use available tools to determine the best course of action."
-            ),
+            "content": build_system_prompt(),
         },
         {"role": "user", "content": question},
-        {
-            "role": "assistant",
-            "content": (
-                f"Here is the user's portfolio summary:\n{portfolio_summary}\n\n"
-                f"Here is the user's exposure summary:\n{exporsure_summary}\n\n"
-                f"And their investment objectives:\n{objectives}"
-            ),
-        },
     ]
 
     # Step 3: Tool execution loop
@@ -79,13 +55,24 @@ async def run_mcp_client_pipeline(
 
         choice = response.choices[0]
         if choice.finish_reason == "stop":
-            return {"archived": True, "summary": choice.message.content}
+            return {
+                "archived": True,
+                "summary": convert_markdown_to_html(choice.message.content),
+            }
 
         if choice.finish_reason == "tool_calls":
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": choice.message.tool_calls,
+                }
+            )
+
             for tool_call in choice.message.tool_calls:
+
                 name = tool_call.function.name
                 args = json.loads(tool_call.function.arguments)
-
                 # Merge context args (always needed)
                 args.update(
                     {"user_id": user_id, "portfolio_id": portfolio_id, "db": db}
@@ -96,14 +83,22 @@ async def run_mcp_client_pipeline(
 
                 # Record and feed result back into LLM
                 tool_outputs[name] = tool_result
-                messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "name": name,
-                        "content": json.dumps(tool_result),
-                    }
-                )
+                if name == "prepare_advice_prompt":
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": tool_result["advice_prompt"],
+                        }
+                    )
+                else:
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "name": name,
+                            "content": json.dumps(tool_result),
+                        }
+                    )
         else:
             # Unexpected finish_reason
             return {
