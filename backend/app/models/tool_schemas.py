@@ -1,20 +1,37 @@
+validate_prompt_schema = {
+    "name": "validate_prompt",
+    "description": "Validate if user question is relevant and investment objective is clear.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "question": {"type": "string"},
+            # user_id and portfolio_id removed from properties
+        },
+        "required": ["question"],
+    },
+}
+
+validate_investment_goal_schema = {
+    "name": "validate_investment_goal",
+    "description": "Validate user's investment goal clarity.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "question": {"type": "string"},
+        },
+        "required": ["question"],
+    },
+}
+
 determine_tool_schema = {
     "name": "determine_if_augmentation_required",
     "description": "Decide if current news data is needed to answer the investment question.",
     "parameters": {
         "type": "object",
         "properties": {
-            "question": {
-                "type": "string",
-                "description": "The user's investment question.",
-            },
-            "portfolio_id": {
-                "type": "integer",
-                "description": "The user's portfolio ID.",
-            },
-            "user_id": {"type": "integer", "description": "The user's ID."},
+            "question": {"type": "string"},
         },
-        "required": ["question", "portfolio_id", "user_id"],
+        "required": ["question"],
     },
 }
 
@@ -24,33 +41,19 @@ retrieve_tool_schema = {
     "parameters": {
         "type": "object",
         "properties": {
-            "question": {
-                "type": "string",
-                "description": "The user's investment question.",
-            },
-            "portfolio_id": {
-                "type": "integer",
-                "description": "The user's portfolio ID.",
-            },
-            "user_id": {"type": "integer", "description": "The user's ID."},
+            "question": {"type": "string"},
         },
-        "required": ["question", "portfolio_id", "user_id"],
+        "required": ["question"],
     },
 }
-prepare_advice_prompt_schema = {
-    "name": "prepare_advice_prompt",
+
+prepare_advice_template_schema = {
+    "name": "prepare_advice_template",
     "description": "Build a complete prompt that summarizes the user's investment context and question for final advice generation.",
     "parameters": {
         "type": "object",
         "properties": {
-            "question": {
-                "type": "string",
-                "description": "The user's investment question.",
-            },
-            "portfolio_id": {
-                "type": "integer",
-                "description": "The user's portfolio ID.",
-            },
+            "question": {"type": "string"},
             "article_summaries": {
                 "type": "array",
                 "description": "List of summarized news articles.",
@@ -67,12 +70,13 @@ prepare_advice_prompt_schema = {
                 },
             },
         },
-        "required": ["question", "portfolio_summary", "objectives"],
+        "required": ["question", "article_summaries"],
     },
 }
 
 tools = [
+
     {"type": "function", "function": determine_tool_schema},
     {"type": "function", "function": retrieve_tool_schema},
-    {"type": "function", "function": prepare_advice_prompt_schema},
+    {"type": "function", "function": prepare_advice_template_schema},
 ]

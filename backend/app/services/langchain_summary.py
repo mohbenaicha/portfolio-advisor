@@ -3,16 +3,16 @@ from langchain_openai import ChatOpenAI
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
 import asyncio
-from app.config import OPEN_AI_API_KEY
+from app.config import OPEN_AI_API_KEY, SUMMARY_MODEL
 
 
 # production model
-llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0, openai_api_key=OPEN_AI_API_KEY)
+llm = ChatOpenAI(model=SUMMARY_MODEL, temperature=0, openai_api_key=OPEN_AI_API_KEY)
 
 
 async def summarize_articles(articles, llm=llm):
-    splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    chain = load_summarize_chain(llm, chain_type="map_reduce")
+    splitter = CharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
+    chain = load_summarize_chain(llm, chain_type="refine")
 
     async def process_article(article):
         doc = Document(
@@ -20,7 +20,7 @@ async def summarize_articles(articles, llm=llm):
             metadata={"url": article.get("link")},
         )
         chunks = splitter.split_documents([doc])
-        summary = chain.run(chunks)
+        summary = await chain.arun(chunks)
         article["summary"] = summary
         return article
 

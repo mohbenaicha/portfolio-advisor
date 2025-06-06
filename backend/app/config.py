@@ -12,6 +12,8 @@ DATABASE_URL = getenv("DATABASE_URI")
 MONGO_URI = getenv("MONGO_URI")
 OUTSCRAPER_API_KEY = getenv("OUTSCRAPER_API_KEY")
 OPEN_AI_API_KEY = getenv("OPENAI_API_KEY")
+BACKEND_BASE_URL = getenv("BACKEND_BASE_URL", "http://localhost:8000")
+PROVIDER_BASE_URL = "/".join([BACKEND_BASE_URL, "tool"])
 
 
 if not DATABASE_URL:
@@ -26,5 +28,6 @@ if not OPEN_AI_API_KEY:
 SESSION_EXPIRY_HOURS = 24
 SCRAPER_HEADERS = {"User-Agent": "Mozilla/5.0"}
 EXTRACTION_MODEL = "gpt-4.1-mini"
+SUMMARY_MODEL = "gpt-4.1-mini"
 ADVICE_MODEL = "gpt-4.1-mini"
 EMAIL_ADDRESS = "mohamed.benaicha@hotmail.com"

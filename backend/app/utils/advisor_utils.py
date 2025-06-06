@@ -1,3 +1,5 @@
+import httpx
+import asyncio
 import markdown
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import (
@@ -6,6 +8,7 @@ from app.utils.portfolio_utils import (
     get_portfolio_summary,
 )
 from fastapi.encoders import jsonable_encoder
+from app.config import PROVIDER_BASE_URL
 
 
 def preprocess_markdown(markdown_text):
@@ -41,7 +44,7 @@ def convert_markdown_to_html(markdown_text):
     return styled_html
 
 
-async def preprocess_final_prompt(db, portfolio_id, user_id, article_simmaries=None):
+async def preprocess_final_prompt(db, portfolio_id, user_id, article_summaries=None):
 
     portfolio = jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     portfolio_summary = "\n".join(
@@ -52,11 +55,17 @@ async def preprocess_final_prompt(db, portfolio_id, user_id, article_simmaries=N
         ]
     )
 
-    if article_simmaries:
+    if article_summaries:
+        article_summaries = [
+            article
+            for article in article_summaries
+            if all(key in article for key in ["title", "summary", "link"])
+        ]
+        print("articles with all keys : ", len(article_summaries))
         article_summaries = "\n\n".join(
             [
                 "\n".join([article["title"], article["summary"], article["link"]])
-                for article in article_simmaries
+                for article in article_summaries
                 if article["summary"] != "Readability extraction failed"
             ]
         )
@@ -111,3 +120,22 @@ def build_advice_prompt(
 
             Keep total length under 500 words (not counting citations) and format the response in an appropriate markdown of headings, paragraphs and lists.
             """
+
+async def call_provider_endpoint(endpoint: str, payload: dict) -> dict:
+    url = f"{PROVIDER_BASE_URL}{endpoint}"
+    timeout = httpx.Timeout(600) # 10 minutes timeout
+    retries = 3
+    backoff = 2  # seconds
+
+    for attempt in range(1, retries + 1):
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+                return response.json()
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            if attempt == retries:
+                raise  # re raise on last atempt
+            print(f"[Retry] Attempt {attempt} failed: {e}. Retrying in {backoff}s...")
+            await asyncio.sleep(backoff)
+            backoff *= 2 

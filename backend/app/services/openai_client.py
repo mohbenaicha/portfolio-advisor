@@ -19,7 +19,9 @@ from app.utils.advisor_utils import build_advice_prompt
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-async def validate_prompt(question: str, portfolio_id: int, user_id: int, db: AsyncSession) -> Dict[str, bool]:
+async def validate_prompt(
+    question: str, portfolio_id: int, user_id: int, db: AsyncSession
+) -> Dict[str, bool]:
     """
     Validates if the user's prompt is a valid investment question and the user's investment objective is clear.
     """
@@ -42,7 +44,7 @@ async def validate_prompt(question: str, portfolio_id: int, user_id: int, db: As
               - key "valid" whose value is a boolean indicating whether the user's question is valid and relevant investment question
             Only return a json object...
             """
-    print("validate_prompt prompt: \n", prompt)
+    # print("validate_prompt prompt: \n", prompt)
 
     # send the prompt to OpenAI API for processing
     response = openai.chat.completions.create(
@@ -55,7 +57,7 @@ async def validate_prompt(question: str, portfolio_id: int, user_id: int, db: As
         r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
     )
     cleaned_json = json.loads(cleaned)
-    print("validate_prompt response: \n", cleaned_json)
+    # print("validate_prompt response: \n", cleaned_json)
     return cleaned_json
 
 
@@ -65,11 +67,17 @@ async def validate_investment_goal(
     portfolio_id: int = None,
     db: AsyncSession = None,
 ) -> Dict[str, bool]:
-    print("Validating investment goal for user_id:", user_id, "portfolio_id:", portfolio_id)
+    print(
+        "Validating investment goal for user_id:",
+        user_id,
+        "portfolio_id:",
+        portfolio_id,
+    )
     memory = await get_investment_objective(user_id, portfolio_id)
 
     prompt = f"""
-            You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
+            You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}.
+            Your job is to determine the user's investment object, based on the user's question, if it isn't provided below.
 
             User question:
             "{question}"
@@ -84,7 +92,7 @@ async def validate_investment_goal(
             Only return a json object...
             """
 
-    print("Validate_investment_goal prompt: \n", prompt)
+    # print("Validate_investment_goal prompt: \n", prompt)
 
     # send the prompt to OpenAI API for processing
     response = openai.chat.completions.create(
@@ -97,7 +105,7 @@ async def validate_investment_goal(
         r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
     )
     cleaned_json = json.loads(cleaned)
-
+    print("--------------->Extracted investment goal response: \n", cleaned_json)
     # parse objectives
     st_obj = cleaned_json.get("short_term_objective", "")
     lt_obj = cleaned_json.get("long_term_objective", "")
@@ -113,15 +121,20 @@ async def validate_investment_goal(
             }
         },
     )
-    print("validate_investment_goal response: \n", cleaned_json)
+    print(
+        "updated user objective  based on llm response",
+        await UserSessionManager.get_llm_memory(
+            user_id=user_id, portfolio_id=portfolio_id
+        ),
+    )
     return cleaned_json
 
 
 async def determine_if_augmentation_required(
     question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
 ) -> bool:
-    print("Determining if augmentation is required for question:", question)
-    exporsure_summary = get_exposure_summary(
+    # print("Determining if augmentation is required for question:", question)
+    exposure_summary = get_exposure_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     )
     portfolio_summary = get_portfolio_summary(
@@ -137,7 +150,7 @@ async def determine_if_augmentation_required(
             {portfolio_summary}
             
             Summary of user's portfolio exposures:
-            {exporsure_summary}
+            {exposure_summary}
             
             User's investment objectives: 
             {memory}
@@ -149,7 +162,7 @@ async def determine_if_augmentation_required(
               - key "additional_data_required" whose value is a boolean indicating whether the user's question requires additional information or augmentation to provide a comprehensive answer.
             Only return a json object...
             """
-    print("determine_if_augmentation_required prompt: \n", prompt)
+    # print("determine_if_augmentation_required prompt: \n", prompt)
     # send the prompt to OpenAI API for processing
     response = openai.chat.completions.create(
         model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
@@ -160,7 +173,7 @@ async def determine_if_augmentation_required(
         r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
     )
     cleaned_json = json.loads(cleaned)
-    print("determine_if_augmentation_required response: \n", cleaned_json)
+    # print("determine_if_augmentation_required response: \n", cleaned_json)
     return cleaned_json.get("additional_data_required", False)
 
 
@@ -171,7 +184,7 @@ async def extract_entities(
     Dict[str, Union[int, str, List[Dict[str, Union[int, str, float, bool]]]]],
     str,
 ]:
-    print("Extracting entities for question:", question)
+    # print("Extracting entities for question:", question)
 
     portfolio_assets = None
     portfolio_summary = ""
@@ -208,7 +221,7 @@ async def extract_entities(
 
             Only return a json object...
             """
-    print("Prompt: \n", prompt)
+    # print("Prompt: \n", prompt)
 
     response = openai.chat.completions.create(
         model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
@@ -228,7 +241,7 @@ async def extract_entities(
 async def retrieve_news(
     question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
 ):
-    print("Retrieving news for question:", question)
+    # print("Retrieving news for question:", question)
     themes = await extract_entities(
         question=question,
         portfolio_id=portfolio_id,
@@ -239,37 +252,37 @@ async def retrieve_news(
     start_date = datetime.now(timezone.utc) - timedelta(days=8)
     end_date = datetime.now(timezone.utc)
 
-    print(" Looking for Cached Articles ")
+    # print(" Looking for Cached Articles ")
     # keys: link, posted (date published), query, query_tags, source (publisher), stored_at (d/t), summary, title
     cached_articles = await get_cached_articles(
         themes, start_date=start_date, end_date=end_date
     )
-    print("Found {} chached articles".format(len(cached_articles)))
+    # print("Found {} chached articles".format(len(cached_articles)))
 
     if len(cached_articles) < 10:
-        print(" Fetching Articles from Google Search News ")
+        # print(" Fetching Articles from Google Search News ")
 
         # 3: Fetch articles from Alpha Vantage
         # list of dicts; keys: query, position, title, body, posted, source, link
         fresh_articles = await fetch_articles(themes)
 
         # 4: Scrape full article content using readability
-        print(" Extracting Article Content ")
+        # print(" Extracting Article Content ")
         for article in fresh_articles:
             # key added added to each article dict: raw_article - full scraped article content
             try:
                 article["raw_article"] = await extract_with_readability(article["link"])
             except Exception as e:
-                print(f"Error extracting article content: {e}")
+                # print(f"Error extracting article content: {e}")
                 article["raw_article"] = "Readability extraction failed."
 
-        print("Starting to summarize articles...")
+        # print("Starting to summarize articles...")
         # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
         # key added: summary - summarized version of each article by GPT-4o mini
-        print(" Summarizing Articles ")
+        # print(" Summarizing Articles ")
         summarized = await summarize_articles(fresh_articles)
 
-        print(" Storing Articles ")
+        # print(" Storing Articles ")
         # 6: Cache summaries in MongoDB
         await store_article_summaries(summarized)
     else:
@@ -277,7 +290,7 @@ async def retrieve_news(
             article["_id"] = str(article["_id"])
             article["stored_at"] = article["stored_at"].isoformat()
         summarized = cached_articles
-    
+
     return summarized
 
 
@@ -291,7 +304,7 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
     - Cite assumptions you rely on.
     - Write in clear, executive‑level English (no jargon unless defined).
     """
-    print("Generating advice for question:", question)
+    # print("Generating advice for question:", question)
 
     portfolio_summary, article_summaries = await preprocess_final_prompt(
         db, portfolio_id, user_id, article_summaries
@@ -331,7 +344,7 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
 
                 Keep total length under 500 words (not counting citations) and format the response in an appropriate markdown of headings, paragraphs and lists.
                 """
-    print("generate_advice prompt: \n", user_prompt)
+    # print("generate_advice prompt: \n", user_prompt)
     response = openai.chat.completions.create(
         model=ADVICE_MODEL,
         messages=[
@@ -339,19 +352,32 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
             {"role": "user", "content": user_prompt},
         ],
     )
-    print("generate_advice response: \n", response.choices[0].message.content)
+    # print("generate_advice response: \n", response.choices[0].message.content)
     return response.choices[0].message.content
 
 
-async def prepare_advice_prompt(question: str, portfolio_id: int, db: AsyncSession, article_summaries: List[Dict[str, str]], **kwargs):
-    portfolio_summary, article_summaries = await preprocess_final_prompt(db, portfolio_id, user_id=kwargs.get("user_id"))
+async def prepare_advice_template(
+    question: str,
+    portfolio_id: int,
+    db: AsyncSession,
+    article_summaries: List[Dict[str, str]],
+    **kwargs,
+):
+    portfolio_summary, article_summaries = await preprocess_final_prompt(
+        db,
+        portfolio_id,
+        user_id=kwargs.get("user_id"),
+        article_summaries=article_summaries,
+    )
     memory = await UserSessionManager.get_llm_memory(
-        user_id=kwargs.get("user_id"), portfolio_id=portfolio_id)
-    
+        user_id=kwargs.get("user_id"), portfolio_id=portfolio_id
+    )
+
     prompt = build_advice_prompt(
         question=question,
         portfolio_summary=portfolio_summary,
         objectives=memory,
         article_summaries=article_summaries,
     )
+    print("prepare_advice_template prompt: \n", prompt)
     return {"advice_prompt": prompt}

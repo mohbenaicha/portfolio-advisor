@@ -13,7 +13,7 @@ async def save_archive(db: AsyncSession = None, archive_data=None, user_id: int 
             )
         )
         portfolio = portfolio_exists.scalar()
-        print(f"DEBUG: Portfolio Query Result: {portfolio}")  # Debugging line
+        # print(f"DEBUG: Portfolio Query Result: {portfolio}")  # Debugging line
         if not portfolio:
             raise ValueError(
                 f"Portfolio with id {archive_data.portfolio_id} does not exist."

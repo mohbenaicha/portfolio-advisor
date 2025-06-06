@@ -27,7 +27,7 @@ async def handle_prompt(request, db: AsyncSession, user_id: int):
             "If you need additional quota for today, you can request additional quota by emailing mohamed.benaicha@hotmail.com</p>",
         }
 
-    print(" Extracting Entities using GPT-4o mini ")
+    # print(" Extracting Entities using GPT-4o mini ")
 
     # step 1: Validate the question
     is_question_valid = await validate_prompt(request.question, request.portfolio_id, user_id, db)[
