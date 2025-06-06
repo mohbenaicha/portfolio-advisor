@@ -92,23 +92,23 @@ async def validate_investment_goal(
             Only return a json object...
             """
 
-    # print("Validate_investment_goal prompt: \n", prompt)
+    max_retries = 3
+    attempt = 0
+    st_obj, lt_obj = "", ""
 
-    # send the prompt to OpenAI API for processing
-    response = openai.chat.completions.create(
-        model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
-    )
-    raw_content = response.choices[0].message.content
+    while attempt < max_retries and not (st_obj or lt_obj):
+        print("Attempt # ", attempt + 1, "to validate investment goal")
+        attempt += 1
+        response = openai.chat.completions.create(model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}])
+        raw_content = response.choices[0].message.content
 
-    # process response
-    cleaned = re.sub(
-        r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
-    )
-    cleaned_json = json.loads(cleaned)
-    print("--------------->Extracted investment goal response: \n", cleaned_json)
-    # parse objectives
-    st_obj = cleaned_json.get("short_term_objective", "")
-    lt_obj = cleaned_json.get("long_term_objective", "")
+        cleaned = re.sub(r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE)
+        cleaned_json = json.loads(cleaned)
+        st_obj = cleaned_json.get("short_term_objective", "")
+        lt_obj = cleaned_json.get("long_term_objective", "")
+
+        if st_obj or lt_obj:
+            break
 
     await UserSessionManager.update_session(
         user_id=user_id,
@@ -122,7 +122,7 @@ async def validate_investment_goal(
         },
     )
     print(
-        "updated user objective  based on llm response",
+        "--------------->updated user objective based on llm response",
         await UserSessionManager.get_llm_memory(
             user_id=user_id, portfolio_id=portfolio_id
         ),
