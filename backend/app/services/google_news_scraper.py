@@ -1,4 +1,4 @@
-import re
+import time
 from outscraper import ApiClient
 from app.config import OUTSCRAPER_API_KEY
 
@@ -7,7 +7,7 @@ client = ApiClient(api_key=OUTSCRAPER_API_KEY)
 def is_junk_news_link(link: str) -> bool:
     return "news.google.com/read" in link
 
-def fetch_news(query: str = "options volatility", pages_per_query: int = 1, time_range: str = "w", retries: int = 1) -> list[dict]:
+def fetch_news(query: str = "options volatility", pages_per_query: int = 1, time_range: str = "w", retries: int = 10) -> list[dict]:
     if not query:
         return None
 
@@ -21,6 +21,7 @@ def fetch_news(query: str = "options volatility", pages_per_query: int = 1, time
         articles = response[0]
         if articles and not all(is_junk_news_link(article.get("link", "")) for article in articles):
             return response
+        time.sleep(2)  # wait before retrying
 
     return response  # return even if junk after retries
 
@@ -36,6 +37,7 @@ async def fetch_articles(entities):
             for article in response[0]:
                 article["keywords"] = entity.get("keywords", [])    
                 news_response.append(article) 
+        break
 
     if not news_response:
         return False

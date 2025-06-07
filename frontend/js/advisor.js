@@ -46,9 +46,20 @@ async function submitPrompt() {
 
   try {
     const refreshArchivesBtn = document.getElementById("refresh-archives-btn");
+    const questionTextarea = document.getElementById("question");
+    const askButton = document.querySelector(".input-footer button");
     if (refreshArchivesBtn) {
-      console.log("Disabling refresh archives button");
-      refreshArchivesBtn.disabled = true; // Disable the button
+      console.log("Disabling archives, text input and Ask button elements");
+      refreshArchivesBtn.disabled = true;
+      if (questionTextarea) {
+        console.log("Disabling question textarea");
+        questionTextarea.disabled = true;
+      }
+
+      if (askButton) {
+        console.log("Disabling advisor button");
+        askButton.disabled = true;
+      }
     }
 
     const result = await analyzePrompt(question, portfolioId);
@@ -59,10 +70,13 @@ async function submitPrompt() {
       throw new Error("No summary returned from the backend or prompt limit reached.");
     }
 
+    questionTextarea.disabled = false; // Re-enable the textarea
+    askButton.disabled = false; // Re-enable the button
+
     console.log("Value of result.archived:", result.archived);
     if (!result.archived) {
       console.log("Archive flag is false, not saving archive.");
-      return; // donn't save if archive flag is false
+      return;
     }
 
     console.log("Saving archive for portfolio ID:", portfolioId, "with question:", question);
@@ -75,7 +89,12 @@ async function submitPrompt() {
     if (refreshArchivesBtn) {
       console.log("Re-enabling refresh archives button");
       refreshArchivesBtn.disabled = false; // Re-enable the button
+      if (questionTextarea) {
+        console.log("Re-enabling question textarea");
+      }
     }
+    // Change the button text to "New Chat"
+    askButton.textContent = "New Chat";
   } catch (err) {
     console.warn("Error occurred:", err.message);
     responseDiv.innerHTML = `<p style="color: red;">Failed to generate response. Please try again.</p>`;
@@ -88,10 +107,13 @@ function renderResponse(data) {
   div.innerHTML = data.summary;
 }
 
+
 const questionBox = document.getElementById("question");
 const advisorDropdown = document.getElementById("portfolio-select");
-// update placeholder text in question box based on selected advisor
+const askButton = document.querySelector(".input-footer button");
 
+
+// update placeholder text in question box based on selected advisor
 if (advisorDropdown && questionBox) {
   advisorDropdown.addEventListener("change", function () {
     const selectedName = this.options[this.selectedIndex].text;
@@ -99,6 +121,27 @@ if (advisorDropdown && questionBox) {
   });
 }
 
+askButton.addEventListener("click", () => {
+  if (askButton.textContent === "Ask") {
+    // Perform submitPrompt functionality
+    submitPrompt();
+  } else if (askButton.textContent === "New Chat") {
+    // Perform "New Chat" functionality
+    const questionInput = document.getElementById("question");
+    const responseDiv = document.getElementById("response");
+
+    if (questionInput) {
+      questionInput.value = ""; // Clear the textarea
+    }
+
+    if (responseDiv) {
+      responseDiv.innerHTML = ""; // Clear the response
+    }
+
+    // Change button text back to "Ask"
+    askButton.textContent = "Ask";
+  }
+});
+
 
 window.submitPrompt = submitPrompt;
-

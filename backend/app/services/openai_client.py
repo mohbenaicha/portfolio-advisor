@@ -25,6 +25,7 @@ async def validate_prompt(
     """
     Validates if the user's prompt is a valid investment question and the user's investment objective is clear.
     """
+    print("Validating prompt for user_id:", user_id, "portfolio_id:", portfolio_id)
     portfolio_summary = get_portfolio_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     )
@@ -73,6 +74,10 @@ async def validate_investment_goal(
         "portfolio_id:",
         portfolio_id,
     )
+
+    portfolio_summary = get_portfolio_summary(
+        jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
+    )
     memory = await get_investment_objective(user_id, portfolio_id)
 
     prompt = f"""
@@ -81,8 +86,12 @@ async def validate_investment_goal(
 
             User question:
             "{question}"
+            
+            User's portfolio:
+            {portfolio_summary}
 
-            {memory}
+            User's investment objectives from memory:
+            {memory if memory else "None"}
 
             Instructions:
             Return a JSON object with a 
@@ -327,7 +336,6 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
                 f"{article_summaries}" if article_summaries else ""
                 }
 
-                
                 "### User's Investment Objective\n"
                 {memory}
                     
