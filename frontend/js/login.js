@@ -1,9 +1,8 @@
 import { getAuthHeaders, authenticateUser, loadPortfolioOptions, loadArchives, initApiToken } from "./api.js";
 import { loadArchiveDropdown } from "./archive.js";
 import { initialUpdateQuestionPlaceholder } from "./portfolio.js";
-
-import { safeFetch } from "./utils.js";
-import { TOKEN_EXPIRY_MS, BASE_URL } from "./config.js";
+import { safeFetch, validateRecaptcha } from "./utils.js";
+import { TOKEN_EXPIRY_MS, BASE_URL, reCAPTCHA_SITE_KEY } from "./config.js";
 
 const loginScreen = document.getElementById("login-screen");
 const appScreen = document.getElementById("app-screen");
@@ -52,8 +51,12 @@ async function login(token) {
 
 
 async function handleLoginClick() {
-  const token = tokenInput.value.trim();
-  await login(token);
+  const recaptchaToken = await grecaptcha.execute(reCAPTCHA_SITE_KEY);
+  const isRecaptchaValid = await validateRecaptcha(recaptchaToken);
+  if (!isRecaptchaValid) return;
+
+  const login_token = tokenInput.value.trim();
+  await login(login_token);
 }
 
 async function init() {
@@ -99,6 +102,7 @@ async function logout() {
     console.error("Error during logout:", err.message);
   }
 }
+
 
 loginBtn.addEventListener("click", handleLoginClick);
 window.addEventListener("DOMContentLoaded", init);

@@ -1,3 +1,5 @@
+import { BASE_URL } from './config.js';
+
 // user to safely fetch responses from the server and handle errors
 export async function safeFetch(url, options = {}) {
   const res = await fetch(url, options);
@@ -34,4 +36,27 @@ export function decodeHTML(str) {
   const textarea = document.createElement("textarea");
   textarea.innerHTML = str;
   return textarea.value;
+}
+
+export async function validateRecaptcha(recaptchaToken) {
+    try {
+        const response = await safeFetch(`${BASE_URL}/verify-recaptcha`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: recaptchaToken }),
+        });
+
+        console.log("Backend reCAPTCHA response:", response);
+
+        // Check the response structure correctly
+        if (response.message !== "success" || response.score < 0.5) {
+            alert("reCAPTCHA validation failed. Please try again.");
+            return false;
+        }
+        return true;
+    } catch (err) {
+        console.error("Error validating reCAPTCHA:", err.message);
+        alert("An error occurred during reCAPTCHA validation. Please try again.");
+        return false;
+    }
 }

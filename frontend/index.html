@@ -19,6 +19,12 @@
       <input type="text" id="token-input" placeholder="Enter your token" />
       <p id="login-error" class="error-msg hidden">Could not authenticate token</p>
       <button id="login-btn">Login <span class="arrow">→</span></button>
+      <button id="register-btn"> Get a login key <span class="arrow">⌵</span></button>
+      <div id="register-box" class="hidden" style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
+        <input type="text" id="email-input" placeholder="Enter your email address" />
+        <button id="register-submit-btn">Submit</button>
+        <span style="cursor: pointer;">✖</span>
+      </div>
       <div class="disclaimer">
         <p>
           <span class="disclaimer-title"><b>Disclaimer</b>:</span> LLMs make mistakes and do <b>NOT</b> constitute
@@ -126,11 +132,14 @@
       </div>
     </footer>
   </div>
+  <script src="https://www.google.com/recaptcha/api.js?render=6Lew31grAAAAAFg0DzPkxuGVriokBVjfxtA7z_h7"></script>
   <script src="./js/login.js" type="module"></script>
+  <script src="./js/register.js" type="module"></script>
   <script src="./js/archive.js" type="module"></script>
   <script src="./js/main.js" type="module"></script>
   <script src="./js/portfolio.js" type="module"></script>
   <script src="./js/advisor.js" type="module"></script>
+  <script src="./js/register.js" type="module"></script>
   <script src="./js/utils.js" type="module"></script>
 </body>
 

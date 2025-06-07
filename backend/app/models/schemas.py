@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime
 from typing import List
@@ -7,6 +7,8 @@ from typing import List
 class TokenAuth(BaseModel):
     token: str
 
+class RecaptchaRequest(BaseModel):
+    token: str
 
 class Asset(BaseModel):
     ticker: str
@@ -83,3 +85,6 @@ class PortfolioOut(BaseModel):
     assets: List[AssetOut]
 
     model_config = {"from_attributes": True}
+
+class AccessRequest(BaseModel):
+    email: EmailStr
