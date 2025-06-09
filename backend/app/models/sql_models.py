@@ -9,12 +9,13 @@ from sqlalchemy import (
     DateTime,
     Date,
     Text,
+    MetaData
 )
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
 
-Base = declarative_base()
+Base = declarative_base(metadata=MetaData(schema="public"))
 
 
 class AssetType(PyEnum):
@@ -60,6 +61,7 @@ class Portfolio(Base):
 
 class Asset(Base):
     __tablename__ = "assets"
+    __table_args__ = {"schema": "public"}
 
     id = Column(Integer, primary_key=True, index=True)
     portfolio_id = Column(Integer, ForeignKey("portfolios.id", ondelete="CASCADE"))
@@ -67,9 +69,9 @@ class Asset(Base):
 
     ticker = Column(String)
     name = Column(String)
-    asset_type = Column(Enum(AssetType))
-    sector = Column(Enum(Sector))
-    region = Column(Enum(Region))
+    asset_type = Column(Enum(AssetType, name="assettype", schema="public"))
+    sector = Column(Enum(Sector, name="sector", schema="public"))
+    region = Column(Enum(Region, name="region", schema="public"))
     market_price = Column(Float)
     units_held = Column(Float)
     is_hedge = Column(Boolean, default=False)
@@ -78,6 +80,7 @@ class Asset(Base):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {"schema": "public"}
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
@@ -89,6 +92,7 @@ class User(Base):
 
 class ArchivedResponse(Base):
     __tablename__ = "archived_responses"
+    __table_args__ = {"schema": "public"}
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -102,6 +106,7 @@ class ArchivedResponse(Base):
 
 class LLMMemory(Base):
     __tablename__ = "llm_memory"
+    __table_args__ = {"schema": "public"}
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
@@ -118,6 +123,7 @@ class LLMMemory(Base):
 
 class UserSession(Base):
     __tablename__ = "user_sessions"
+    __table_args__ = {"schema": "public"}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, unique=True)  # Each user has one session

@@ -5,6 +5,7 @@ from app.config import MONGO_URI
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["news_cache"]
 
+print("Connected to MongoDB at:", MONGO_URI)
 
 async def get_cached_articles(entities, start_date=None, end_date=None):
     tags = [keyword for entity in entities for keyword in entity.get("keywords", [])]

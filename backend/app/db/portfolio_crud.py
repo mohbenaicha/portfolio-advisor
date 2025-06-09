@@ -109,7 +109,6 @@ async def update_portfolio(
     data: PortfolioCreate = None,
     user_id: int = Depends(get_current_user),
 ):
-    print(f"Update portfolio called with portfolio_id: {portfolio_id}")
     result = await db.execute(
         select(Portfolio)
         .options(selectinload(Portfolio.assets))
@@ -126,9 +125,6 @@ async def update_portfolio(
     current_assets = {(a.ticker, a.asset_type.value): a for a in portfolio.assets}
     new_assets_dict = {(a.ticker, a.asset_type): a for a in data.assets}
 
-    print(f"Current assets: {list(current_assets.keys())}")
-    print(f"New assets: {list(new_assets_dict.keys())}")
-
     current_keys = set(current_assets.keys())
     new_keys = set(new_assets_dict.keys())
 
@@ -137,10 +133,6 @@ async def update_portfolio(
     assets_to_add = new_keys - current_keys
     assets_to_delete = current_keys - new_keys
 
-    print(f"Assets to update: {assets_to_update}")
-    print(f"Assets to add: {assets_to_add}")
-
-    # Update existing assets
     for key in assets_to_update:
         existing_asset = current_assets[key]
         new_data = new_assets_dict[key].model_dump()
@@ -150,7 +142,6 @@ async def update_portfolio(
     # Add new assets
     for key in assets_to_add:
         new_asset_data = new_assets_dict[key].model_dump()
-        print(f"Adding asset: {key} with data: {new_asset_data}")
         asset = Asset(**new_asset_data, portfolio_id=portfolio_id)
         db.add(asset)
 

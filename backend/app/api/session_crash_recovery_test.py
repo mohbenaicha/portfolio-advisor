@@ -40,7 +40,6 @@ async def update_session(
             },
         },
     )
-    print("/update endpoint called, session_store updated via UserSessionManager: ", session_store)
     return {"message": "Session updated successfully"}
 
 

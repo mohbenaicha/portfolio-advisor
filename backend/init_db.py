@@ -1,4 +1,3 @@
-# backend/init_db.py
 import asyncio
 from app.db.init import init_db
 

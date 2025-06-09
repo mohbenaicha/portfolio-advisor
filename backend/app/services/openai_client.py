@@ -108,10 +108,14 @@ async def validate_investment_goal(
     while attempt < max_retries and not (st_obj or lt_obj):
         print("Attempt # ", attempt + 1, "to validate investment goal")
         attempt += 1
-        response = openai.chat.completions.create(model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}])
+        response = openai.chat.completions.create(
+            model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
+        )
         raw_content = response.choices[0].message.content
 
-        cleaned = re.sub(r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE)
+        cleaned = re.sub(
+            r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
+        )
         cleaned_json = json.loads(cleaned)
         st_obj = cleaned_json.get("short_term_objective", "")
         lt_obj = cleaned_json.get("long_term_objective", "")
@@ -319,7 +323,11 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
         db, portfolio_id, user_id, article_summaries
     )
     memory = await get_investment_objective(user_id, portfolio_id)
-
+    news_section = (
+        f"### Recent News & Data (already pre‑filtered for relevance)\n{article_summaries}"
+        if article_summaries
+        else ""
+    )
     user_prompt = f"""
                 You are a professional investment advisor with expertise in financial markets, portfolio management, and risk assessment. You have 
                 received a question from a user regarding their investment portfolio, and you need to provide a comprehensive analysis and actionable 
@@ -331,10 +339,7 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
                 ### Portfolio Snapshot
                 {portfolio_summary}
 
-                {
-                "### Recent News & Data (already pre‑filtered for relevance)\n"
-                f"{article_summaries}" if article_summaries else ""
-                }
+                {news_section}
 
                 "### User's Investment Objective\n"
                 {memory}

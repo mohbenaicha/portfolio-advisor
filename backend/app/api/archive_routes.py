@@ -15,7 +15,6 @@ async def get_user_archives(
     user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     result = await get_archived_responses(db=db, user_id=user_id)
-    # print(f"Retrieved {len(result)} archives for user {user_id}")
     return result or []
 
 

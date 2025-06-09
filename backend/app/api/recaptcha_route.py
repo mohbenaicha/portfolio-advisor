@@ -17,7 +17,6 @@ async def verify_recaptcha(request: RecaptchaRequest):
         result = response.json()
 
     score = result.get("score", 0)
-    print("reCAPTCHA verification result:", result)
     if score < 0.5:  # Set your threshold score here
         raise HTTPException(status_code=400, detail="Suspicious activity detected")
 
