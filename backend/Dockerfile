@@ -8,7 +8,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy code
+
+RUN apt-get update && apt-get install -y ca-certificates
+RUN pip install truststore
+RUN python -c "import truststore; truststore.inject_into_ssl()"
+
+# Copy code source: backend, dest: mnt
 COPY . .
 
 # Expose port (Cloud Run default)

@@ -1,4 +1,4 @@
-import json, os, re, openai
+import json, re
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Tuple, Union
 from fastapi.encoders import jsonable_encoder
@@ -7,16 +7,17 @@ from app.utils.portfolio_utils import get_exposure_summary, get_portfolio_summar
 from app.db.session import AsyncSession
 from app.db.user_session import UserSessionManager
 from app.utils.memory_utils import get_investment_objective
-from app.config import EXTRACTION_MODEL, ADVICE_MODEL, EMAIL_ADDRESS
+from app.config import EXTRACTION_MODEL, ADVICE_MODEL, EMAIL_ADDRESS, OPEN_AI_API_KEY
 from app.db.mongo import get_cached_articles, store_article_summaries
 from app.services.google_news_scraper import fetch_articles
 from app.services.langchain_summary import summarize_articles
 from app.utils.article_scraper import extract_with_readability
 from app.utils.advisor_utils import preprocess_final_prompt
 from app.utils.advisor_utils import build_advice_prompt
+from openai import OpenAI
+import socket
 
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPEN_AI_API_KEY)
 
 
 async def validate_prompt(
@@ -26,6 +27,14 @@ async def validate_prompt(
     Validates if the user's prompt is a valid investment question and the user's investment objective is clear.
     """
     print("Validating prompt for user_id:", user_id, "portfolio_id:", portfolio_id)
+    print("🧪 DNS:", socket.gethostbyname("api.openai.com"))
+    try:
+        result = await client.models.list()
+        print("✅ OpenAI reachable:", result[:3])
+    except Exception as e:
+        import traceback
+        print("🔥 OpenAI error:")
+        traceback.print_exc()
     portfolio_summary = get_portfolio_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     )
@@ -45,10 +54,9 @@ async def validate_prompt(
               - key "valid" whose value is a boolean indicating whether the user's question is valid and relevant investment question
             Only return a json object...
             """
-    # print("validate_prompt prompt: \n", prompt)
 
     # send the prompt to OpenAI API for processing
-    response = openai.chat.completions.create(
+    response = client.chat.completions.create(
         model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
@@ -58,7 +66,6 @@ async def validate_prompt(
         r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
     )
     cleaned_json = json.loads(cleaned)
-    # print("validate_prompt response: \n", cleaned_json)
     return cleaned_json
 
 
@@ -108,7 +115,7 @@ async def validate_investment_goal(
     while attempt < max_retries and not (st_obj or lt_obj):
         print("Attempt # ", attempt + 1, "to validate investment goal")
         attempt += 1
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
         )
         raw_content = response.choices[0].message.content
@@ -176,8 +183,8 @@ async def determine_if_augmentation_required(
             Only return a json object...
             """
     # print("determine_if_augmentation_required prompt: \n", prompt)
-    # send the prompt to OpenAI API for processing
-    response = openai.chat.completions.create(
+    # send the prompt to client API for processing
+    response = client.chat.completions.create(
         model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
@@ -236,7 +243,7 @@ async def extract_entities(
             """
     # print("Prompt: \n", prompt)
 
-    response = openai.chat.completions.create(
+    response = client.chat.completions.create(
         model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
@@ -358,7 +365,7 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
                 Keep total length under 500 words (not counting citations) and format the response in an appropriate markdown of headings, paragraphs and lists.
                 """
     # print("generate_advice prompt: \n", user_prompt)
-    response = openai.chat.completions.create(
+    response = client.chat.completions.create(
         model=ADVICE_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},

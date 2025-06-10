@@ -10,7 +10,7 @@ window.selectedPortfolioId = selectedPortfolioId;
 
 export async function loadPortfolioDropdown() {
   const portfolios = await getPortfolios();
-  const dropdownIds = ["portfolio-dropdown", "portfolio-select"]; // List of dropdown IDs
+  const dropdownIds = ["portfolio-dropdown", "portfolio-select"];
 
   dropdownIds.forEach((id) => {
     const dropdown = document.getElementById(id);
@@ -40,17 +40,14 @@ export async function loadPortfolioDropdown() {
 
 export async function loadPortfolio() {
   const id = parseInt(document.getElementById("portfolio-dropdown").value);
-  console.log("Dropdown selected ID:", id); // Debug dropdown value
   const portfolios = await getPortfolios();
-  console.log("Fetched portfolios:", portfolios); // Debug fetched portfolios
   const selected = portfolios.find(p => p.id === id);
   if (!selected) {
-    console.log("No matching portfolio found.");
+    console.warn("No matching portfolio found.");
     return;
   }
 
   selectedPortfolioId = id;
-  console.log("Updated selectedPortfolioId:", selectedPortfolioId); // Debug updated ID
   document.getElementById("portfolio-name").value = selected.name;
   const tbody = document.querySelector("#asset-table tbody");
   tbody.innerHTML = "";
@@ -70,19 +67,14 @@ export async function initialUpdateQuestionPlaceholder() {
     await loadPortfolioDropdown();
     if (dropdown.options.length > 0) {
       dropdown.selectedIndex = 0;
-      await loadPortfolio(); // load first portfolio
+      await loadPortfolio();
     }
   }
 }
 
 export async function createPortfolio() {
   const name = document.getElementById("portfolio-name").value;
-  const assets = []; // empty for now
-
-  console.log("Creating portfolio...");
-  console.log("selectedPortfolioId before creation:", selectedPortfolioId);
-  console.log("name:", name);
-  console.log("assets:", assets);
+  const assets = [];
 
   try {
     document.getElementById("portfolio-name").value = "";
@@ -90,7 +82,6 @@ export async function createPortfolio() {
     selectedPortfolioId = null;
 
     const newPortfolio = await createPortfolioAPI(name, assets);
-    console.log("New portfolio created:", newPortfolio);
     selectedPortfolioId = newPortfolio.id;
 
     await loadPortfolioDropdown();
@@ -102,7 +93,7 @@ export async function createPortfolio() {
     }
 
   } catch (err) {
-    console.log('Failed to save portfolio: ' + err.message);
+    console.error('Failed to save portfolio: ' + err.message);
   }
 }
 
@@ -114,7 +105,6 @@ export async function deletePortfolio() {
 
 
   try {
-    // delete the portfolio
     await deletePortfolioAPI(selectedPortfolioId);
 
     // Set selectedPortfolioId so the existing portfolio isn't overwritten
@@ -132,7 +122,7 @@ export async function deletePortfolio() {
     }
 
   } catch (err) {
-    console.log('Failed to delete portfolio: ' + err.message);
+    console.error('Failed to delete portfolio: ' + err.message);
   }
 }
 
@@ -214,7 +204,7 @@ function calculateTotals(assets) {
 
 export async function saveAssets() {
   const name = document.getElementById("portfolio-name").value.trim();
-  const nameErr = document.getElementById("portfolio-name-error"); // Access error container
+  const nameErr = document.getElementById("portfolio-name-error");
 
   // Clear previous error
   nameErr.textContent = "";
@@ -274,12 +264,10 @@ export async function saveAssets() {
     tickerSet.add(a.ticker);
     nameSet.add(a.name);
   }
-  errorOutput.textContent = ""; // Clear error message if no issues
+  errorOutput.textContent = "";
 
-  // Populate total values and weights
   calculateTotals(assets);
 
-  // Update DOM display
   const tableRows = document.querySelectorAll("#asset-table tbody tr");
   tableRows.forEach((row, i) => {
     row.querySelector(".auto-total").textContent = assets[i].total_value.toFixed(2);
@@ -290,33 +278,27 @@ export async function saveAssets() {
     await createPortfolioAPI(name, assets, selectedPortfolioId);
     await loadPortfolioDropdown();
   } catch (err) {
-    console.log('Failed to save portfolio: ' + err.message);
+    console.error('Failed to save portfolio: ' + err.message);
   }
 }
 
-// Handle input pop-up on click
 document.addEventListener("DOMContentLoaded", () => {
   const table = document.querySelector("table");
 
   table.addEventListener("click", (event) => {
     const target = event.target;
 
-    // Check if the clicked element is an input, textarea, or select
     if (
       (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT") &&
       !["price", "units"].includes(target.id) // Exclude elements with id="price" or id="units"
     ) {
-      // Remove the 'active' class from all inputs
       document.querySelectorAll("table td input, table td textarea, table td select").forEach((el) => {
         el.classList.remove("active");
       });
-
-      // Add the 'active' class to the clicked element
       target.classList.add("active");
     }
   });
 
-  // Remove the 'active' class when clicking outside the table
   document.addEventListener("click", (event) => {
     if (!table.contains(event.target)) {
       document.querySelectorAll("table td input, table td textarea, table td select").forEach((el) => {
@@ -326,7 +308,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// Expose key functions to window if needed
 window.createPortfolio = createPortfolio;
 window.saveAssets = saveAssets;
 window.loadPortfolio = loadPortfolio;

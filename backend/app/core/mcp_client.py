@@ -6,10 +6,10 @@ from app.utils.advisor_utils import (
     convert_markdown_to_html,
     call_provider_endpoint,
 )
-from app.config import ADVICE_MODEL
+from app.config import ADVICE_MODEL, OPEN_AI_API_KEY
 from app.core.provider_endpoint_map import endpoint_map
 
-openai = OpenAI()
+client = OpenAI(api_key=OPEN_AI_API_KEY)
 
 async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> bool:
     # Call validation endpoints first via HTTPfv
@@ -46,7 +46,7 @@ def construct_initial_messages(question: str) -> list:
 
 def process_final_message(messages: list) -> dict:
     # Final message using generated advice prompt
-    response = openai.chat.completions.create(
+    response = client.chat.completions.create(
         model=ADVICE_MODEL,
         messages=messages,
     )
@@ -135,7 +135,7 @@ async def run_mcp_client_pipeline(
 
 
     while True:
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model=ADVICE_MODEL, messages=messages, tools=tools, tool_choice="auto"
         )
 

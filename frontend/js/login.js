@@ -32,10 +32,10 @@ async function login(token) {
 
     loginScreen.classList.add("hidden");
     appScreen.classList.remove("hidden");
+    document.querySelector(".grecaptcha-badge").style.display = "none";
     appScreen.style.display = "flex";
     loginError.textContent = "";
     loginError.style.display = "none";
-    console.log("---------------User authenticated successfully");
     await loadArchiveDropdown();
     await loadArchives();
     await initialUpdateQuestionPlaceholder();
@@ -81,9 +81,7 @@ async function logout() {
     });
 
     if (response.message === "Logout successful") {
-      console.log("User logged out successfully");
       localStorage.clear(); // Clear local storage
-      // window.location.href = "/"; // Redirect to login screen
 
       // Reverse the visual process of login
       appScreen.classList.add("hidden");

@@ -5,29 +5,23 @@ import { BASE_URL } from "./config.js";
 let currentToken = null;
 
 
-// Call this at startup to sync from localStorage
 export function initApiToken() {
   const token = localStorage.getItem("authToken");
   if (token) currentToken = token;
 }
 
-// Authenticate user and store user ID
 export async function authenticateUser(token) {
-  console.log("Authenticating with token:", token);
   const res = await safeFetch(`${BASE_URL}/auth`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token }),
   });
-  console.log("Auth response:", res);
   currentToken = token;
   return res;
 }
 
 
-// Get headers including x-user-id if authenticated
 export function getAuthHeaders() {
-  console.log("Using auth headers with token:", currentToken);
   return {
     "Content-Type": "application/json",
     ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
@@ -44,8 +38,6 @@ export async function getPortfolios() {
 export async function loadPortfolioOptions() {
   try {
     const portfolios = await getPortfolios();
-    console.log("Portfolios fetched:", portfolios);
-
     const dropdowns = [
       document.getElementById("portfolio-dropdown"),
       document.getElementById("portfolio-select")
@@ -149,7 +141,6 @@ export async function loadArchives() {
             alert("Failed to delete archive.");
           }
         } catch (error) {
-          console.error("Error deleting archive:", error);
           alert("An error occurred while deleting the archive.");
         }
       }
@@ -199,7 +190,6 @@ export async function deletePortfolioAPI(id) {
   });
 }
 
-// Prompt submission
 export async function analyzePrompt(question, portfolio_id) {
   return safeFetch(`${BASE_URL}/analyze`, {
     method: "POST",
@@ -208,7 +198,6 @@ export async function analyzePrompt(question, portfolio_id) {
   });
 }
 
-// Archive APIs
 export async function getArchives() {
   return safeFetch(`${BASE_URL}/archives`, {
     headers: getAuthHeaders(),

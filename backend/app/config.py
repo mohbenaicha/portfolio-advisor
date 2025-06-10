@@ -8,15 +8,18 @@ if ENV == "DEV":
 
     load_dotenv()
 
-DATABASE_URL = getenv("DATABASE_URI")
-MONGO_URI = getenv("MONGO_URI")
-OUTSCRAPER_API_KEY = getenv("OUTSCRAPER_API_KEY")
-OPEN_AI_API_KEY = getenv("OPENAI_API_KEY")
+DATABASE_URL = getenv("DATABASE_URI").strip()
+MONGO_URI = getenv("MONGO_URI").strip()
+OUTSCRAPER_API_KEY = getenv("OUTSCRAPER_API_KEY").strip()
+OPEN_AI_API_KEY = getenv("OPENAI_API_KEY").strip()  # Remove any surrounding quotes due to GCP cloud secter create
 BACKEND_BASE_URL = getenv("BACKEND_BASE_URL", "https://briefly-backend-459260001744.us-central1.run.app")
-ALLOWED_ORIGIN = getenv("ALLOWED_ORIGIN", "https://project-briefly-2a809.web.app/")
+ALLOWED_ORIGINS = [
+    getenv("ALLOWED_ORIGIN", "https://project-briefly-2a809.web.app"),
+    "http://localhost:5173",
+]
 PROVIDER_BASE_URL = "/".join([BACKEND_BASE_URL, "tool"])
-GMAIL_PWD = getenv("GMAIL_PWD", "")
-RECAPTCHA_SECRET_KEY = getenv("RECAPTCHA_SECRET_KEY", "")
+GMAIL_PWD = getenv("GMAIL_PWD", "").strip()
+RECAPTCHA_SECRET_KEY = getenv("RECAPTCHA_SECRET_KEY", "").strip()
 
 if not DATABASE_URL:
     raise ValueError("DATABASE_URI environment variable not set")
@@ -39,3 +42,28 @@ EXTRACTION_MODEL = "gpt-4.1-mini"
 SUMMARY_MODEL = "gpt-4.1-mini"
 ADVICE_MODEL = "gpt-4.1-mini"
 EMAIL_ADDRESS = "mohamedbenaicha1992@gmail.com"
+
+def print_env_variables():
+    env_vars = {
+        "ENV": ENV,
+        "DATABASE_URL": DATABASE_URL,
+        "MONGO_URI": MONGO_URI,
+        "OUTSCRAPER_API_KEY": OUTSCRAPER_API_KEY,
+        "OPEN_AI_API_KEY": OPEN_AI_API_KEY,
+        "BACKEND_BASE_URL": BACKEND_BASE_URL,
+        "ALLOWED_ORIGIN": ALLOWED_ORIGINS,
+        "PROVIDER_BASE_URL": PROVIDER_BASE_URL,
+        "GMAIL_PWD": GMAIL_PWD,
+        "RECAPTCHA_SECRET_KEY": RECAPTCHA_SECRET_KEY,
+        "SESSION_EXPIRY_HOURS": SESSION_EXPIRY_HOURS,
+        "SCRAPER_HEADERS": SCRAPER_HEADERS,
+        "EXTRACTION_MODEL": EXTRACTION_MODEL,
+        "SUMMARY_MODEL": SUMMARY_MODEL,
+        "ADVICE_MODEL": ADVICE_MODEL,
+        "EMAIL_ADDRESS": EMAIL_ADDRESS,
+    }
+
+    for key, value in env_vars.items():
+        print(f"{key}: {value}")
+
+print_env_variables()

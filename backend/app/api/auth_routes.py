@@ -64,7 +64,6 @@ async def authenticate_user(
 
 @router.post("/logout")
 async def logout_user(
-    db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_current_user),
 ):
     if not user_id:

@@ -29,9 +29,6 @@ async function submitPrompt() {
     });
     return;
   }
-  console.log("Submitting question:", question, "for portfolio ID:", portfolioId);
-
-
   // Show loading animation
   responseDiv.innerHTML = `
   <div class="loading-animation">
@@ -49,15 +46,12 @@ async function submitPrompt() {
     const questionTextarea = document.getElementById("question");
     const askButton = document.querySelector(".input-footer button");
     if (refreshArchivesBtn) {
-      console.log("Disabling archives, text input and Ask button elements");
       refreshArchivesBtn.disabled = true;
       if (questionTextarea) {
-        console.log("Disabling question textarea");
         questionTextarea.disabled = true;
       }
 
       if (askButton) {
-        console.log("Disabling advisor button");
         askButton.disabled = true;
       }
     }
@@ -73,13 +67,10 @@ async function submitPrompt() {
     questionTextarea.disabled = false; // Re-enable the textarea
     askButton.disabled = false; // Re-enable the button
 
-    console.log("Value of result.archived:", result.archived);
     if (!result.archived) {
-      console.log("Archive flag is false, not saving archive.");
       return;
     }
 
-    console.log("Saving archive for portfolio ID:", portfolioId, "with question:", question);
     await saveArchive({
       portfolio_id: portfolioId,
       original_question: question,
@@ -87,10 +78,8 @@ async function submitPrompt() {
     });
 
     if (refreshArchivesBtn) {
-      console.log("Re-enabling refresh archives button");
       refreshArchivesBtn.disabled = false; // Re-enable the button
       if (questionTextarea) {
-        console.log("Re-enabling question textarea");
       }
     }
     // Change the button text to "New Chat"
@@ -123,25 +112,21 @@ if (advisorDropdown && questionBox) {
 
 askButton.addEventListener("click", () => {
   if (askButton.textContent === "Ask") {
-    // Perform submitPrompt functionality
     submitPrompt();
   } else if (askButton.textContent === "New Chat") {
-    // Perform "New Chat" functionality
     const questionInput = document.getElementById("question");
     const responseDiv = document.getElementById("response");
 
     if (questionInput) {
-      questionInput.value = ""; // Clear the textarea
+      questionInput.value = "";
     }
 
     if (responseDiv) {
-      responseDiv.innerHTML = ""; // Clear the response
+      responseDiv.innerHTML = "";
     }
 
-    // Change button text back to "Ask"
     askButton.textContent = "Ask";
   }
 });
-
 
 window.submitPrompt = submitPrompt;

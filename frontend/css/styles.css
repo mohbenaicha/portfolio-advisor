@@ -1047,3 +1047,7 @@ a:hover {
 .sidebar::-webkit-scrollbar-thumb:hover {
   background-color: #555;
 }
+
+div.grecaptcha-badge {
+  z-index: 1000;
+}

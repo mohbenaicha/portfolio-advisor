@@ -123,6 +123,7 @@ def build_advice_prompt(
 
 async def call_provider_endpoint(endpoint: str, payload: dict) -> dict:
     url = f"{PROVIDER_BASE_URL}{endpoint}"
+    print("-------------->>>>>>>>>>>------>>>>>>Provider URL:", url)
     timeout = httpx.Timeout(600) # 10 minutes timeout
     retries = 3
     backoff = 2  # seconds
@@ -130,6 +131,7 @@ async def call_provider_endpoint(endpoint: str, payload: dict) -> dict:
     for attempt in range(1, retries + 1):
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
+                print("📤 Payload to /tool/validate-prompt:", payload)
                 response = await client.post(url, json=payload)
                 response.raise_for_status()
                 return response.json()

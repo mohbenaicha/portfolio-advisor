@@ -39,24 +39,20 @@ export function decodeHTML(str) {
 }
 
 export async function validateRecaptcha(recaptchaToken) {
-    try {
-        const response = await safeFetch(`${BASE_URL}/verify-recaptcha`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: recaptchaToken }),
-        });
-
-        console.log("Backend reCAPTCHA response:", response);
-
-        // Check the response structure correctly
-        if (response.message !== "success" || response.score < 0.5) {
-            alert("reCAPTCHA validation failed. Please try again.");
-            return false;
-        }
-        return true;
-    } catch (err) {
-        console.error("Error validating reCAPTCHA:", err.message);
-        alert("An error occurred during reCAPTCHA validation. Please try again.");
-        return false;
+  try {
+    const response = await safeFetch(`${BASE_URL}/verify-recaptcha`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: recaptchaToken }),
+    });
+    if (response.message !== "success" || response.score < 0.5) {
+      alert("reCAPTCHA validation failed. Please try again.");
+      return false;
     }
+    return true;
+  } catch (err) {
+    console.error("Error validating reCAPTCHA:", err.message);
+    alert("An error occurred during reCAPTCHA validation. Please try again.");
+    return false;
+  }
 }
