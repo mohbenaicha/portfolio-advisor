@@ -1,6 +1,7 @@
 .env
 **/__pycache__/
 **.zip
+**/*.7z
 **.txt
 write_code_to_txt.py
 **/deploy.sh
