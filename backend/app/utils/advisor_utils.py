@@ -1,6 +1,7 @@
 import httpx
 import asyncio
 import markdown
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import (
     get_asset_representation,
@@ -9,6 +10,7 @@ from app.utils.portfolio_utils import (
 )
 from fastapi.encoders import jsonable_encoder
 from app.config import PROVIDER_BASE_URL
+from app.db.user_session import UserSessionManager
 
 
 def preprocess_markdown(markdown_text):
@@ -20,17 +22,17 @@ def preprocess_markdown(markdown_text):
 
 
 def convert_markdown_to_html(markdown_text):
-    markdown_text = preprocess_markdown(markdown_text)  # Preprocess markdown
+    markdown_text = preprocess_markdown(markdown_text)
 
     html_content = markdown.markdown(markdown_text, extensions=["extra", "smarty"])
     styled_html = f"""
     <html>
         <style>
             ul, ol {{
-                margin-left: 30px; /* Indent list items */
+                margin-left: 30px; 
             }}
             li {{
-                margin-bottom: 10px; /* Add spacing between items */
+                margin-bottom: 10px; 
             }}
             p {{
                 margin-left: 10px;
@@ -61,7 +63,6 @@ async def preprocess_final_prompt(db, portfolio_id, user_id, article_summaries=N
             for article in article_summaries
             if all(key in article for key in ["title", "summary", "link"])
         ]
-        print("articles with all keys : ", len(article_summaries))
         article_summaries = "\n\n".join(
             [
                 "\n".join([article["title"], article["summary"], article["link"]])
@@ -73,14 +74,35 @@ async def preprocess_final_prompt(db, portfolio_id, user_id, article_summaries=N
     return portfolio_summary, article_summaries
 
 
-def build_system_prompt():
-    return """You are “Titan”, a senior buy‑side investment strategist (CFA, 15 yrs experience).
+async def build_system_prompt(user_id: int, portfolio_id: int, db: AsyncSession) -> str:
+
+    portfolio = jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
+    portfolio_summary = "\n".join(
+        [
+            get_asset_representation(portfolio),
+            get_portfolio_summary(portfolio),
+            get_exposure_summary(portfolio),
+        ]
+    )
+
+    memory  = await UserSessionManager.get_llm_memory(
+        user_id=user_id, portfolio_id=portfolio_id
+    )
+    return f"""You are “Titan”, a senior buy‑side investment strategist (CFA, 15 yrs experience).
     Duty: synthesize news + portfolio data and produce *actionable* portfolio guidance.
     Constraints:
     - Stay within classical asset‑allocation & risk‑management best practice.
     - No personal tax or legal advice.
     - Cite assumptions you rely on.
-    - Write in clear, executive‑level English (no jargon unless defined)."""
+    - Write in clear, executive‑level English (no jargon unless defined).
+    - Use markdown for formatting (headings, lists, links).
+    
+    User's portfolio summary:
+    {portfolio_summary}
+
+    User's investment objectives:
+    {memory}
+    """
 
 
 def build_advice_prompt(
@@ -123,7 +145,6 @@ def build_advice_prompt(
 
 async def call_provider_endpoint(endpoint: str, payload: dict) -> dict:
     url = f"{PROVIDER_BASE_URL}{endpoint}"
-    print("-------------->>>>>>>>>>>------>>>>>>Provider URL:", url)
     timeout = httpx.Timeout(600) # 10 minutes timeout
     retries = 3
     backoff = 2  # seconds
@@ -131,7 +152,6 @@ async def call_provider_endpoint(endpoint: str, payload: dict) -> dict:
     for attempt in range(1, retries + 1):
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
-                print("📤 Payload to /tool/validate-prompt:", payload)
                 response = await client.post(url, json=payload)
                 response.raise_for_status()
                 return response.json()

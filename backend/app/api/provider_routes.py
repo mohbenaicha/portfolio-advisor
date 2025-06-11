@@ -43,6 +43,7 @@ async def api_validate_prompt(
     payload: ValidatePromptPayload,
     db: AsyncSession = Depends(get_db),
 ):
+    
     return await validate_prompt(
         question=payload.question,
         portfolio_id=payload.portfolio_id,

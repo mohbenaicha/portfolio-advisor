@@ -193,3 +193,12 @@ class UserSessionManager:
             if user_id in session_store
             else False
         )
+    
+    @staticmethod
+    async def get_total_prompts_used(
+        user_id: int
+    ) -> int:
+        """
+        Retrieves the total number of prompts used by a user.
+        """
+        return session_store[user_id].get("total_prompts_used", 0) if user_id in session_store else 0
