@@ -11,6 +11,7 @@ from app.utils.portfolio_utils import (
 from fastapi.encoders import jsonable_encoder
 from app.config import PROVIDER_BASE_URL
 from app.db.user_session import UserSessionManager
+from app.utils.memory_utils import get_investment_objective
 
 
 def preprocess_markdown(markdown_text):
@@ -160,4 +161,27 @@ async def call_provider_endpoint(endpoint: str, payload: dict) -> dict:
                 raise  # re raise on last atempt
             print(f"[Retry] Attempt {attempt} failed: {e}. Retrying in {backoff}s...")
             await asyncio.sleep(backoff)
-            backoff *= 2 
+            backoff *= 2
+
+async def construct_prompt_for_embedding(db: AsyncSession, portfolio_id: int, user_id: int, question: str):
+    portfolio_assets = jsonable_encoder(
+        await get_portfolio_by_id(db, portfolio_id, user_id)
+    )
+    portfolio_summary = "\n".join(
+        [
+            get_portfolio_summary(portfolio_assets),
+            get_exposure_summary(portfolio_assets),
+        ]
+    )
+
+    memory = await get_investment_objective(user_id, portfolio_id)
+    return f"""
+{question}
+
+My portfolio:
+{portfolio_summary}
+
+My investment objectives:
+{memory}
+            """
+    

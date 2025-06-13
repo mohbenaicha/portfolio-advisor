@@ -9,7 +9,7 @@ const appScreen = document.getElementById("app-screen");
 const tokenInput = document.getElementById("token-input");
 const loginBtn = document.getElementById("login-btn");
 const loginError = document.getElementById("login-error");
-
+const loadingScreen = document.getElementById("loading-screen");
 
 initApiToken();
 
@@ -46,11 +46,17 @@ async function login(token) {
     loginError.style.display = "block";
     loginError.classList.remove("hidden");
     console.error("Login error:", err.message); // Log the error for debugging
+  } finally {
+    // Hide loading screen
+    loadingScreen.classList.add("hidden");
   }
 }
 
 
 async function handleLoginClick() {
+  // Show loading screen
+  loadingScreen.classList.remove("hidden");
+
   const recaptchaToken = await grecaptcha.execute(reCAPTCHA_SITE_KEY);
   const isRecaptchaValid = await validateRecaptcha(recaptchaToken);
   if (!isRecaptchaValid) return;
@@ -74,6 +80,8 @@ async function init() {
 
 
 async function logout() {
+  // Show loading screen
+  loadingScreen.classList.remove("hidden");
   try {
     const response = await safeFetch(`${BASE_URL}/logout`, {
       method: "POST",
@@ -98,6 +106,9 @@ async function logout() {
     }
   } catch (err) {
     console.error("Error during logout:", err.message);
+  } finally {
+    // Hide loading screen
+    loadingScreen.classList.add("hidden");
   }
 }
 

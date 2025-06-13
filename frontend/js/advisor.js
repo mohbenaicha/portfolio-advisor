@@ -64,8 +64,7 @@ async function submitPrompt() {
       throw new Error("No summary returned from the backend or prompt limit reached.");
     }
 
-    questionTextarea.disabled = false; // Re-enable the textarea
-    askButton.disabled = false; // Re-enable the button
+
 
     if (!result.archived) {
       return;
@@ -79,15 +78,17 @@ async function submitPrompt() {
 
     if (refreshArchivesBtn) {
       refreshArchivesBtn.disabled = false; // Re-enable the button
-      if (questionTextarea) {
-      }
     }
     // Change the button text to "New Chat"
     askButton.textContent = "New Chat";
   } catch (err) {
     console.warn("Error occurred:", err.message);
     responseDiv.innerHTML = `<p style="color: red;">Failed to generate response. Please try again.</p>`;
+  } finally {
+    questionTextarea.disabled = false; // Re-enable the textarea
+    askButton.disabled = false; // Re-enable the button
   }
+
 }
 
 // Render the response in the designated advisor panel div

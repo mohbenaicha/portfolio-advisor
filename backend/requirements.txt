@@ -15,5 +15,6 @@ Requests==2.32.3
 SQLAlchemy==2.0.41
 uvicorn==0.34.2
 asyncpg==0.30.0
+numpy==2.2.5
 pydantic[email]
 pymongo[srv]

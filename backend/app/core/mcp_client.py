@@ -35,8 +35,8 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> boo
             "archived": False,
             "summary": "<p>"
             "I cannot find your investment objectives in my memory. "
-            "Could you please share your short-term and long-term investment objectives so I can better advise you."
-            "Ex: growth, dividend income, capital preservation, etc."
+            "Could you please share your short-term and long-term investment objectives so I can better advise you"
+            "(e.g. growth, dividend income, capital preservation, etc.)."
             "</p>",
         }
 
@@ -73,6 +73,7 @@ async def process_final_message(user_id: int, messages: list, db: AsyncSession) 
 
 
 async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id, stop):
+    print(f"Handling tool call: [{choice.message.tool_calls}]")
     for tool_call in choice.message.tool_calls:
         name = tool_call.function.name
         args = json.loads(tool_call.function.arguments)
@@ -158,7 +159,7 @@ async def run_mcp_client_pipeline(
         )
 
         choice = response.choices[0]
-
+        print(f"OpenAI response: {choice}")
         if choice.finish_reason == "stop":
             await UserSessionManager.update_session(
                 user_id=user_id,

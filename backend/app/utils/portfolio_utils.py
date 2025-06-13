@@ -57,3 +57,19 @@ Sectors: {exposure_summary["sectors"]}
 Asset Types: {exposure_summary["asset_types"]}
 """
     return assets_representation_str
+
+
+def get_portfolio(selected_portfolio: dict) -> str:
+    portfolio_summary = get_portfolio_summary(selected_portfolio)
+    assets_representation = get_asset_representation(selected_portfolio)
+    exposure_summary = get_exposure_summary(selected_portfolio)
+
+    portfolio_str = f"""
+Portfolio Summary:
+{portfolio_summary}
+Assets Representation:
+{assets_representation}
+Portfolio Exposure Summary:
+{exposure_summary}
+"""
+    return portfolio_str

@@ -8,12 +8,11 @@ from app.db.session import AsyncSession
 from app.db.user_session import UserSessionManager
 from app.utils.memory_utils import get_investment_objective
 from app.config import EXTRACTION_MODEL, ADVICE_MODEL, OPEN_AI_API_KEY
-from app.db.mongo import get_cached_articles, store_article_summaries
+from app.db.mongo import get_similar_articles, store_article_summaries
 from app.services.google_news_scraper import fetch_articles
-from app.services.langchain_summary import summarize_articles
-from app.utils.article_scraper import extract_with_readability
-from app.utils.advisor_utils import preprocess_final_prompt
-from app.utils.advisor_utils import build_advice_prompt
+from app.services.article_processor import summarize_and_embed_articles
+from app.utils.article_utils import extract_with_readability
+from app.utils.advisor_utils import preprocess_final_prompt, build_advice_prompt, construct_prompt_for_embedding
 from openai import OpenAI
 
 client = OpenAI(api_key=OPEN_AI_API_KEY)
@@ -219,13 +218,9 @@ async def extract_entities(
             Extract and return a JSON object that is a list of 2 specific, focused search themes related to the user's quesiton, portfolio and investment objectives, suitable as Google News search queries.
                 Each theme must include:  
                 - a key "theme" whose value is a concise, descriptive phrase reflecting a current news topic or trend tied to the user's question and portfolio (e.g., "US renewable energy policy", "emerging biotech startups in Europe")  
-                - a key "keywords" whose value is a list of targeted keywords and phrases to support news search relevance  
-                - a key "country_code" whose value is a two-letter country code related to portfolio exposure or "NA" if none applies
            
-
             Only return a json object...
             """
-    # print("Prompt: \n", prompt)
 
     response = client.chat.completions.create(
         model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
@@ -258,12 +253,19 @@ async def retrieve_news(
 
     print(" Looking for Cached Articles :", themes)
     # keys: link, posted (date published), query, query_tags, source (publisher), stored_at (d/t), summary, title
-    cached_articles = await get_cached_articles(
-        themes, start_date=start_date, end_date=end_date
+    # cached_articles = await get_cached_articles(
+    #     themes, start_date=start_date, end_date=end_date
+    # )
+
+    composite_prompt = await construct_prompt_for_embedding(
+        db=db, portfolio_id=portfolio_id, user_id=user_id, question=question
+    )
+    cached_articles = await get_similar_articles(
+        composite_prompt, start_date=start_date, end_date=end_date
     )
     print("Found {} chached articles".format(len(cached_articles)))
 
-    if len(cached_articles) < 10:
+    if len(cached_articles) < 1:
         print(" Fetching Articles from Google Search News ")
 
         # 3: Fetch articles from Alpha Vantage
@@ -271,20 +273,23 @@ async def retrieve_news(
         fresh_articles = await fetch_articles(themes)
 
         # 4: Scrape full article content using readability
-        for article in fresh_articles:
-            # key added added to each article dict: raw_article - full scraped article content
-            try:
-                article["raw_article"] = await extract_with_readability(article["link"])
-            except Exception as e:
-                # print(f"Error extracting article content: {e}")
-                article["raw_article"] = "Readability extraction failed."
+        if fresh_articles:
+            for article in fresh_articles:
+                # key added added to each article dict: raw_article - full scraped article content
+                try:
+                    article["raw_article"] = await extract_with_readability(article["link"])
+                except Exception as e:
+                    # print(f"Error extracting article content: {e}")
+                    article["raw_article"] = "Readability extraction failed."
 
         # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
-        # key added: summary - summarized version of each article by GPT-4o mini
-        summarized = await summarize_articles(fresh_articles)
+        # keys added: 
+        #   summary - summarized version of each article by GPT-4o mini
+        #   embedding - embedding vector for the summary
+        articles = await summarize_and_embed_articles(articles=fresh_articles)
 
         # 6: Cache summaries in MongoDB
-        await store_article_summaries(summarized)
+        await store_article_summaries(articles)
     else:
         for article in cached_articles:
             article["_id"] = str(article["_id"])

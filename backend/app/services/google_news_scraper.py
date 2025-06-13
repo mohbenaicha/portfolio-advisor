@@ -4,10 +4,17 @@ from app.config import OUTSCRAPER_API_KEY
 
 client = ApiClient(api_key=OUTSCRAPER_API_KEY)
 
+
 def is_junk_news_link(link: str) -> bool:
     return "news.google.com/read" in link
 
-def fetch_news(query: str = "options volatility", pages_per_query: int = 1, time_range: str = "w", retries: int = 10) -> list[dict]:
+
+def fetch_news(
+    query: str = "options volatility",
+    pages_per_query: int = 1,
+    time_range: str = "w",
+    retries: int = 10,
+) -> list[dict]:
     if not query:
         return None
 
@@ -19,25 +26,26 @@ def fetch_news(query: str = "options volatility", pages_per_query: int = 1, time
         )
 
         articles = response[0]
-        if articles and not all(is_junk_news_link(article.get("link", "")) for article in articles):
+        if articles and not all(
+            is_junk_news_link(article.get("link", "")) for article in articles
+        ):
             return response
-        time.sleep(2)  # wait before retrying
+        time.sleep(3)  # wait before retrying
 
-    return response  # return even if junk after retries
+    return []
 
 
-async def fetch_articles(entities):
-    if len(entities) == 0:
+async def fetch_articles(themes):
+    if len(themes) == 0:
         return False
     news_response = []
-    for entity in entities:
-        response = fetch_news(entity.get("theme", ""), 1, time_range="w")
-
-        if response[0] != []:
+    for theme in themes:
+        print(f"Fetching news for theme: {theme.get('theme', '')}")
+        response = fetch_news(theme.get("theme", ""), 1, time_range="w")
+        if response and response[0] != []:
             for article in response[0]:
-                article["keywords"] = entity.get("keywords", [])    
-                news_response.append(article) 
-
+                news_response.append(article)
+        break
     if not news_response:
         return False
 

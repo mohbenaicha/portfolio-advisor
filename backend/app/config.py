@@ -41,6 +41,7 @@ SCRAPER_HEADERS = {"User-Agent": "Mozilla/5.0"}
 EXTRACTION_MODEL = "gpt-4.1-mini"
 SUMMARY_MODEL = "gpt-4.1-mini"
 ADVICE_MODEL = "gpt-4.1-mini"
+EMBEDDING_MODEL = "text-embedding-3-small"
 EMAIL_ADDRESS = "mohamedbenaicha1992@gmail.com"
 
 def print_env_variables():
