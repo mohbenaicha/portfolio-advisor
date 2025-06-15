@@ -40,22 +40,18 @@ async function submitPrompt() {
   </div>
 `;
 
-
+  const refreshArchivesBtn = document.getElementById("refresh-archives-btn");
+  const questionTextarea = document.getElementById("question");
+  const askButton = document.querySelector(".input-footer button");
   try {
-    const refreshArchivesBtn = document.getElementById("refresh-archives-btn");
-    const questionTextarea = document.getElementById("question");
-    const askButton = document.querySelector(".input-footer button");
-    if (refreshArchivesBtn) {
-      refreshArchivesBtn.disabled = true;
-      if (questionTextarea) {
-        questionTextarea.disabled = true;
-      }
-
-      if (askButton) {
-        askButton.disabled = true;
-      }
+    if (refreshArchivesBtn) refreshArchivesBtn.disabled = true;
+    if (questionTextarea) {
+      questionTextarea.disabled = true;
     }
 
+    if (askButton) {
+      askButton.disabled = true;
+    }
     const result = await analyzePrompt(question, portfolioId);
 
     renderResponse(result);
@@ -64,23 +60,21 @@ async function submitPrompt() {
       throw new Error("No summary returned from the backend or prompt limit reached.");
     }
 
-
-
-    if (!result.archived) {
-      return;
+    if (result.archived) {
+      // Essentially a final response
+      await saveArchive({
+        portfolio_id: portfolioId,
+        original_question: question,
+        openai_response: result.summary,
+      });
+      // Change the button text to "New Chat"
+      askButton.textContent = "New Chat";
     }
-
-    await saveArchive({
-      portfolio_id: portfolioId,
-      original_question: question,
-      openai_response: result.summary,
-    });
 
     if (refreshArchivesBtn) {
       refreshArchivesBtn.disabled = false; // Re-enable the button
     }
-    // Change the button text to "New Chat"
-    askButton.textContent = "New Chat";
+
   } catch (err) {
     console.warn("Error occurred:", err.message);
     responseDiv.innerHTML = `<p style="color: red;">Failed to generate response. Please try again.</p>`;
@@ -88,13 +82,20 @@ async function submitPrompt() {
     questionTextarea.disabled = false; // Re-enable the textarea
     askButton.disabled = false; // Re-enable the button
   }
-
 }
 
 // Render the response in the designated advisor panel div
 function renderResponse(data) {
-  const div = document.getElementById("response");
-  div.innerHTML = data.summary;
+
+  try {
+    const div = document.getElementById("response");
+    div.innerHTML = data.summary;
+  }
+  catch (error) {
+    console.error("Error rendering response:", error);
+    const div = document.getElementById("response");
+    div.innerHTML = `<p style="color: red;">Failed to render response.</p>`;
+  }
 }
 
 

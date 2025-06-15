@@ -28,7 +28,6 @@ class UserSessionManager:
         db: AsyncSession = None,
         llm_memory: Dict[str, LLMMemory] = {},
     ) -> Dict[str, Union[int, str, Dict[str, LLMMemory]]]:
-        print(f"Loading session for user {user_id} from database")
         if db is None:
             raise ValueError(
                 "error in user_session.py/UserSessionManager::load_session_from_db: Database session is required"
@@ -59,10 +58,6 @@ class UserSessionManager:
 
         for k, v in updates.items():
             if k == "llm_memory":
-                print(f"Updating session_store[{user_id}][{k}] to {v}")
-
-                # Remove existing memory with matching portfolio ID
-
                 # Add new memory to session_store
                 user_memory = await add_user_memory(
                     user_id=user_id,
@@ -113,11 +108,9 @@ class UserSessionManager:
     async def delete_session(user_id: int, db: AsyncSession):
         if user_id in session_store:
             del session_store[user_id]
-            print(f"Session removed from in-memory store for user {user_id}")
 
         await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
         await db.commit()
-        print(f"Session removed from database for user {user_id}")
 
     @staticmethod
     async def fix_null_sessions(db: AsyncSession):
@@ -133,7 +126,6 @@ class UserSessionManager:
         null_sessions = result.scalars().all()
 
         for session in null_sessions:
-            print(f"Fixing session for user {session.user_id} with null timestamp")
             # Update the session store
             await UserSessionManager.update_session(
                 user_id=session.user_id,
@@ -155,7 +147,6 @@ class UserSessionManager:
             )
 
         await db.commit()
-        print(f"Fixed {len(null_sessions)} sessions with null timestamps.")
 
     @staticmethod
     async def cleanup_sessions(db: AsyncSession = None):
@@ -170,7 +161,6 @@ class UserSessionManager:
             < current_time
         ]
         for user_id in expired_users:
-            print(f"Cleaning up expired session for user {user_id}")
             del session_store[user_id]
 
         await db.execute(
@@ -186,13 +176,8 @@ class UserSessionManager:
     async def get_llm_memory(
         user_id: int, portfolio_id: int
     ) -> LLMMemory:
-        print(f"Retrieving LLM memory for user {user_id} and portfolio {portfolio_id}")
-        print("Session store contents:", session_store)
-        return (
-            session_store[user_id].get("llm_memory").get(portfolio_id, {})
-            if user_id in session_store
-            else False
-        )
+        memory = session_store[user_id].get("llm_memory").get(portfolio_id, {}) if user_id in session_store else False
+        return memory
     
     @staticmethod
     async def get_total_prompts_used(

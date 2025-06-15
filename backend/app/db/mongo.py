@@ -1,6 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timezone
 import numpy as np
+import heapq, time
 from app.services.article_processor import batch_embed  # reuse embedding logic
 from app.utils.article_utils import cosine_sim
 from app.config import MONGO_URI
@@ -25,17 +26,23 @@ async def get_similar_articles(prompt_text: str, start_date=None, end_date=None,
         query["stored_at"] = date_filter
 
     articles = await db.articles.find(query).to_list(length=100)
-
-    scored = []
+    
+    heap = []
     for article in articles:
         emb = article.get("summary_embedding")
-        if emb:
-            score = cosine_sim(prompt_embedding, emb)
-            article["similarity"] = score
-            scored.append(article)
+        if not emb:
+            continue
 
+        score = cosine_sim(prompt_embedding, emb)
+        article["similarity"] = score
+
+        if len(heap) < top_k:
+            heapq.heappush(heap, (score, article))
+        else:
+            heapq.heappushpop(heap, (score, article))
+
+    top_articles = [pair[1] for pair in heap]  # ← this would be a second loop
     
-    top_articles = sorted(scored, key=lambda x: x["similarity"], reverse=True)[:top_k] # descending order
     return top_articles
 
 

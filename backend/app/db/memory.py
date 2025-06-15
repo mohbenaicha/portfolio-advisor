@@ -13,7 +13,7 @@ async def add_user_memory(
     long_term: str = None,
     portfolio_id: int = None,
     db: AsyncSession = Depends(get_db),
-):
+) -> LLMMemory:
     # Overwrite the memory entry if it exists
     await db.execute(
         update(LLMMemory)
@@ -33,6 +33,7 @@ async def add_user_memory(
     )
     db.add(memory)
     await db.commit()
+    return memory
 
 
 # Get all memory entries for a user and associated portfolio

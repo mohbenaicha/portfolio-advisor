@@ -7,9 +7,8 @@ async def get_investment_objective(user_id: int, portfolio_id: int) -> str:
     llm_memory: Dict[str, str] = await UserSessionManager.get_llm_memory(
         user_id, portfolio_id
     )
-    st_obj = llm_memory.short_term_goal or "" if llm_memory else ""
-    lt_obj = llm_memory.long_term_goal or "" if llm_memory else ""
-
+    st_obj = llm_memory.short_term_goal if llm_memory else ""
+    lt_obj = llm_memory.long_term_goal if llm_memory else ""
     return f"""
             {
                 f"User's last short-term investment objective: {st_obj}" if st_obj else ""

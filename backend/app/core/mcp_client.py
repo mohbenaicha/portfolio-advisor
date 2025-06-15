@@ -8,6 +8,7 @@ from app.utils.advisor_utils import (
     convert_markdown_to_html,
     call_provider_endpoint,
 )
+from app.utils.memory_utils import get_investment_objective
 from app.config import ADVICE_MODEL, OPEN_AI_API_KEY
 from app.core.provider_endpoint_map import endpoint_map
 
@@ -30,6 +31,8 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> boo
         endpoint_map["validate_investment_goal"],
         {"question": question, "user_id": user_id, "portfolio_id": portfolio_id},
     )
+
+    print("investment objective in validate_prompt : \n", await get_investment_objective(user_id, portfolio_id))
     if not validate_investment_goal_resp.get("valid", False):
         return {
             "archived": False,
@@ -73,7 +76,6 @@ async def process_final_message(user_id: int, messages: list, db: AsyncSession) 
 
 
 async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id, stop):
-    print(f"Handling tool call: [{choice.message.tool_calls}]")
     for tool_call in choice.message.tool_calls:
         name = tool_call.function.name
         args = json.loads(tool_call.function.arguments)
@@ -148,6 +150,7 @@ async def run_mcp_client_pipeline(
     if validation_issue:
         return validation_issue
 
+    exit(0)
     messages = await construct_initial_messages(question, db, portfolio_id, user_id)
 
     tool_outputs = {}
@@ -159,7 +162,6 @@ async def run_mcp_client_pipeline(
         )
 
         choice = response.choices[0]
-        print(f"OpenAI response: {choice}")
         if choice.finish_reason == "stop":
             await UserSessionManager.update_session(
                 user_id=user_id,

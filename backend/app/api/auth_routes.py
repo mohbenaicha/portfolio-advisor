@@ -37,7 +37,7 @@ async def authenticate_user(
         return {"message": "Session already active", "user_id": user_id}
 
     # returns object list(LLMMemory) for the user
-    # access attribute of LLMMemory using llm_memory[i].attribute
+    # access attribute of LLMMemory using llm_memory[assoc_portfolio_id].attribute
     # accessible members: id, user_id, date, short_term_goal, long_term_goal, created_at, assoc_portfolio_i
     llm_memories = await get_user_memory(user_id=user.id, db=db)
 
@@ -45,6 +45,7 @@ async def authenticate_user(
     session = await UserSessionManager.load_session_from_db(
         user_id=user.id, llm_memory=llm_memories, db=db
     )
+ 
     if session:
         return {"message": "Session loaded from database", "user_id": user.id}
 

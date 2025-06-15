@@ -124,19 +124,13 @@ async def validate_investment_goal(
             }
         },
     )
-    print(
-        "--------------->updated user objective based on llm response",
-        await UserSessionManager.get_llm_memory(
-            user_id=user_id, portfolio_id=portfolio_id
-        ),
-    )
+
     return cleaned_json
 
 
 async def determine_if_augmentation_required(
     question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
 ) -> bool:
-    # print("Determining if augmentation is required for question:", question)
     exposure_summary = get_exposure_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     )
@@ -165,7 +159,6 @@ async def determine_if_augmentation_required(
               - key "additional_data_required" whose value is a boolean indicating whether the user's question requires additional information or augmentation to provide a comprehensive answer.
             Only return a json object...
             """
-    # print("determine_if_augmentation_required prompt: \n", prompt)
     # send the prompt to client API for processing
     response = client.chat.completions.create(
         model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
@@ -176,7 +169,6 @@ async def determine_if_augmentation_required(
         r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
     )
     cleaned_json = json.loads(cleaned)
-    # print("determine_if_augmentation_required response: \n", cleaned_json)
     return cleaned_json.get("additional_data_required", False)
 
 
@@ -187,7 +179,6 @@ async def extract_entities(
     Dict[str, Union[int, str, List[Dict[str, Union[int, str, float, bool]]]]],
     str,
 ]:
-    # print("Extracting entities for question:", question)
 
     portfolio_assets = None
     portfolio_summary = ""
@@ -240,7 +231,6 @@ async def extract_entities(
 async def retrieve_news(
     question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
 ):
-    # print("Retrieving news for question:", question)
     themes = await extract_entities(
         question=question,
         portfolio_id=portfolio_id,
@@ -265,39 +255,35 @@ async def retrieve_news(
     )
     print("Found {} chached articles".format(len(cached_articles)))
 
-    if len(cached_articles) < 1:
-        print(" Fetching Articles from Google Search News ")
-
-        # 3: Fetch articles from Alpha Vantage
-        # list of dicts; keys: query, position, title, body, posted, source, link
-        fresh_articles = await fetch_articles(themes)
-
-        # 4: Scrape full article content using readability
-        if fresh_articles:
-            for article in fresh_articles:
-                # key added added to each article dict: raw_article - full scraped article content
-                try:
-                    article["raw_article"] = await extract_with_readability(article["link"])
-                except Exception as e:
-                    # print(f"Error extracting article content: {e}")
-                    article["raw_article"] = "Readability extraction failed."
-
-        # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
-        # keys added: 
-        #   summary - summarized version of each article by GPT-4o mini
-        #   embedding - embedding vector for the summary
-        articles = await summarize_and_embed_articles(articles=fresh_articles)
-
-        # 6: Cache summaries in MongoDB
-        await store_article_summaries(articles)
-    else:
+    if len(cached_articles) > 0:
         for article in cached_articles:
             article["_id"] = str(article["_id"])
             article["stored_at"] = article["stored_at"].isoformat()
-        summarized = cached_articles
 
+    # 3: Fetch articles from Alpha Vantage
+    # list of dicts; keys: query, position, title, body, posted, source, link
+    fresh_articles = await fetch_articles(themes)
 
-    return summarized
+    # 4: Scrape full article content using readability
+    if fresh_articles:
+        for article in fresh_articles:
+            # key added added to each article dict: raw_article - full scraped article content
+            try:
+                article["raw_article"] = await extract_with_readability(article["link"])
+            except Exception as e:
+                article["raw_article"] = "Readability extraction failed."
+
+    # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
+    # keys added: 
+    #   summary - summarized version of each article by GPT-4o mini
+    #   embedding - embedding vector for the summary
+    articles = await summarize_and_embed_articles(articles=fresh_articles)
+
+    # 6: Cache summaries in MongoDB
+    await store_article_summaries(articles)
+        
+    print("Retreived {} fresh articles".format(len(articles)))
+    return articles + cached_articles if cached_articles else articles
 
 
 async def generate_advice(question, db, portfolio_id, user_id, article_summaries):
@@ -310,7 +296,6 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
     - Cite assumptions you rely on.
     - Write in clear, executive‑level English (no jargon unless defined).
     """
-    # print("Generating advice for question:", question)
 
     portfolio_summary, article_summaries = await preprocess_final_prompt(
         db, portfolio_id, user_id, article_summaries
@@ -350,7 +335,6 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
 
                 Keep total length under 500 words (not counting citations) and format the response in an appropriate markdown of headings, paragraphs and lists.
                 """
-    # print("generate_advice prompt: \n", user_prompt)
     response = client.chat.completions.create(
         model=ADVICE_MODEL,
         messages=[
@@ -358,7 +342,6 @@ async def generate_advice(question, db, portfolio_id, user_id, article_summaries
             {"role": "user", "content": user_prompt},
         ],
     )
-    # print("generate_advice response: \n", response.choices[0].message.content)
     return response.choices[0].message.content
 
 
