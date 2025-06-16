@@ -1,6 +1,7 @@
 import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from openai import OpenAI
+from typing import Dict, Union, List
 from app.db.user_session import UserSessionManager
 from app.models.tool_schemas import tools
 from app.utils.advisor_utils import (
@@ -15,7 +16,7 @@ from app.core.provider_endpoint_map import endpoint_map
 client = OpenAI(api_key=OPEN_AI_API_KEY)
 
 
-async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> bool:
+async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> Dict[str, Union[bool, str]]:
     # Call validation endpoints first via HTTPfv
     validate_prompt_resp = await call_provider_endpoint(
         endpoint_map["validate_prompt"],
@@ -32,7 +33,10 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> boo
         {"question": question, "user_id": user_id, "portfolio_id": portfolio_id},
     )
 
-    print("investment objective in validate_prompt : \n", await get_investment_objective(user_id, portfolio_id))
+    print(
+        "investment objective in validate_prompt : \n",
+        await get_investment_objective(user_id, portfolio_id),
+    )
     if not validate_investment_goal_resp.get("valid", False):
         return {
             "archived": False,
@@ -44,15 +48,20 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> boo
         }
 
 
-async def construct_initial_messages(question: str, db: AsyncSession, portfolio_id: int, user_id: int) -> list:
+async def construct_initial_messages(
+    question: str, db: AsyncSession, portfolio_id: int, user_id: int
+) -> List[Dict[str, Union[str, Dict]]]:
     """Construct the initial messages for OpenAI."""
     return [
-        {"role": "system", "content": await build_system_prompt(user_id, portfolio_id, db)},
+        {
+            "role": "system",
+            "content": await build_system_prompt(user_id, portfolio_id, db),
+        },
         {"role": "user", "content": question},
     ]
 
 
-async def process_final_message(user_id: int, messages: list, db: AsyncSession) -> dict:
+async def process_final_message(user_id: int, messages: list, db: AsyncSession) -> Dict[str, Union[bool, str]]:
     # Final message using generated advice prompt
     response = client.chat.completions.create(
         model=ADVICE_MODEL,
@@ -62,12 +71,15 @@ async def process_final_message(user_id: int, messages: list, db: AsyncSession) 
     final_msg = response.choices[0].message.content
 
     await UserSessionManager.update_session(
-            user_id=user_id,
-            db=db,
-            updates={
-                "total_prompts_used": await UserSessionManager.get_total_prompts_used(user_id) + 1
-            },
-        )
+        user_id=user_id,
+        db=db,
+        updates={
+            "total_prompts_used": await UserSessionManager.get_total_prompts_used(
+                user_id
+            )
+            + 1
+        },
+    )
 
     return {
         "archived": True,
@@ -75,7 +87,7 @@ async def process_final_message(user_id: int, messages: list, db: AsyncSession) 
     }
 
 
-async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id, stop):
+async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id, stop) -> bool:
     for tool_call in choice.message.tool_calls:
         name = tool_call.function.name
         args = json.loads(tool_call.function.arguments)
@@ -129,7 +141,7 @@ async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id
                     "content": json.dumps(tool_result),
                 }
             )
-    return choice, messages, tool_outputs, stop
+    return stop
 
 
 async def run_mcp_client_pipeline(
@@ -137,8 +149,8 @@ async def run_mcp_client_pipeline(
     user_id: int,
     portfolio_id: int,
     db: AsyncSession = None,
-) -> dict:
-    
+) -> Dict[str, Union[bool, str]]:
+
     prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
     if prompt_count >= 3:
         return {
@@ -150,7 +162,6 @@ async def run_mcp_client_pipeline(
     if validation_issue:
         return validation_issue
 
-    exit(0)
     messages = await construct_initial_messages(question, db, portfolio_id, user_id)
 
     tool_outputs = {}
@@ -166,16 +177,20 @@ async def run_mcp_client_pipeline(
             await UserSessionManager.update_session(
                 user_id=user_id,
                 updates={
-                    "total_prompts_used": await UserSessionManager.get_total_prompts_used(user_id) + 1
+                    "total_prompts_used": await UserSessionManager.get_total_prompts_used(
+                        user_id
+                    )
+                    + 1
                 },
             )
 
             return {
                 "archived": True,
-                "summary": convert_markdown_to_html(choice.message.content)
+                "summary": convert_markdown_to_html(choice.message.content),
             }
-         
+
         if choice.finish_reason == "tool_calls":
+
             messages.append(
                 {
                     "role": "assistant",
@@ -184,7 +199,7 @@ async def run_mcp_client_pipeline(
                 }
             )
 
-        choice, messages, tool_outputs, stop = await handle_tool_call(
+        stop = await handle_tool_call(
             choice, messages, tool_outputs, user_id, portfolio_id, stop
         )
         if stop:

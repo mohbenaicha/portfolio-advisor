@@ -4,6 +4,7 @@ from app.core.mcp_client import run_mcp_client_pipeline
 from app.db.session import get_db
 from app.dependencies.user import get_current_user
 from app.models.schemas import PromptRequest, PromptResponse
+import traceback
 
 router = APIRouter()
 
@@ -14,4 +15,5 @@ async def analyze(request: PromptRequest, db: AsyncSession = Depends(get_db), us
         return result
     except Exception as e:
         print(f"Error in analyze endpoint: {e}")
+        # traceback.print_exc() # DEBUG
         raise HTTPException(status_code=500, detail=str(e))
