@@ -45,6 +45,7 @@ async def fetch_articles(themes):
         if response and response[0] != []:
             for article in response[0]:
                 news_response.append(article)
+                
     if not news_response:
         return False
 

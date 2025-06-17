@@ -5,7 +5,6 @@ from app.db.session import get_db, AsyncSession
 from app.dependencies.user import get_current_user
 
 
-# Add a new memory entry
 async def add_user_memory(
     user_id: int = Depends(get_current_user),
     date=None,
@@ -14,8 +13,7 @@ async def add_user_memory(
     portfolio_id: int = None,
     db: AsyncSession = Depends(get_db),
 ) -> LLMMemory:
-    # Overwrite the memory entry if it exists
-    await db.execute(
+    result = await db.execute(
         update(LLMMemory)
         .where(
             LLMMemory.user_id == user_id, LLMMemory.assoc_portfolio_id == portfolio_id
@@ -23,20 +21,28 @@ async def add_user_memory(
         .values(date=date, short_term_goal=short_term, long_term_goal=long_term)
     )
 
-    # Create a new memory entry if no rows were updated
-    memory = LLMMemory(
-        user_id=user_id,
-        date=date,
-        assoc_portfolio_id=portfolio_id,
-        short_term_goal=short_term,
-        long_term_goal=long_term,
-    )
-    db.add(memory)
+    if result.rowcount == 0:
+        memory = LLMMemory(
+            user_id=user_id,
+            date=date,
+            assoc_portfolio_id=portfolio_id,
+            short_term_goal=short_term,
+            long_term_goal=long_term,
+        )
+        db.add(memory)
+        await db.commit()
+        return memory
+
     await db.commit()
-    return memory
+
+    updated_memory = await db.execute(
+        select(LLMMemory).where(
+            LLMMemory.user_id == user_id, LLMMemory.assoc_portfolio_id == portfolio_id
+        )
+    )
+    return updated_memory.scalar_one_or_none()
 
 
-# Get all memory entries for a user and associated portfolio
 async def get_user_memory(
     user_id: int = Depends(get_current_user),
     portfolio_id: int = None,

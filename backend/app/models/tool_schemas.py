@@ -78,5 +78,5 @@ tools = [
 
     {"type": "function", "function": determine_tool_schema},
     {"type": "function", "function": retrieve_tool_schema},
-    {"type": "function", "function": prepare_advice_template_schema},
+    # {"type": "function", "function": prepare_advice_template_schema}, # deprecated, will be removed in future PRs
 ]

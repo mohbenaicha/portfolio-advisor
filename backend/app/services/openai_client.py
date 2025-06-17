@@ -38,7 +38,7 @@ async def validate_prompt(
             {portfolio_summary}
 
             Instructions:
-            Determine if the user's question is related to finance and investing.
+            Determine if the user's question is related to finance, investing, and the user's portfolio.
             Return a JSON object with a 
               - key "valid" whose value is a boolean indicating whether the user's question is valid and relevant investment question
             Only return a json object...
@@ -86,8 +86,8 @@ async def validate_investment_goal(
             Instructions:
             Return a JSON object with a 
               - key "valid" whose value is a boolean indicating whether the user has a clear investment objective from the above
-              - key "short_term_objective" whose value is the user's short-term investment objective if it has changed based on the question, or blank if it has not changed
-              - key "long_term_objective" whose value is the user's long-term investment objective if it has changed based on the question, or blank if it has not changed
+              - key "short_term_objective" whose value is the user's short-term investment objective if it has changed based on the question, or leave it as is if it has not changed
+              - key "long_term_objective" whose value is the user's long-term investment objective if it has changed based on the question, or leave it as is if it has not changed
             Only return a json object...
             """
 
@@ -229,7 +229,7 @@ async def extract_entities(
 
 
 async def retrieve_news(
-    question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
+    question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None, scrape: bool = True
 ):
     themes = await extract_entities(
         question=question,
@@ -260,31 +260,33 @@ async def retrieve_news(
             article["_id"] = str(article["_id"])
             article["stored_at"] = article["stored_at"].isoformat()
 
-    # 3: Fetch articles from Alpha Vantage
-    # list of dicts; keys: query, position, title, body, posted, source, link
-    fresh_articles = await fetch_articles(themes)
+    if scrape:
+        # 3: Fetch articles from Alpha Vantage
+        # list of dicts; keys: query, position, title, body, posted, source, link
+        fresh_articles = await fetch_articles(themes)
 
-    # 4: Scrape full article content using readability
-    if fresh_articles:
-        for article in fresh_articles:
-            # key added added to each article dict: raw_article - full scraped article content
-            try:
-                article["raw_article"] = await extract_with_readability(article["link"])
-            except Exception as e:
-                article["raw_article"] = "Readability extraction failed."
+        # 4: Scrape full article content using readability
+        if fresh_articles:
+            for article in fresh_articles:
+                # key added added to each article dict: raw_article - full scraped article content
+                try:
+                    article["raw_article"] = await extract_with_readability(article["link"])
+                except Exception as e:
+                    article["raw_article"] = "Readability extraction failed."
 
-    # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
-    # keys added: 
-    #   summary - summarized version of each article by GPT-4o mini
-    #   embedding - embedding vector for the summary
-    articles = await summarize_and_embed_articles(articles=fresh_articles)
+        # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
+        # keys added: 
+        #   summary - summarized version of each article by GPT-4o mini
+        #   embedding - embedding vector for the summary
+        articles = await summarize_and_embed_articles(articles=fresh_articles)
 
-    # 6: Cache summaries in MongoDB
-    await store_article_summaries(articles)
-        
-    print("Retreived {} fresh articles".format(len(articles)))
-    return articles + cached_articles if cached_articles else articles
-
+        # 6: Cache summaries in MongoDB
+        await store_article_summaries(articles)
+            
+        print("Retreived {} fresh articles".format(len(articles)))
+        return articles + cached_articles if cached_articles else articles
+    else:
+        return cached_articles if cached_articles else []
 
 async def generate_advice(question, db, portfolio_id, user_id, article_summaries):
     system_prompt = """
@@ -358,9 +360,8 @@ async def prepare_advice_template(
         user_id=kwargs.get("user_id"),
         article_summaries=article_summaries,
     )
-    memory = await UserSessionManager.get_llm_memory(
-        user_id=kwargs.get("user_id"), portfolio_id=portfolio_id
-    )
+
+    memory = await get_investment_objective(kwargs.get("user_id"), portfolio_id)
 
     prompt = build_advice_prompt(
         question=question,

@@ -40,7 +40,7 @@ async def authenticate_user(
     # access attribute of LLMMemory using llm_memory[assoc_portfolio_id].attribute
     # accessible members: id, user_id, date, short_term_goal, long_term_goal, created_at, assoc_portfolio_i
     llm_memories = await get_user_memory(user_id=user.id, db=db)
-
+    
     # Load session from database if it exists (hypothetical: server crash)
     session = await UserSessionManager.load_session_from_db(
         user_id=user.id, llm_memory=llm_memories, db=db
