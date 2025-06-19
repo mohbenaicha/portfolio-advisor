@@ -1,7 +1,6 @@
 import { safeFetch, decodeHTML } from "./utils.js";
-import { showTab } from "./main.js";
 import { BASE_URL } from "./config.js";
-
+import { handle_load_archive } from "./archive.js";
 let currentToken = null;
 
 
@@ -64,7 +63,7 @@ export async function loadArchives() {
   const archiveSelect = document.getElementById("archive-list");
   archiveSelect.innerHTML = "";
 
-  archives.forEach((a) => {
+  archives.forEach(async (a) => {
     const div = document.createElement("div");
     div.className = "archive-item";
     div.dataset.id = a.id;
@@ -76,50 +75,11 @@ export async function loadArchives() {
     `;
 
     // Handle archive item click
+    const portfolios = await getPortfolios();
+
     div.onclick = async () => {
-      showTab("archive");
-      document.querySelectorAll(".archive-item").forEach(el => el.classList.remove("active"));
       div.classList.add("active");
-
-      const archive = await getArchivedResponse(a.id);
-      const viewer = document.getElementById("archive-viewer");
-      if (!archive) {
-        viewer.innerHTML = "<p>Failed to load archive.</p>";
-        return;
-      }
-
-      const portfolios = await getPortfolios();
-      const portfolio = portfolios.find(p => p.id === archive.portfolio_id);
-
-      viewer.innerHTML = `
-        <h2>${archive.original_question}</h2>
-        <p class="timestamp">${new Date(archive.timestamp).toLocaleString()}</p>
-        <p class="portfolio-name"><strong>Portfolio:</strong> ${portfolio?.name || 'Unknown'}</p>
-        <h3>Advice</h3>
-      `;
-      const raw = decodeHTML(archive.openai_response); // Decode escaped HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(raw, "text/html");
-
-      // Apply style if needed
-      const style = doc.querySelector("style");
-      if (style) {
-        const existing = document.getElementById("archive-style");
-        if (existing) existing.remove();
-
-        const styleEl = document.createElement("style");
-        styleEl.id = "archive-style";
-        styleEl.textContent = style.textContent;
-        document.head.appendChild(styleEl);
-      }
-
-      // Inject content
-      const body = doc.querySelector("body");
-      if (body) {
-        const container = document.createElement("div");
-        container.innerHTML = body.innerHTML;
-        viewer.appendChild(container);
-      }
+      handle_load_archive(a.id, portfolios)
     }
 
     // Handle delete button click

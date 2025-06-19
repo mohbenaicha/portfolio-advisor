@@ -1,4 +1,6 @@
 // load navigation buttons
+
+
 document.addEventListener("DOMContentLoaded", () => {
   const advisorBtn = document.querySelector("button[data-tab='advisor']");
   if (advisorBtn) advisorBtn.addEventListener("click", () => showTab('advisor'));

@@ -56,3 +56,26 @@ export async function validateRecaptcha(recaptchaToken) {
     return false;
   }
 }
+
+
+export function revealArchiveSequentially(body, targetContainer, delay = 200) {
+  const temp = document.createElement("div");
+  temp.innerHTML = body.innerHTML;
+
+  const elements = Array.from(temp.children); // this gets the actual block-level elements
+  targetContainer.innerHTML = ""; // optional: clear existing
+
+  let i = 0;
+  function revealNext() {
+    if (i < elements.length) {
+      console.log("Appending:", elements[i]);
+      const clone = elements[i].cloneNode(true);
+      targetContainer.appendChild(clone);
+      i++;
+      setTimeout(revealNext, delay);
+    }
+  }
+
+  revealNext();
+}
+

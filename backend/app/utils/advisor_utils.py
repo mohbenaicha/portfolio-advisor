@@ -3,9 +3,9 @@ import asyncio
 import markdown
 from typing import Tuple, Union, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
+from bs4 import BeautifulSoup
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import (
-    get_asset_representation,
     get_exposure_summary,
     get_portfolio_summary,
 )

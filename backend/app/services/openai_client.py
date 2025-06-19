@@ -229,7 +229,7 @@ async def extract_entities(
 
 
 async def retrieve_news(
-    question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None, scrape: bool = True
+    question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None, scrape: bool = False
 ):
     themes = await extract_entities(
         question=question,

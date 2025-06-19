@@ -7,7 +7,7 @@ from app.utils.advisor_utils import (
     build_system_prompt,
     convert_markdown_to_html,
     call_provider_endpoint,
-    increment_prompt_usage,
+    increment_prompt_usage
 )
 from app.config import OPEN_AI_API_KEY, LLM
 from app.core.provider_endpoint_map import endpoint_map

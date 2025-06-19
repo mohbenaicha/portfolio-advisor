@@ -85,18 +85,44 @@ async function submitPrompt() {
 }
 
 // Render the response in the designated advisor panel div
-function renderResponse(data) {
+// function renderResponse(data) {
+//   try {
+//     const div = document.getElementById("response");
+//     div.innerHTML = data.summary;
+//   }
+//   catch (error) {
+//     console.error("Error rendering response:", error);
+//     const div = document.getElementById("response");
+//     div.innerHTML = `<p style="color: red;">Failed to render response.</p>`;
+//   }
+// }
 
-  try {
-    const div = document.getElementById("response");
-    div.innerHTML = data.summary;
+function renderResponse(data) {
+  const container = document.getElementById("response");
+  container.innerHTML = data.summary;
+
+  const children = Array.from(container.children);
+
+  // Hide all child elements initially
+  children.forEach(el => {
+    el.style.opacity = 0;
+    el.style.transition = "opacity 0.3s ease";
+  });
+
+  // Reveal one at a time
+  let i = 0;
+  function revealNext() {
+    if (i < children.length) {
+      children[i].style.opacity = 1;
+      i++;
+      setTimeout(revealNext, 200); // speed per element
+    }
   }
-  catch (error) {
-    console.error("Error rendering response:", error);
-    const div = document.getElementById("response");
-    div.innerHTML = `<p style="color: red;">Failed to render response.</p>`;
-  }
+
+  revealNext();
 }
+
+
 
 
 const questionBox = document.getElementById("question");
