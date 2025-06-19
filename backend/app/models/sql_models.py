@@ -53,7 +53,7 @@ class Portfolio(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    name = Column(String, unique=True, nullable=False)
+    name = Column(String, unique=False, nullable=False)
     assets = relationship(
         "Asset", back_populates="portfolio", cascade="all, delete-orphan"
     )
