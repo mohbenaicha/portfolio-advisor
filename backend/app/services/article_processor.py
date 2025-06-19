@@ -5,11 +5,11 @@ from langchain_openai import ChatOpenAI
 from langchain.chains.summarize import load_summarize_chain
 from langchain.docstore.document import Document
 from openai import OpenAI
-from app.config import OPEN_AI_API_KEY, SUMMARY_MODEL, EMBEDDING_MODEL
+from app.config import OPEN_AI_API_KEY, SUMMARY_LLM, EMBEDDING_MODEL
 
 
 # production model
-summary_client = ChatOpenAI(model=SUMMARY_MODEL, temperature=0, openai_api_key=OPEN_AI_API_KEY)
+summary_client = ChatOpenAI(model=SUMMARY_LLM, temperature=0, openai_api_key=OPEN_AI_API_KEY)
 embedding_client = OpenAI(api_key=OPEN_AI_API_KEY)
 
 

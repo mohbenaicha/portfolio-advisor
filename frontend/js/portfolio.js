@@ -190,7 +190,9 @@ function createAssetRow(data = {}) {
 function calculateTotals(assets) {
   let total = assets.reduce((acc, a) => acc + (a.market_price * a.units_held), 0);
   assets.forEach(a => {
-    a.total_value = a.market_price * a.units_held;
+    // a.total_value = a.market_price * a.units_held;
+    // a.percentage_of_total = ((a.total_value / total) * 100).toFixed(2);
+    a.total_value = a.market_price * a.units_held * (a.asset_type === "option" ? 100 : 1);
     a.percentage_of_total = ((a.total_value / total) * 100).toFixed(2);
   });
 

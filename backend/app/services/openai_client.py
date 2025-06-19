@@ -7,12 +7,12 @@ from app.utils.portfolio_utils import get_exposure_summary, get_portfolio_summar
 from app.db.session import AsyncSession
 from app.db.user_session import UserSessionManager
 from app.utils.memory_utils import get_investment_objective
-from app.config import EXTRACTION_MODEL, ADVICE_MODEL, OPEN_AI_API_KEY
+from app.config import LLM, OPEN_AI_API_KEY
 from app.db.mongo import get_similar_articles, store_article_summaries
 from app.services.google_news_scraper import fetch_articles
 from app.services.article_processor import summarize_and_embed_articles
 from app.utils.article_utils import extract_with_readability
-from app.utils.advisor_utils import preprocess_final_prompt, build_advice_prompt, construct_prompt_for_embedding
+from app.utils.advisor_utils import construct_prompt_for_embedding
 from openai import OpenAI
 
 client = OpenAI(api_key=OPEN_AI_API_KEY)
@@ -46,7 +46,7 @@ async def validate_prompt(
 
     # send the prompt to OpenAI API for processing
     response = client.chat.completions.create(
-        model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
+        model=LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
 
@@ -99,7 +99,7 @@ async def validate_investment_goal(
         print("Attempt # ", attempt + 1, "to validate investment goal")
         attempt += 1
         response = client.chat.completions.create(
-            model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
+            model=LLM, messages=[{"role": "user", "content": prompt}]
         )
         raw_content = response.choices[0].message.content
 
@@ -161,7 +161,7 @@ async def determine_if_augmentation_required(
             """
     # send the prompt to client API for processing
     response = client.chat.completions.create(
-        model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
+        model=LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
     # process response
@@ -214,7 +214,7 @@ async def extract_entities(
             """
 
     response = client.chat.completions.create(
-        model=EXTRACTION_MODEL, messages=[{"role": "user", "content": prompt}]
+        model=LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
 
@@ -287,87 +287,3 @@ async def retrieve_news(
         return articles + cached_articles if cached_articles else articles
     else:
         return cached_articles if cached_articles else []
-
-async def generate_advice(question, db, portfolio_id, user_id, article_summaries):
-    system_prompt = """
-    You are “Titan”, a senior buy‑side investment strategist (CFA, 15 yrs experience).
-    Duty: synthesize news + portfolio data and produce *actionable* portfolio guidance.
-    Constraints:
-    - Stay within classical asset‑allocation & risk‑management best practice.
-    - No personal tax or legal advice.
-    - Cite assumptions you rely on.
-    - Write in clear, executive‑level English (no jargon unless defined).
-    """
-
-    portfolio_summary, article_summaries = await preprocess_final_prompt(
-        db, portfolio_id, user_id, article_summaries
-    )
-    memory = await get_investment_objective(user_id, portfolio_id)
-    news_section = (
-        f"### Recent News & Data (already pre‑filtered for relevance)\n{article_summaries}"
-        if article_summaries
-        else ""
-    )
-    user_prompt = f"""
-                You are a professional investment advisor with expertise in financial markets, portfolio management, and risk assessment. You have 
-                received a question from a user regarding their investment portfolio, and you need to provide a comprehensive analysis and actionable 
-                recommendations based on the user's portfolio, recent news data if any, and their investment objectives.
-                
-                ### User Question
-                {question}
-
-                ### Portfolio Snapshot
-                {portfolio_summary}
-
-                {news_section}
-
-                "### User's Investment Objective\n"
-                {memory}
-                    
-                ### Deliverable
-                Respond using **only** the following markdown section headings:
-
-                ##1‑Sentence Answer – the punch line.  
-                ##Portfolio Impact Analysis – how news items affect key positions/exposures (News summaries don't make sense, infer from their titles).  
-                ##Recommendations (Numbered) – specific trades, hedges, or reallocations; include target weight/size, time frame, and thesis in ≤ 40 words each, taking into consideration the user's short-term and long-term objectives.
-                ##Key Risks & Unknowns – bullet list.  
-                ##Confidence (0‑100%) – single number plus one‑line justification.  
-                ##References & Assumptions – mention news snippets or metrics (brief).  
-                ##Citations – list of news snippets (title, source) used to support your analysis.
-
-                Keep total length under 500 words (not counting citations) and format the response in an appropriate markdown of headings, paragraphs and lists.
-                """
-    response = client.chat.completions.create(
-        model=ADVICE_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
-    return response.choices[0].message.content
-
-
-async def prepare_advice_template(
-    question: str,
-    portfolio_id: int,
-    db: AsyncSession,
-    article_summaries: List[Dict[str, str]],
-    **kwargs,
-):
-    portfolio_summary, article_summaries = await preprocess_final_prompt(
-        db,
-        portfolio_id,
-        user_id=kwargs.get("user_id"),
-        article_summaries=article_summaries,
-    )
-
-    memory = await get_investment_objective(kwargs.get("user_id"), portfolio_id)
-
-    prompt = build_advice_prompt(
-        question=question,
-        portfolio_summary=portfolio_summary,
-        objectives=memory,
-        article_summaries=article_summaries,
-    )
-    print("prepare_advice_template prompt: \n", prompt)
-    return {"advice_prompt": prompt}

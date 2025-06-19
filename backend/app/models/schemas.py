@@ -7,8 +7,10 @@ from typing import List
 class TokenAuth(BaseModel):
     token: str
 
+
 class RecaptchaRequest(BaseModel):
     token: str
+
 
 class Asset(BaseModel):
     ticker: str
@@ -86,5 +88,35 @@ class PortfolioOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class AccessRequest(BaseModel):
     email: EmailStr
+
+
+class DetermineAugmentationPayload(BaseModel):
+    question: str
+    portfolio_id: int
+    user_id: int
+
+
+class RetrieveNewsPayload(BaseModel):
+    question: str
+    portfolio_id: int
+    user_id: int
+
+
+class ValidatePromptPayload(BaseModel):
+    question: str
+    portfolio_id: int
+    user_id: int
+
+
+class GetUserPortfolioPayload(BaseModel):
+    portfolio_id: int
+    user_id: int
+
+
+class ValidateInvestmentGoalPayload(BaseModel):
+    question: str
+    portfolio_id: int
+    user_id: int

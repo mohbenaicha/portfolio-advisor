@@ -1,6 +1,7 @@
 import httpx
 import asyncio
 import markdown
+from typing import Tuple, Union, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import (
@@ -46,45 +47,7 @@ def convert_markdown_to_html(markdown_text):
     """
     return styled_html
 
-
-async def preprocess_final_prompt(db, portfolio_id, user_id, article_summaries=None):
-
-    portfolio = jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
-    portfolio_summary = "\n".join(
-        [
-            get_asset_representation(portfolio),
-            get_portfolio_summary(portfolio),
-            get_exposure_summary(portfolio),
-        ]
-    )
-
-    if article_summaries:
-        article_summaries = [
-            article
-            for article in article_summaries
-            if all(key in article for key in ["title", "summary", "link"])
-        ]
-        article_summaries = "\n\n".join(
-            [
-                "\n".join([article["title"], article["summary"], article["link"]])
-                for article in article_summaries
-                if article["summary"] != "Readability extraction failed"
-            ]
-        )
-
-    return portfolio_summary, article_summaries
-
-
-async def build_system_prompt(user_id: int, portfolio_id: int, db: AsyncSession) -> str:
-
-    portfolio = jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
-    portfolio_summary = "\n".join(
-        [
-            get_asset_representation(portfolio),
-            get_portfolio_summary(portfolio),
-            get_exposure_summary(portfolio),
-        ]
-    )
+async def build_system_prompt(user_id: int, portfolio_id: int) -> str:
 
     memory = await UserSessionManager.get_llm_memory(
         user_id=user_id, portfolio_id=portfolio_id
@@ -94,13 +57,11 @@ You are Titan, a senior buy-side investment strategist (CFA, 15+ years of experi
 
 Your role is to review the user's portfolio and investment objectives, then deliver clear, actionable portfolio guidance.
 
-Follow classical asset allocation and risk management principles.  
+Follow classical asset allocation and risk management principles. 
+You **must retrieve news data** to provide relevant advice. 
 Do **not** provide personal tax or legal advice.  
 Cite any key assumptions you rely on.  
 Write in concise, executive-level English — avoid jargon unless explained.
-
-User’s portfolio:
-{portfolio_summary}
 
 User’s investment objectives:
 {memory}
@@ -180,7 +141,7 @@ def build_advice_prompt(
             """
 
 
-async def call_provider_endpoint(endpoint: str, payload: dict) -> dict:
+async def call_provider_endpoint(endpoint: str, payload: dict) -> Dict[str, Union[bool, str]]: 
     url = f"{PROVIDER_BASE_URL}{endpoint}"
     timeout = httpx.Timeout(600)  # 10 minutes timeout
     retries = 3
@@ -202,7 +163,7 @@ async def call_provider_endpoint(endpoint: str, payload: dict) -> dict:
 
 async def construct_prompt_for_embedding(
     db: AsyncSession, portfolio_id: int, user_id: int, question: str
-):
+) -> str:
     portfolio_assets = jsonable_encoder(
         await get_portfolio_by_id(db, portfolio_id, user_id)
     )
@@ -223,3 +184,26 @@ My portfolio:
 My investment objectives:
 {memory}
             """
+
+
+async def increment_prompt_usage(user_id: int, db: AsyncSession) -> None:
+    await UserSessionManager.update_session(
+        user_id=user_id,
+        db=db,
+        updates={
+            "total_prompts_used": await UserSessionManager.get_total_prompts_used(
+                user_id
+            )
+            + 1
+        },
+    )
+
+async def check_prompt_limit(user_id: int) -> Tuple[bool, Union[dict[str, Union[bool]], None]]:
+    prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
+    if prompt_count >= 3:
+        return True, {
+            "archived": False,
+            "summary": "<p>You have reached the maximum number of prompts allowed for today.</p>",
+        }
+    else:
+        False, None

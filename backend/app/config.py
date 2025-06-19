@@ -38,9 +38,9 @@ if not RECAPTCHA_SECRET_KEY:
 
 SESSION_EXPIRY_HOURS = 24
 SCRAPER_HEADERS = {"User-Agent": "Mozilla/5.0"}
-EXTRACTION_MODEL = "gpt-4.1-mini"
-SUMMARY_MODEL = "gpt-4.1-mini"
-ADVICE_MODEL = "gpt-4.1-mini"
+SUMMARY_LLM = "gpt-4.1-mini"
+LLM = "gpt-4.1-mini"
+ALT_LLM = "gpt-4.1"
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMAIL_ADDRESS = "mohamedbenaicha1992@gmail.com"
 
@@ -58,9 +58,8 @@ def print_env_variables():
         "RECAPTCHA_SECRET_KEY": RECAPTCHA_SECRET_KEY,
         "SESSION_EXPIRY_HOURS": SESSION_EXPIRY_HOURS,
         "SCRAPER_HEADERS": SCRAPER_HEADERS,
-        "EXTRACTION_MODEL": EXTRACTION_MODEL,
-        "SUMMARY_MODEL": SUMMARY_MODEL,
-        "ADVICE_MODEL": ADVICE_MODEL,
+        "SUMMARY_MODEL": SUMMARY_LLM,
+        "LLM": LLM,
         "EMAIL_ADDRESS": EMAIL_ADDRESS,
     }
 

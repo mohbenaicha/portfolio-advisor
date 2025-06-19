@@ -7,8 +7,9 @@ from app.utils.advisor_utils import (
     build_system_prompt,
     convert_markdown_to_html,
     call_provider_endpoint,
+    increment_prompt_usage,
 )
-from app.config import ADVICE_MODEL, OPEN_AI_API_KEY
+from app.config import OPEN_AI_API_KEY, LLM
 from app.core.provider_endpoint_map import endpoint_map
 
 client = OpenAI(api_key=OPEN_AI_API_KEY)
@@ -42,35 +43,17 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> boo
         }
 
 
-async def construct_initial_messages(question: str, db: AsyncSession, portfolio_id: int, user_id: int) -> list:
+async def construct_initial_messages(
+    question: str, db: AsyncSession, portfolio_id: int, user_id: int
+) -> list:
     """Construct the initial messages for OpenAI."""
     return [
-        {"role": "system", "content": await build_system_prompt(user_id, portfolio_id, db)},
+        {
+            "role": "system",
+            "content": await build_system_prompt(user_id, portfolio_id),
+        },
         {"role": "user", "content": question},
     ]
-
-# deprecated, to remove in future PR
-# async def process_final_message(user_id: int, messages: list, db: AsyncSession) -> dict:
-#     # Final message using generated advice prompt
-#     response = client.chat.completions.create(
-#         model=ADVICE_MODEL,
-#         messages=messages,
-#     )
-
-#     final_msg = response.choices[0].message.content
-
-#     await UserSessionManager.update_session(
-#             user_id=user_id,
-#             db=db,
-#             updates={
-#                 "total_prompts_used": await UserSessionManager.get_total_prompts_used(user_id) + 1
-#             },
-#         )
-
-#     return {
-#         "archived": True,
-#         "summary": convert_markdown_to_html(final_msg),
-#     }
 
 
 async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id, stop):
@@ -137,13 +120,14 @@ async def run_mcp_client_pipeline(
     portfolio_id: int,
     db: AsyncSession = None,
 ) -> dict:
-    
+
     prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
     if prompt_count >= 3:
         return {
             "archived": False,
             "summary": "<p>You have reached the maximum number of prompts allowed for today.</p>",
         }
+
     # Call validation endpoints first via HTTPfv
     validation_issue = await validate_prompt(question, user_id, portfolio_id)
     if validation_issue:
@@ -156,24 +140,17 @@ async def run_mcp_client_pipeline(
 
     while True:
         response = client.chat.completions.create(
-            model=ADVICE_MODEL, messages=messages, tools=tools, tool_choice="auto"
+            model=LLM, messages=messages, tools=tools, tool_choice="auto"
         )
 
         choice = response.choices[0]
         if choice.finish_reason == "stop":
-            await UserSessionManager.update_session(
-                user_id=user_id,
-                db=db,
-                updates={
-                    "total_prompts_used": await UserSessionManager.get_total_prompts_used(user_id) + 1
-                },
-            )
-
+            await increment_prompt_usage(user_id, db)
             return {
                 "archived": True,
-                "summary": convert_markdown_to_html(choice.message.content)
+                "summary": convert_markdown_to_html(choice.message.content),
             }
-         
+
         if choice.finish_reason == "tool_calls":
             messages.append(
                 {
@@ -183,22 +160,9 @@ async def run_mcp_client_pipeline(
                 }
             )
 
-        choice, messages, tool_outputs, stop = await handle_tool_call(
+        choice, messages, tool_outputs, _ = await handle_tool_call(
             choice, messages, tool_outputs, user_id, portfolio_id, stop
         )
-        print("Stop: ", stop)
-        if stop:
-            break
-
-    await UserSessionManager.update_session(
-        user_id=user_id,
-        db=db,
-        updates={
-            "total_prompts_used": await UserSessionManager.get_total_prompts_used(user_id) + 1
-        },
-    )
-    return {
-            "archived": True,
-            "summary": convert_markdown_to_html(choice.message.content)
-        }
-    # return await process_final_message(user_id, messages, db) # deprecated, to remove in future PR
+        # print("Stop: ", stop)
+        # if stop:
+        #     break

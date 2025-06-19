@@ -1,42 +1,17 @@
 from fastapi import APIRouter, Depends
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.services.openai_client import (
-    determine_if_augmentation_required,
     retrieve_news,
-    prepare_advice_template,
     validate_prompt,
     validate_investment_goal,
 )
-from pydantic import BaseModel
+from app. models.schemas import *
 
 router = APIRouter()
 
-class DetermineAugmentationPayload(BaseModel):
-    question: str
-    portfolio_id: int
-    user_id: int
 
-class RetrieveNewsPayload(BaseModel):
-    question: str
-    portfolio_id: int
-    user_id: int
-
-class GenerateAdviceTemplatePayload(BaseModel):
-    question: str
-    portfolio_id: int
-    user_id: int
-    article_summaries: list = []
-
-class ValidatePromptPayload(BaseModel):
-    question: str
-    portfolio_id: int
-    user_id: int
-
-class ValidateInvestmentGoalPayload(BaseModel):
-    question: str
-    portfolio_id: int
-    user_id: int
 
 @router.post("/validate-prompt")
 async def api_validate_prompt(
@@ -63,18 +38,6 @@ async def api_validate_investment_goal(
         db=db,
     )
 
-@router.post("/determine-augmentation")
-async def api_determine_augmentation(
-    payload: DetermineAugmentationPayload,
-    db: AsyncSession = Depends(get_db),
-):
-    return await determine_if_augmentation_required(
-        question=payload.question,
-        portfolio_id=payload.portfolio_id,
-        db=db,
-        user_id=payload.user_id,
-    )
-
 @router.post("/retrieve-news")
 async def api_retrieve_news(
     payload: RetrieveNewsPayload,
@@ -87,15 +50,18 @@ async def api_retrieve_news(
         user_id=payload.user_id,
     )
 
-@router.post("/generate-advice-template")
-async def api_generate_advice_template(
-    payload: GenerateAdviceTemplatePayload,
+@router.post("/get-user-portfolio")
+async def api_get_user_portfolio(
+    payload: GetUserPortfolioPayload,
     db: AsyncSession = Depends(get_db),
 ):
-    return await prepare_advice_template(
-        question=payload.question,
-        portfolio_id=payload.portfolio_id,
-        article_summaries=payload.article_summaries,
-        db=db,
-        user_id=payload.user_id,
+    from app.utils.portfolio_utils import get_portfolio
+    from app.db.portfolio_crud import get_portfolio_by_id
+    portfolio = get_portfolio(
+       jsonable_encoder(await get_portfolio_by_id(db, payload.portfolio_id, payload.user_id))
     )
+    
+    if not portfolio:
+        return {"error": "Portfolio not found"}
+    
+    return portfolio
