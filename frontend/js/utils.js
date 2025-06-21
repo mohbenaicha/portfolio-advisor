@@ -1,5 +1,11 @@
 import { BASE_URL } from './config.js';
 
+
+const loginError = document.getElementById("login-error");
+const tempLoadingScreen = document.getElementById("loading-screen");
+const sidebar = document.querySelector('.sidebar');
+const resizeHandle = sidebar.querySelector('.sidebar-resize-handle');
+
 // user to safely fetch responses from the server and handle errors
 export async function safeFetch(url, options = {}) {
   const res = await fetch(url, options);
@@ -9,10 +15,6 @@ export async function safeFetch(url, options = {}) {
   }
   return res.json();
 }
-
-
-const sidebar = document.querySelector('.sidebar');
-const resizeHandle = sidebar.querySelector('.sidebar-resize-handle');
 
 resizeHandle.addEventListener('mousedown', (e) => {
   e.preventDefault();
@@ -39,12 +41,28 @@ export function decodeHTML(str) {
 }
 
 export async function validateRecaptcha(recaptchaToken) {
+  let instanceDown = false;
+
   try {
-    const response = await safeFetch(`${BASE_URL}/verify-recaptcha`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: recaptchaToken }),
-    });
+    const maxAttempts = 3; // 1 minute total (30 attempts * 2 seconds)
+    const delay = 2000; // 2 seconds
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const response = await safeFetch(`${BASE_URL}/verify-recaptcha`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: recaptchaToken }),
+        });
+        return response; // Exit loop and return response if successful
+      } catch (err) {
+        if (attempt === maxAttempts - 1) {
+          instanceDown = true;
+          throw new Error("Container did not start within the timeout period.");
+        }
+        await new Promise(resolve => setTimeout(resolve, delay)); // Wait before retrying
+      }
+    }
+    showElement(tempLoadingScreen, "Validating reCAPTCHA...");
     if (response.message !== "success" || response.score < 0.5) {
       alert("reCAPTCHA validation failed. Please try again.");
       return false;
@@ -52,7 +70,11 @@ export async function validateRecaptcha(recaptchaToken) {
     return true;
   } catch (err) {
     console.error("Error validating reCAPTCHA:", err.message);
-    alert("An error occurred during reCAPTCHA validation. Please try again.");
+    if (instanceDown) {
+      alert("Briefly service is currently unavailable. Please try again later.");
+    } else {
+      alert("An error occurred during reCAPTCHA validation. Please try again.");
+    }
     return false;
   }
 }
@@ -79,3 +101,40 @@ export function revealArchiveSequentially(body, targetContainer, delay = 200) {
   revealNext();
 }
 
+export function handleLoginErrorDisplay(show_error = true, message = "") {
+  if (show_error) {
+    loginError.textContent = message;
+    loginError.style.display = "block";
+    loginError.classList.remove("hidden");
+  }
+  else {
+    loginError.textContent = "";
+    loginError.style.display = "none";
+    loginError.classList.add("hidden");
+  }
+}
+
+const populateLoadingText = (message) => {
+  document.getElementById("loading-text").textContent = message;
+};
+
+
+export const hideElement = (element) => {
+  if (element) {
+    element.classList.add("hidden");
+    if (element.id !== "loading-screen") {
+      element.style.display = "none";
+    }
+  }
+}
+
+export const showElement = (element, additionContent) => {
+  if (element) {
+    element.classList.remove("hidden");
+    if (element.id === "loading-screen") {
+      populateLoadingText(additionContent);
+    } else {
+      element.style.display = "block";
+    }
+  }
+};

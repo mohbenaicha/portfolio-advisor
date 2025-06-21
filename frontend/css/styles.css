@@ -1085,6 +1085,7 @@ div.grecaptcha-badge {
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
+  flex-direction: column; /* Stack items vertically */
   justify-content: center;
   align-items: center;
   z-index: 1000;
@@ -1097,6 +1098,13 @@ div.grecaptcha-badge {
   border-top: 5px solid #ffffff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  margin-bottom: 20px; /* Add space between spinner and text */
+}
+
+.loading-text {
+  color: white;
+  font-size: 18px;
+  margin-top: 0;
 }
 
 @keyframes spin {

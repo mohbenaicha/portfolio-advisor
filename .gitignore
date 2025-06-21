@@ -8,3 +8,4 @@
 write_code_to_txt.py
 test_fetch_articles.py
 backend/populate_demo_portfolios.py
+*.pptx

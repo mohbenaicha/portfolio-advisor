@@ -72,7 +72,6 @@ export async function loadArchiveDropdown() {
 
       select.appendChild(opt);
     });
-    select.onchange = loadArchive; // <-- add this line here
   } catch (err) {
     console.warn("Failed to load archive list: " + err.message);
   }
