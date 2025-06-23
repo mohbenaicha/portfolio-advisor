@@ -329,6 +329,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   });
+
+  initPortfolioUpload();
 });
 
 export async function duplicatePortfolio() {
@@ -394,3 +396,155 @@ window.loadPortfolio = loadPortfolio;
 window.deletePortfolio = deletePortfolio;
 window.duplicatePortfolio = duplicatePortfolio;
 window.addAssetRow = addAssetRow;
+
+// logic for uploading portfoloi
+function initPortfolioUpload() {
+  const uploadBtn = document.getElementById('upload-portfolio-btn');
+  const modal = document.getElementById('upload-modal');
+  const closeBtn = document.getElementById('upload-modal-close');
+  const dropArea = document.getElementById('upload-drop-area');
+  const fileInput = document.getElementById('upload-file-input');
+  const browseLink = document.getElementById('upload-browse-link');
+  const errorsDiv = document.getElementById('upload-errors');
+  const schemaSample = document.getElementById('upload-schema-sample');
+
+  // schema req
+  const assetTypeEnum = ["stock", "bond", "option", "future", "swap"];
+  const sectorEnum = ["Technology", "Finance", "Utilities", "Healthcare", "Consumer Goods", "Energy", "Real Estate", "Government Bonds", "Retail", "Life Sciences", "Manufacturing"];
+  const regionEnum = ["US", "Europe", "Asia", "Emerging Markets", "Global"];
+  const schemaCols = [
+    {name: 'ticker', type: 'string', required: true},
+    {name: 'name', type: 'string', required: true},
+    {name: 'asset_type', type: 'enum', required: true, values: assetTypeEnum},
+    {name: 'sector', type: 'enum', required: true, values: sectorEnum},
+    {name: 'region', type: 'enum', required: true, values: regionEnum},
+    {name: 'market_price', type: 'float', required: true, min: 0.01},
+    {name: 'units_held', type: 'int', required: true, min: 1},
+    {name: 'is_hedge', type: 'int', required: true, values: [0,1]},
+    {name: 'hedges_asset', type: 'string', required: false}
+  ];
+
+  // schema sample
+  // TODO: add sample csv
+  schemaSample.innerHTML =
+    `<b>Required columns:</b><br>` +
+    schemaCols.map(col => {
+      let desc = `<b>${col.name}</b> (${col.type}`;
+      if (col.values) desc += `: ${col.values.join(', ')}`;
+      if (col.min) desc += `, min: ${col.min}`;
+      desc += col.required ? ', required' : ', optional';
+      return desc + ')';
+    }).join('<br>') +
+    `<br><br>Example:<br>` +
+    `<pre>ticker,name,asset_type,sector,region,market_price,units_held,is_hedge,hedges_asset\nAAPL,Apple,stock,Technology,US,150,10,0,\nXOM,Exxon,stock,Energy,US,100,5,1,AAPL</pre>`;
+
+  // open/close elemnt
+  uploadBtn.onclick = () => { modal.classList.remove('hidden'); errorsDiv.textContent = ''; };
+  closeBtn.onclick = () => { modal.classList.add('hidden'); };
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') modal.classList.add('hidden'); });
+
+  // drop file area
+  dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('dragover'); });
+  dropArea.addEventListener('dragleave', e => { dropArea.classList.remove('dragover'); });
+  dropArea.addEventListener('drop', e => {
+    e.preventDefault(); dropArea.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  dropArea.onclick = () => fileInput.click();
+  browseLink.onclick = e => { e.stopPropagation(); fileInput.click(); };
+  fileInput.onchange = e => { if (fileInput.files.length) handleFile(fileInput.files[0]); };
+
+  function handleFile(file) {
+    if (!file.name.endsWith('.csv')) {
+      errorsDiv.textContent = 'Please upload a .csv file.';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      parseAndValidateCSV(text);
+    };
+    reader.readAsText(file);
+  }
+
+  function parseAndValidateCSV(text) {
+    errorsDiv.textContent = '';
+    // todo: replace with csv parser
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) {
+      errorsDiv.textContent = 'CSV must have a header and at least one row.';
+      return;
+    }
+    const headers = lines[0].split(',').map(h => h.trim());
+    const required = schemaCols.filter(c => c.required).map(c => c.name);
+    for (const req of required) {
+      if (!headers.includes(req)) {
+        errorsDiv.textContent = `Missing required column: ${req}`;
+        return;
+      }
+    }
+    const assets = [];
+    for (let i = 1; i < lines.length; ++i) {
+      if (!lines[i].trim()) continue;
+      const vals = lines[i].split(',');
+      if (vals.length < headers.length) {
+        errorsDiv.textContent = `Row ${i+1} has missing columns.`;
+        return;
+      }
+      const asset = {};
+      for (let j = 0; j < headers.length; ++j) {
+        asset[headers[j]] = vals[j] ? vals[j].trim() : '';
+      }
+      // validating feilds:
+      // required: 
+      for (const col of schemaCols) {
+        const val = asset[col.name];
+        if (col.required && (val === undefined || val === '')) {
+          errorsDiv.textContent = `Row ${i+1}: ${col.name} is required.`;
+          return;
+        }
+        if (col.type === 'enum' && val && !col.values.includes(val)) {
+          errorsDiv.textContent = `Row ${i+1}: ${col.name} must be one of: ${col.values.join(', ')}`;
+          return;
+        }
+        if (col.type === 'float' && val) {
+          const num = parseFloat(val);
+          if (isNaN(num) || num < (col.min || 0)) {
+            errorsDiv.textContent = `Row ${i+1}: ${col.name} must be a number >= ${col.min}`;
+            return;
+          }
+          asset[col.name] = num;
+        }
+        if (col.type === 'int' && val) {
+          const num = parseInt(val, 10);
+          if (isNaN(num) || num < (col.min || 0) || !/^\d+$/.test(val)) {
+            errorsDiv.textContent = `Row ${i+1}: ${col.name} must be a whole number >= ${col.min}`;
+            return;
+          }
+          asset[col.name] = num;
+        }
+        if (col.name === 'is_hedge' && val !== undefined) {
+          if (val !== '0' && val !== '1' && val !== 0 && val !== 1) {
+            errorsDiv.textContent = `Row ${i+1}: is_hedge must be 0 or 1.`;
+            return;
+          }
+          asset.is_hedge = val == '1';
+        }
+      }
+      assets.push(asset);
+    }
+    createPortfolioFromUpload(assets);
+    modal.classList.add('hidden');
+  }
+
+  async function createPortfolioFromUpload(assets) {
+    await window.createPortfolio();
+    // populate table
+    const tbody = document.querySelector('#asset-table tbody');
+    tbody.innerHTML = '';
+    assets.forEach(a => {
+      const row = window.createAssetRow ? window.createAssetRow(a) : createAssetRow(a);
+      tbody.appendChild(row);
+    });
+  }
+}

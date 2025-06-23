@@ -54,15 +54,16 @@ async function submitPrompt() {
   }
 
   // Show loading animation
-  responseDiv.innerHTML = `
-  <div class="loading-animation">
-    Generating response&nbsp;&nbsp;<span class="ellipsis">
-      <span> .</span>
-      <span> .</span>
-      <span> .</span>
-    </span>
-  </div>
-`;
+  // responseDiv.innerHTML = `
+  // <div class="loading-animation">
+  //   Generating response&nbsp;&nbsp;<span class="ellipsis">
+  //     <span> .</span>
+  //     <span> .</span>
+  //     <span> .</span>
+  //   </span>
+  // </div>
+  // <div id="chat-container"></div>
+  // `;
 
   const refreshArchivesBtn = document.getElementById("refresh-archives-btn");
   const questionTextarea = document.getElementById("question");
@@ -76,8 +77,19 @@ async function submitPrompt() {
     if (askButton) {
       askButton.disabled = true;
     }
+    // Do NOT clear chat history here!
+    // Append user message as a chat bubble
+    appendMessageToChat(question, 'user');
+    // Add buffering bubble for assistant
+    const chatContainer = document.getElementById('chat-container');
+    const bufferingBubble = document.createElement('div');
+    bufferingBubble.className = 'chat-bubble assistant buffering';
+    bufferingBubble.innerHTML = '<span class="ellipsis"><span> .</span><span> .</span><span> .</span></span>';
+    chatContainer.appendChild(bufferingBubble);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
     const result = await analyzePrompt(question, portfolioId);
-
+    // Remove buffering bubble
+    if (bufferingBubble.parentNode) bufferingBubble.parentNode.removeChild(bufferingBubble);
     renderResponse(result);
 
     if (!result) {
@@ -85,11 +97,12 @@ async function submitPrompt() {
     }
 
     if (result.archived) {
-      // Essentially a final response
+      // Archive the entire chat history
+      const chatHistoryHTML = document.getElementById('chat-container').innerHTML;
       await saveArchive({
         portfolio_id: portfolioId,
         original_question: question,
-        openai_response: result.summary,
+        openai_response: chatHistoryHTML,
       });
       // Change the button text to "New Chat"
       askButton.textContent = "New Chat";
@@ -101,49 +114,32 @@ async function submitPrompt() {
 
   } catch (err) {
     console.warn("Error occurred:", err.message);
-    responseDiv.innerHTML = `<p style="color: red;">Failed to generate response. Please try again.</p>`;
+    // Remove buffering bubble if it exists
+    const bufferingBubble = document.querySelector('.chat-bubble.buffering');
+    if (bufferingBubble && bufferingBubble.parentNode) {
+      bufferingBubble.parentNode.removeChild(bufferingBubble);
+    }
+    // Append error as assistant message instead of destroying chat
+    appendMessageToChat(`<p style="color: red;">Failed to generate response. Please try again.</p>`, 'assistant');
   } finally {
     questionTextarea.disabled = false; // Re-enable the textarea
     askButton.disabled = false; // Re-enable the button
   }
 }
 
-// Render the response in the designated advisor panel div
-// function renderResponse(data) {
-//   try {
-//     const div = document.getElementById("response");
-//     div.innerHTML = data.summary;
-//   }
-//   catch (error) {
-//     console.error("Error rendering response:", error);
-//     const div = document.getElementById("response");
-//     div.innerHTML = `<p style="color: red;">Failed to render response.</p>`;
-//   }
-// }
+// Helper to append a chat bubble
+function appendMessageToChat(message, sender) {
+  const chatContainer = document.getElementById('chat-container');
+  const bubble = document.createElement('div');
+  bubble.className = sender === 'user' ? 'chat-bubble user' : 'chat-bubble assistant';
+  bubble.innerHTML = message;
+  chatContainer.appendChild(bubble);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 
+// Render the response as a chat bubble
 function renderResponse(data) {
-  const container = document.getElementById("response");
-  container.innerHTML = data.summary;
-
-  const children = Array.from(container.children);
-
-  // Hide all child elements initially
-  children.forEach(el => {
-    el.style.opacity = 0;
-    el.style.transition = "opacity 0.3s ease";
-  });
-
-  // Reveal one at a time
-  let i = 0;
-  function revealNext() {
-    if (i < children.length) {
-      children[i].style.opacity = 1;
-      i++;
-      setTimeout(revealNext, 200); // speed per element
-    }
-  }
-
-  revealNext();
+  appendMessageToChat(data.summary, 'assistant');
 }
 
 
@@ -167,14 +163,14 @@ askButton.addEventListener("click", () => {
     submitPrompt();
   } else if (askButton.textContent === "New Chat") {
     const questionInput = document.getElementById("question");
-    const responseDiv = document.getElementById("response");
+    const chatContainer = document.getElementById("chat-container");
 
     if (questionInput) {
       questionInput.value = "";
     }
 
-    if (responseDiv) {
-      responseDiv.innerHTML = "";
+    if (chatContainer) {
+      chatContainer.innerHTML = "";
     }
 
     askButton.textContent = "Ask";
@@ -182,3 +178,87 @@ askButton.addEventListener("click", () => {
 });
 
 window.submitPrompt = submitPrompt;
+
+// === Portfolio Summary Panel Logic ===
+
+const summaryTabs = [
+  { key: 'exposure', label: 'Exposure' },
+  { key: 'region', label: 'Region' },
+  { key: 'sector', label: 'Sector' }
+];
+
+let currentSummaryTab = 'exposure';
+
+async function renderPortfolioSummary() {
+  const select = document.getElementById('portfolio-select');
+  const summaryContent = document.getElementById('summary-content');
+  if (!select || !summaryContent) return;
+  const portfolioId = parseInt(select.value);
+  if (!portfolioId) {
+    summaryContent.innerHTML = '<div style="color: #aaa; text-align: center;">No portfolio selected.</div>';
+    return;
+  }
+  const portfolios = await getPortfolios();
+  const portfolio = portfolios.find(p => p.id === portfolioId);
+  if (!portfolio || !portfolio.assets || portfolio.assets.length === 0) {
+    summaryContent.innerHTML = '<div style="color: #aaa; text-align: center;">No assets in this portfolio.</div>';
+    return;
+  }
+
+  // Compute summary by tab
+  let groupKey;
+  if (currentSummaryTab === 'exposure') groupKey = 'asset_type';
+  else if (currentSummaryTab === 'region') groupKey = 'region';
+  else if (currentSummaryTab === 'sector') groupKey = 'sector';
+
+  // Group assets
+  const groups = {};
+  let totalValue = 0;
+  portfolio.assets.forEach(a => {
+    const value = (parseFloat(a.market_price) || 0) * (parseFloat(a.units_held) || 0) * (a.asset_type === 'option' ? 100 : 1);
+    totalValue += value;
+    const key = a[groupKey] || 'Other';
+    if (!groups[key]) groups[key] = 0;
+    groups[key] += value;
+  });
+
+  // Build table
+  let table = `<table class="summary-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
+    <thead><tr>
+      <th style='text-align:left;padding:4px;'><span>${currentSummaryTab === 'exposure' ? 'Asset Type' : currentSummaryTab.charAt(0).toUpperCase() + currentSummaryTab.slice(1) + '<br>'}</span></th>
+      <th style='text-align:right;padding:4px;'><span>$ Exposure</span></th>
+      <th style='text-align:right;padding:4px;'><span>% Exposure</span></th>
+    </tr></thead><tbody>`;
+  Object.entries(groups).sort((a, b) => b[1] - a[1]).forEach(([label, value]) => {
+    const pct = totalValue ? ((value / totalValue) * 100).toFixed(2) : '0.00';
+    table += `<tr>
+      <td style='padding:4px;'>${label}</td>
+      <td style='text-align:right;padding:4px;'>$${value.toLocaleString(undefined, {maximumFractionDigits:2})}</td>
+      <td style='text-align:right;padding:4px;'>${pct}%</td>
+    </tr>`;
+  });
+  table += '</tbody></table>';
+  summaryContent.innerHTML = table;
+}
+
+function setupSummaryTabs() {
+  const tabButtons = document.querySelectorAll('.summary-tab');
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSummaryTab = btn.getAttribute('data-summary');
+      renderPortfolioSummary();
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupSummaryTabs();
+  const select = document.getElementById('portfolio-select');
+  if (select) {
+    select.addEventListener('change', renderPortfolioSummary);
+    // Initial render after portfolios load
+    setTimeout(renderPortfolioSummary, 600);
+  }
+});

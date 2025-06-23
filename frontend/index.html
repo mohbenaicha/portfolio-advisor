@@ -77,7 +77,9 @@
 
         <!-- Tabs -->
         <section id="advisor" class="tab hidden">
-          <div id="response" class="response-box scrollable"></div>
+          <div id="response" class="response-box scrollable">
+            <div id="chat-container"></div>
+          </div>
           <div class="advisor-box">
             <div class="textarea-wrapper">
               <textarea id="question" placeholder="Ask a question about your portfolio..."></textarea>
@@ -85,6 +87,14 @@
                 <select id="portfolio-select"></select>
                 <button>Ask</button>
               </div>
+            </div>
+            <div class="portfolio-summary-panel">
+              <div class="summary-tabs">
+                <button class="summary-tab active" data-summary="exposure">Asset</button>
+                <button class="summary-tab" data-summary="region">Region</button>
+                <button class="summary-tab" data-summary="sector">Sector</button>
+              </div>
+              <div id="summary-content"></div>
             </div>
           </div>
         </section>
@@ -96,10 +106,11 @@
             <button onclick="duplicatePortfolio()">📋 Duplicate</button>
             <button onclick="saveAssets()">💾 Save</button>
             <button onclick="deletePortfolio()">🗑 Delete</button>
+            <button id="upload-portfolio-btn">⭳ Upload</button>
           </div>
           <div class="portfolio-name-field">
             <span class="prefix"><span style="font-size: 15px !important;">✏️</span> Name:</span>
-            <input id="portfolio-name" type="text" />
+            <input id="portfolio-name" type="text" placeholder="Enter a name for your portfolio" />
           </div>
           <div id="portfolio-name-error" class="error-font-portfolio-name"></div>
 
@@ -162,6 +173,27 @@
   <script src="./js/advisor.js" type="module"></script>
   <script src="./js/register.js" type="module"></script>
   <script src="./js/utils.js" type="module"></script>
+
+  <!-- Upload Portfolio Modal -->
+  <div id="upload-modal" class="upload-modal hidden">
+    <div class="upload-modal-content">
+      <span class="upload-modal-close" id="upload-modal-close">&times;</span>
+      <h2>Upload Portfolio CSV</h2>
+      <div id="upload-drop-area" class="upload-drop-area">
+        <input type="file" id="upload-file-input" accept=".csv" hidden />
+        <div id="upload-drop-text">
+          <p>Drag and drop a <b>.csv</b> file here, or <span id="upload-browse-link">browse</span></p>
+        </div>
+      </div>
+      <div class="upload-errors" id="upload-errors"></div>
+      <details class="upload-schema-details">
+        <summary>Show Sample CSV Schema</summary>
+        <div class="upload-schema-sample" id="upload-schema-sample">
+          <!-- JS will fill this with schema info -->
+        </div>
+      </details>
+    </div>
+  </div>
 </body>
 
 </html>
