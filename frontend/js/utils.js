@@ -67,7 +67,6 @@ export async function validateRecaptcha(recaptchaToken) {
       alert("reCAPTCHA validation failed. Please try again.");
       return false;
     }
-    return true;
   } catch (err) {
     console.error("Error validating reCAPTCHA:", err.message);
     if (instanceDown) {

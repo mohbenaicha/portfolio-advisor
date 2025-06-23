@@ -73,7 +73,6 @@ export async function initialUpdateQuestionPlaceholder() {
 }
 
 export async function createPortfolio() {
-  const name = document.getElementById("portfolio-name").value;
   const assets = [];
 
   try {
@@ -81,7 +80,8 @@ export async function createPortfolio() {
     document.querySelector("#asset-table tbody").innerHTML = "";
     selectedPortfolioId = null;
 
-    const newPortfolio = await createPortfolioAPI(name, assets);
+    // Pass empty string for name so new portfolio starts blank
+    const newPortfolio = await createPortfolioAPI("", assets);
     selectedPortfolioId = newPortfolio.id;
 
     await loadPortfolioDropdown();
@@ -89,7 +89,7 @@ export async function createPortfolio() {
     const dropdown = document.getElementById("portfolio-dropdown");
     if (dropdown && selectedPortfolioId) {
       dropdown.value = selectedPortfolioId.toString(); // force string match
-      await loadPortfolio();
+      // Don't call loadPortfolio() for new portfolios - keep name input empty
     }
 
   } catch (err) {
@@ -188,19 +188,16 @@ function createAssetRow(data = {}) {
 }
 
 function calculateTotals(assets) {
-  let total = assets.reduce((acc, a) => acc + (a.market_price * a.units_held), 0);
-  assets.forEach(a => {
-    // a.total_value = a.market_price * a.units_held;
-    // a.percentage_of_total = ((a.total_value / total) * 100).toFixed(2);
+  const total = assets.reduce((acc, a) => acc + (a.market_price * a.units_held), 0);
+  const tableRows = document.querySelectorAll("#asset-table tbody tr");
+  
+  assets.forEach((a, i) => {
     a.total_value = a.market_price * a.units_held * (a.asset_type === "option" ? 100 : 1);
     a.percentage_of_total = ((a.total_value / total) * 100).toFixed(2);
-  });
-
-  // Update DOM display
-  const tableRows = document.querySelectorAll("#asset-table tbody tr");
-  tableRows.forEach((row, i) => {
-    row.querySelector(".auto-total").textContent = assets[i].total_value.toFixed(2);
-    row.querySelector(".auto-pct").textContent = assets[i].percentage_of_total;
+    
+    // Update DOM in same loop
+    tableRows[i].querySelector(".auto-total").textContent = a.total_value.toFixed(2);
+    tableRows[i].querySelector(".auto-pct").textContent = a.percentage_of_total;
   });
 }
 
@@ -213,7 +210,6 @@ export async function saveAssets() {
 
   if (!name || name.replace(/[^a-zA-Z0-9]/g, "").trim() === "") {
     nameErr.textContent = "Invalid portfolio name...";
-
     return;
   }
 
@@ -229,52 +225,53 @@ export async function saveAssets() {
     assets.push(obj);
   });
 
-  const tickerSet = new Set();
-  const nameSet = new Set();
   const errorOutput = document.getElementById("portfolio-err-pout");
   errorOutput.style.color = "red"; // Set font color to bright red
 
+  // If there are assets, validate them
+  if (assets.length > 0) {
+    const tickerSet = new Set();
+    const nameSet = new Set();
 
-  // Ensure at least one asset is present
-  if (assets.length === 0) {
-    errorOutput.textContent = "Error: Add at least 1 valid asset to save portfolio.";
-    return;
+    // Validate assets
+    for (const a of assets) {
+      if (!a.ticker || !a.name) {
+        errorOutput.textContent = "Error: Ticker and Name cannot be empty.";
+        return;
+      }
+      if (tickerSet.has(a.ticker)) {
+        errorOutput.textContent = `Error: Duplicate ticker: ${a.ticker}`;
+        return;
+      }
+      if (nameSet.has(a.name)) {
+        errorOutput.textContent = `Error: Duplicate name: ${a.name}`;
+        return;
+      }
+      if (!a.asset_type || !a.sector || !a.region) {
+        errorOutput.textContent = "Error: Missing required fields.";
+        return;
+      }
+      if (!a.market_price || !a.units_held || a.market_price <= 0 || a.units_held <= 0) {
+        errorOutput.textContent = "Error: Invalid price/units.";
+        return;
+      }
+      
+      tickerSet.add(a.ticker);
+      nameSet.add(a.name);
+    }
+
+    // Calculate totals for assets
+    calculateTotals(assets);
+
+    const tableRows = document.querySelectorAll("#asset-table tbody tr");
+    tableRows.forEach((row, i) => {
+      row.querySelector(".auto-total").textContent = assets[i].total_value.toFixed(2);
+      row.querySelector(".auto-pct").textContent = assets[i].percentage_of_total;
+    });
   }
 
-  // Validate assets
-  for (const a of assets) {
-    if (!a.ticker || !a.name) {
-      errorOutput.textContent = "Error: Ticker and Name cannot be empty.";
-      return;
-    }
-    if (tickerSet.has(a.ticker)) {
-      errorOutput.textContent = `Error: Duplicate ticker found: ${a.ticker}`;
-      return;
-    }
-    if (nameSet.has(a.name)) {
-      errorOutput.textContent = `Error: Duplicate name found: ${a.name}`;
-      return;
-    }
-    if (!a.asset_type || !a.sector || !a.region) {
-      errorOutput.textContent = "Error: Type, Sector, and Region must have values.";
-      return;
-    }
-    if (!a.market_price || !a.units_held || a.market_price <= 0 || a.units_held <= 0 || !Number.isInteger(a.units_held)) {
-      errorOutput.textContent = "Error: Price must be greater than 0, and Units must be a whole number greater than 0.";
-      return;
-    }
-    tickerSet.add(a.ticker);
-    nameSet.add(a.name);
-  }
+  // Clear any previous errors if we reach this point
   errorOutput.textContent = "";
-
-  calculateTotals(assets);
-
-  const tableRows = document.querySelectorAll("#asset-table tbody tr");
-  tableRows.forEach((row, i) => {
-    row.querySelector(".auto-total").textContent = assets[i].total_value.toFixed(2);
-    row.querySelector(".auto-pct").textContent = assets[i].percentage_of_total;
-  });
 
   try {
     await createPortfolioAPI(name, assets, selectedPortfolioId);

@@ -1,4 +1,4 @@
-import { analyzePrompt, saveArchive } from "./api.js";
+import { analyzePrompt, saveArchive, getPortfolios } from "./api.js";
 
 
 
@@ -29,6 +29,30 @@ async function submitPrompt() {
     });
     return;
   }
+
+  // Check if the selected portfolio has at least one asset
+  try {
+    const portfolios = await getPortfolios();
+    const selectedPortfolio = portfolios.find(p => p.id === portfolioId);
+    
+    if (!selectedPortfolio || !selectedPortfolio.assets || selectedPortfolio.assets.length === 0) {
+      questionInput.value = "Portfolio should have at least 1 asset before it can be analyzed.";
+      questionInput.style.color = "red";
+      questionInput.addEventListener("input", () => {
+        questionInput.style.color = "";
+      });
+      return;
+    }
+  } catch (error) {
+    console.error("Error checking portfolio assets:", error);
+    questionInput.value = "Error checking portfolio. Please try again.";
+    questionInput.style.color = "red";
+    questionInput.addEventListener("input", () => {
+      questionInput.style.color = "";
+    });
+    return;
+  }
+
   // Show loading animation
   responseDiv.innerHTML = `
   <div class="loading-animation">

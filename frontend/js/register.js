@@ -1,5 +1,5 @@
 import { BASE_URL, reCAPTCHA_SITE_KEY } from "./config.js";
-import { validateRecaptcha } from "./utils.js";
+import { validateRecaptcha, showElement, hideElement } from "./utils.js";
 
 const loadingScreen = document.getElementById("loading-screen");
 
@@ -14,7 +14,7 @@ document.querySelector("#register-box span").addEventListener("click", () => {
 });
 
 document.getElementById("register-submit-btn").addEventListener("click", async () => {
-    loadingScreen.classList.remove("hidden");
+    showElement(loadingScreen, "Processing your registration request...");
     const recaptchaToken = await grecaptcha.execute(reCAPTCHA_SITE_KEY);
     const isRecaptchaValid = await validateRecaptcha(recaptchaToken);
     if (!isRecaptchaValid) return;
@@ -73,6 +73,6 @@ document.getElementById("register-submit-btn").addEventListener("click", async (
         console.error("Network error:", error);
         alert("An unexpected error occurred. Please try again later.");
     } finally {
-        loadingScreen.classList.add("hidden");
+        hideElement(loadingScreen);
     }
 });

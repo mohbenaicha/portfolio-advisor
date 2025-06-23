@@ -9,7 +9,7 @@ from app.config import MONGO_URI
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["news_cache"]
 
-print("Connected to MongoDB at:", MONGO_URI)
+# print("Connected to MongoDB at:", MONGO_URI) # DEBUG
 
 
 async def get_similar_articles(prompt_text: str, start_date=None, end_date=None, top_k=10):
