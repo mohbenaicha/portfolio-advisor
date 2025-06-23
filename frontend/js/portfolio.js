@@ -3,6 +3,7 @@ import {
   createPortfolioAPI,
   deletePortfolioAPI
 } from './api.js';
+import { showToast } from './utils.js';
 
 let selectedPortfolioId = null;
 window.getPortfolios = getPortfolios;
@@ -49,6 +50,13 @@ export async function loadPortfolio() {
 
   selectedPortfolioId = id;
   document.getElementById("portfolio-name").value = selected.name;
+  
+  // Clear any existing error messages
+  const nameErr = document.getElementById("portfolio-name-error");
+  if (nameErr) {
+    nameErr.textContent = "";
+  }
+  
   const tbody = document.querySelector("#asset-table tbody");
   tbody.innerHTML = "";
 
@@ -79,6 +87,12 @@ export async function createPortfolio() {
     document.getElementById("portfolio-name").value = "";
     document.querySelector("#asset-table tbody").innerHTML = "";
     selectedPortfolioId = null;
+
+    // Clear any existing error messages
+    const nameErr = document.getElementById("portfolio-name-error");
+    if (nameErr) {
+      nameErr.textContent = "";
+    }
 
     // Pass empty string for name so new portfolio starts blank
     const newPortfolio = await createPortfolioAPI("", assets);
@@ -114,6 +128,12 @@ export async function deletePortfolio() {
     await loadPortfolioDropdown();
     document.getElementById("portfolio-name").value = "";
     document.querySelector("#asset-table tbody").innerHTML = "";
+
+    // Clear any existing error messages
+    const nameErr = document.getElementById("portfolio-name-error");
+    if (nameErr) {
+      nameErr.textContent = "";
+    }
 
     const dropdown = document.getElementById("portfolio-dropdown");
     if (dropdown.options.length > 0) {
@@ -226,7 +246,7 @@ export async function saveAssets() {
   });
 
   const errorOutput = document.getElementById("portfolio-err-pout");
-  errorOutput.style.color = "red"; // Set font color to bright red
+  errorOutput.style.color = "red";
 
   // If there are assets, validate them
   if (assets.length > 0) {
@@ -276,8 +296,12 @@ export async function saveAssets() {
   try {
     await createPortfolioAPI(name, assets, selectedPortfolioId);
     await loadPortfolioDropdown();
+    
+    // Show success notification
+    showToast("💾 Portfolio saved successfully!", 2500);
   } catch (err) {
     console.error('Failed to save portfolio: ' + err.message);
+    showToast("❌ Failed to save portfolio. Please try again.", 3000);
   }
 }
 
@@ -307,8 +331,66 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+export async function duplicatePortfolio() {
+  if (!selectedPortfolioId) {
+    showToast("Please select a portfolio to duplicate.", 3000);
+    return;
+  }
+
+  try {
+    // Get current portfolio data
+    const portfolios = await getPortfolios();
+    const currentPortfolio = portfolios.find(p => p.id === selectedPortfolioId);
+    
+    if (!currentPortfolio || !currentPortfolio.assets) {
+      showToast("No portfolio data found to duplicate.", 3000);
+      return;
+    }
+
+    // Create new portfolio with blank name and copied assets
+    const newPortfolio = await createPortfolioAPI("", currentPortfolio.assets);
+    
+    // Update the selected portfolio ID to the new one
+    selectedPortfolioId = newPortfolio.id;
+    
+    // Reload the dropdown to include the new portfolio
+    await loadPortfolioDropdown();
+    
+    // Select the new portfolio in the dropdown
+    const dropdown = document.getElementById("portfolio-dropdown");
+    if (dropdown) {
+      dropdown.value = selectedPortfolioId.toString();
+    }
+    
+    // Clear the portfolio name field (since it's a new portfolio)
+    document.getElementById("portfolio-name").value = "";
+    
+    // Clear any existing error messages
+    const nameErr = document.getElementById("portfolio-name-error");
+    if (nameErr) {
+      nameErr.textContent = "";
+    }
+    
+    // Clear any existing error output
+    const errorOutput = document.getElementById("portfolio-err-pout");
+    if (errorOutput) {
+      errorOutput.textContent = "";
+    }
+    
+    // Reload the portfolio to show the duplicated assets
+    await loadPortfolio();
+    
+    showToast("Portfolio duplicated successfully! 📋", 2500);
+    
+  } catch (err) {
+    console.error('Failed to duplicate portfolio: ' + err.message);
+    showToast("Failed to duplicate portfolio. Please try again.", 3000);
+  }
+}
+
 window.createPortfolio = createPortfolio;
 window.saveAssets = saveAssets;
 window.loadPortfolio = loadPortfolio;
 window.deletePortfolio = deletePortfolio;
+window.duplicatePortfolio = duplicatePortfolio;
 window.addAssetRow = addAssetRow;

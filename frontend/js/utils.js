@@ -44,7 +44,7 @@ export async function validateRecaptcha(recaptchaToken) {
   let instanceDown = false;
 
   try {
-    const maxAttempts = 3; // 1 minute total (30 attempts * 2 seconds)
+    const maxAttempts = 30; // 1 minute total (30 attempts * 2 seconds)
     const delay = 2000; // 2 seconds
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
@@ -137,3 +137,34 @@ export const showElement = (element, additionContent) => {
     }
   }
 };
+
+export function showToast(message, duration = 3000) {
+  // Remove any existing toast
+  const existingToast = document.querySelector('.toast-notification');
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  // Create new toast
+  const toast = document.createElement('div');
+  toast.className = 'toast-notification';
+  toast.textContent = message;
+  
+  // Add to DOM
+  document.body.appendChild(toast);
+  
+  // Trigger animation
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+  
+  // Hide after duration
+  setTimeout(() => {
+    toast.classList.add('hide');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.remove();
+      }
+    }, 300);
+  }, duration);
+}

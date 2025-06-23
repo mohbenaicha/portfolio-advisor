@@ -106,16 +106,13 @@ export async function loadArchives() {
       }
     });
 
-    archiveSelect.appendChild(div);
-  });
-
-  document.querySelectorAll(".archive-item").forEach((item) => {
-    const title = item.querySelector(".archive-title");
-    const wrapper = item.querySelector(".archive-title-wrapper");
-    const deleteButton = item.querySelector(".delete-archive-btn");
+    // Add animation event listeners to this specific item
+    const title = div.querySelector(".archive-title");
+    const wrapper = div.querySelector(".archive-title-wrapper");
+    const deleteBtn = div.querySelector(".delete-archive-btn");
 
     title.addEventListener("mouseenter", () => {
-      const deleteButtonWidth = deleteButton.offsetWidth;
+      const deleteButtonWidth = deleteBtn.offsetWidth;
       const availableSpace = wrapper.clientWidth - deleteButtonWidth - 10; // Subtract padding/margin (e.g., 10px)
       const overflow = title.scrollWidth - availableSpace;
 
@@ -126,10 +123,12 @@ export async function loadArchives() {
       }
     });
 
-    item.addEventListener("mouseleave", () => {
+    div.addEventListener("mouseleave", () => {
       title.style.transition = "none";
       title.style.transform = "translateX(0)";
     });
+
+    archiveSelect.appendChild(div);
   });
 }
 

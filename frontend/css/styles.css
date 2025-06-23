@@ -17,7 +17,7 @@
   --border: #888888;
   --input-bg: #20304900;
   --portfolio-select-bg: #0f172a;
-  
+
   /* Typography */
   --para-font-size: 16px;
   --button-font-size: 18px;
@@ -873,9 +873,10 @@ button.delete:hover {
 
 .archive-title {
   flex-grow: 1;
+  display: inline-block;
   text-align: left;
-  transition: none;
-  will-change: auto;
+  transition: transform 0.3s ease;
+  will-change: transform;
   z-index: 1;
 }
 
@@ -918,7 +919,7 @@ button.delete:hover {
 }
 
 /* Hide footer when app-screen is hidden (login screen is active) */
-.app-layout #app-screen.hidden ~ .footer {
+.app-layout #app-screen.hidden~.footer {
   display: none;
 }
 
@@ -1022,19 +1023,25 @@ button.delete:hover {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
 }
 
 @keyframes waveAnimation {
-  0%, 20% {
+
+  0%,
+  20% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-5px);
   }
-  80%, 100% {
+
+  80%,
+  100% {
     transform: translateY(0);
   }
 }
@@ -1105,9 +1112,11 @@ hr {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -1207,4 +1216,36 @@ div.grecaptcha-badge {
   #register-box span::before {
     content: "Close";
   }
+}
+
+/* ==========================================================================
+   TOAST NOTIFICATIONS
+   ========================================================================== */
+
+.toast-notification {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background: var(--accent);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.toast-notification.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-notification.hide {
+  opacity: 0;
+  transform: translateY(-20px);
 }
