@@ -9,7 +9,9 @@ from app.config import OPEN_AI_API_KEY, SUMMARY_LLM, EMBEDDING_MODEL
 
 
 # production model
-summary_client = ChatOpenAI(model=SUMMARY_LLM, temperature=0, openai_api_key=OPEN_AI_API_KEY)
+summary_client = ChatOpenAI(
+    model=SUMMARY_LLM, temperature=0, openai_api_key=OPEN_AI_API_KEY
+)
 embedding_client = OpenAI(api_key=OPEN_AI_API_KEY)
 
 
@@ -18,8 +20,7 @@ def sync_batch_embed(texts: list[str]) -> list[list[float]]:
     Synchronously embed a batch of texts using OpenAI's embedding model.
     """
     response = embedding_client.embeddings.create(
-        model=EMBEDDING_MODEL,
-        input=texts  # list of strings
+        model=EMBEDDING_MODEL, input=texts  # list of strings
     )
     return [item.embedding for item in response.data]
 
@@ -36,9 +37,24 @@ async def embed_articles(articles: List[dict]) -> List[dict]:
         article["summary_embedding"] = emb
     return articles
 
-async def summarize_articles(articles, llm=summary_client):
+
+async def summarize_articles(articles, llm=summary_client, max_summary_length=300):
     splitter = CharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
-    chain = load_summarize_chain(llm, chain_type="refine")
+    
+    custom_prompt = """
+    Summarize the following text in {max_length} characters or less. 
+    Focus on key facts. Be concise and direct. 
+    Keep important entity names, dates and figures in the summary.
+    
+    {text}
+    
+    Summary:"""
+
+    from langchain.prompts import PromptTemplate
+    prompt = PromptTemplate(template=custom_prompt, input_variables=["text", "max_length"])
+    
+    # Use "stuff" chain type with custom prompt
+    chain = load_summarize_chain(llm, chain_type="stuff", prompt=prompt)
 
     async def process_article(article):
         doc = Document(
@@ -46,13 +62,16 @@ async def summarize_articles(articles, llm=summary_client):
             metadata={"url": article.get("link")},
         )
         chunks = splitter.split_documents([doc])
-        summary = await chain.arun(chunks)
-        article["summary"] = summary
+        
+        # Pass documents and max_length
+        response = await chain.arun({"input_documents": chunks, "max_length": max_summary_length})
+        article["summary"] = response
+        print("\nSummary: ", response)
         return article
 
-    # Process articles concurrently
     summarized = await asyncio.gather(*[process_article(a) for a in articles])
     return summarized
+
 
 async def summarize_and_embed_articles(articles, llm=summary_client) -> List[dict]:
     summarized = await summarize_articles(articles, llm=llm)

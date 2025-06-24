@@ -1,7 +1,9 @@
 import json
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from openai import OpenAI
 from app.db.user_session import UserSessionManager
+from app.models.sql_models import Portfolio
 from app.models.tool_schemas import tools
 from app.utils.advisor_utils import (
     build_system_prompt,
@@ -15,7 +17,7 @@ from app.core.provider_endpoint_map import endpoint_map
 client = OpenAI(api_key=OPEN_AI_API_KEY)
 
 
-async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> bool:
+async def validate_prompt(question: str, user_id: int, portfolio_id: int, db: AsyncSession) -> bool:
     # Call validation endpoints first via HTTPfv
     validate_prompt_resp = await call_provider_endpoint(
         endpoint_map["validate_prompt"],
@@ -33,10 +35,17 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int) -> boo
     )
 
     if not validate_investment_goal_resp.get("valid", False):
+        result = await db.execute(
+            select(Portfolio.name).where(
+                Portfolio.id == portfolio_id, 
+                Portfolio.user_id == user_id
+            )
+        )
+        portfolio_name = result.scalar_one_or_none()
         return {
             "archived": False,
             "summary": "<p>"
-            "I cannot find your investment objectives in my memory. "
+            f"I cannot find your investment objectives in my memory for the portfolio: <code>{portfolio_name}</code>. "
             "Could you please share your short-term and long-term investment objectives so I can better advise you"
             "(e.g. growth, dividend income, capital preservation, etc.)."
             "</p>",
@@ -129,7 +138,7 @@ async def run_mcp_client_pipeline(
         }
 
     # Call validation endpoints first via HTTPfv
-    validation_issue = await validate_prompt(question, user_id, portfolio_id)
+    validation_issue = await validate_prompt(question, user_id, portfolio_id, db)
     if validation_issue:
         return validation_issue
 
