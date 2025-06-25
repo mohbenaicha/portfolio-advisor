@@ -261,4 +261,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial render after portfolios load
     setTimeout(renderPortfolioSummary, 600);
   }
+
+  // --- Draggable divider logic for advisor tab ---
+  const resizeBar = document.getElementById('advisor-resize-bar');
+  const textareaWrapper = document.querySelector('.textarea-wrapper');
+  const summaryPanel = document.querySelector('.portfolio-summary-panel');
+  const advisorBox = document.querySelector('.advisor-box');
+  let isDragging = false;
+
+  if (resizeBar && textareaWrapper && summaryPanel && advisorBox) {
+    resizeBar.addEventListener('mousedown', function(e) {
+      // Only allow horizontal drag if flex-direction is row
+      if (window.getComputedStyle(advisorBox).flexDirection !== 'row') return;
+      isDragging = true;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      // Calculate new width for textareaWrapper
+      const boxRect = advisorBox.getBoundingClientRect();
+      let newWidth = e.clientX - boxRect.left;
+      // Set min/max
+      const min = 300, max = advisorBox.offsetWidth - 370 - 24; // 370px min for summary panel, 24px for divider/margins
+      if (newWidth < min) newWidth = min;
+      if (newWidth > max) newWidth = max;
+      textareaWrapper.style.width = newWidth + 'px';
+      summaryPanel.style.flex = '1 1 0';
+    });
+    document.addEventListener('mouseup', function(e) {
+      if (isDragging) {
+        isDragging = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+  }
 });

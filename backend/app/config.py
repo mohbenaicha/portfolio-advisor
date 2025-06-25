@@ -15,7 +15,7 @@ OPEN_AI_API_KEY = getenv("OPENAI_API_KEY").strip()  # Remove any surrounding quo
 BACKEND_BASE_URL = getenv("BACKEND_BASE_URL", "https://briefly-backend-459260001744.us-central1.run.app")
 ALLOWED_ORIGINS = [
     getenv("ALLOWED_ORIGIN", "https://project-briefly-2a809.web.app"),
-    # "http://localhost:5173", "http://localhost:3000"
+    "http://localhost:5173", "http://localhost:3000"
 ]
 PROVIDER_BASE_URL = "/".join([BACKEND_BASE_URL, "tool"])
 GMAIL_PWD = getenv("GMAIL_PWD", "").strip()

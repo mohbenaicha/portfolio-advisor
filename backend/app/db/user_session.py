@@ -53,7 +53,7 @@ class UserSessionManager:
     async def update_session(
         user_id: int = None,
         db: AsyncSession = None,
-        updates: Dict[str, Union[int, str]] = {},
+        updates: dict = {},
     ):
 
         for k, v in updates.items():

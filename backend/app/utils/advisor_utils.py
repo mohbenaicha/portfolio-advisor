@@ -3,7 +3,6 @@ import asyncio
 import markdown
 from typing import Tuple, Union, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
-from bs4 import BeautifulSoup
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import (
     get_exposure_summary,
@@ -93,52 +92,14 @@ A single number with a one-line justification.
 Briefly mention any key news snippets or metrics relied on.
 
 ## Citations  
-List full titles and sources of referenced news.
+For each referenced news article, list the full title, source, and the direct URL.
+Format each citation as: [Title](URL) — Source
 
 **Constraints:**  
 Keep total length under 500 words (excluding citations). Use clean markdown formatting (headings, bullet points, short paragraphs).
 
 Assume no follow-up questions. Your response must be as decisive and complete as possible, or clearly explain what’s missing to provide valid recommendations.
     """
-
-
-def build_advice_prompt(
-    question: str, portfolio_summary: str, objectives: str, article_summaries: list
-) -> str:
-
-    return f"""
-            You are a professional investment advisor with expertise in financial markets, portfolio management, and risk assessment. You have 
-            received a question from a user regarding their investment portfolio, and you need to provide a comprehensive analysis and actionable 
-            recommendations based on the user's portfolio, recent news data if any, and their investment objectives.
-            
-            ### User Question
-            {question}
-
-            ### Portfolio Snapshot
-            {portfolio_summary}
-
-            {
-            "### Recent News & Data (already pre‑filtered for relevance)\n"
-            f"{article_summaries}" if article_summaries else ""
-            }
-
-            
-            "### User's Investment Objective\n"
-            {objectives}
-                
-            ### Deliverable
-            Respond using **only** the following markdown section headings:
-
-            ##1‑Sentence Answer – the punch line.  
-            ##Portfolio Impact Analysis – how news items affect key positions/exposures (News summaries don't make sense, infer from their titles).  
-            ##Recommendations (Numbered) – specific trades, hedges, or reallocations; include target weight/size, time frame, and thesis in ≤ 40 words each, taking into consideration the user's short-term and long-term objectives.
-            ##Key Risks & Unknowns – bullet list.  
-            ##Confidence (0‑100%) – single number plus one‑line justification.  
-            ##References & Assumptions – mention news snippets or metrics (brief).  
-            ##Citations – list of news snippets (title, source) used to support your analysis.
-
-            Keep total length under 500 words (not counting citations) and format the response in an appropriate markdown of headings, paragraphs and lists.
-            """
 
 
 async def call_provider_endpoint(endpoint: str, payload: dict) -> Dict[str, Union[bool, str]]: 
@@ -159,6 +120,7 @@ async def call_provider_endpoint(endpoint: str, payload: dict) -> Dict[str, Unio
             print(f"[Retry] Attempt {attempt} failed: {e}. Retrying in {backoff}s...")
             await asyncio.sleep(backoff)
             backoff *= 2
+    return {"archived": False, "summary": "Error calling provider endpoint"}
 
 
 async def construct_prompt_for_embedding(
@@ -198,7 +160,7 @@ async def increment_prompt_usage(user_id: int, db: AsyncSession) -> None:
         },
     )
 
-async def check_prompt_limit(user_id: int) -> Tuple[bool, Union[dict[str, Union[bool]], None]]:
+async def check_prompt_limit(user_id: int) -> Tuple[bool, Union[dict[str, Union[bool, str]], None]]:
     prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
     if prompt_count >= 3:
         return True, {
@@ -206,4 +168,4 @@ async def check_prompt_limit(user_id: int) -> Tuple[bool, Union[dict[str, Union[
             "summary": "<p>You have reached the maximum number of prompts allowed for today.</p>",
         }
     else:
-        False, None
+        return False, None

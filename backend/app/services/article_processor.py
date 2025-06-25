@@ -66,7 +66,6 @@ async def summarize_articles(articles, llm=summary_client, max_summary_length=30
         # Pass documents and max_length
         response = await chain.arun({"input_documents": chunks, "max_length": max_summary_length})
         article["summary"] = response
-        print("\nSummary: ", response)
         return article
 
     summarized = await asyncio.gather(*[process_article(a) for a in articles])

@@ -14,7 +14,7 @@
   --danger-hover: #e69d00;
   --success: #77d0e8;
   --success-hover: #e6e600;
-  --border: #888888;
+  --border: #333333;
   --input-bg: #20304900;
   --portfolio-select-bg: #0f172a;
 
@@ -416,7 +416,6 @@ button,
   padding: 8px 12px;
   border: none;
   border-radius: 6px;
-  border: 1px solid var(--border);
   font-weight: 500;
   cursor: pointer;
   font-size: var(--button-font-size);
@@ -546,14 +545,47 @@ button.delete:hover {
 
 .advisor-box {
   height: 250px;
-  min-height: 250px; /* Accommodate textarea wrapper + portfolio summary panel */
+  min-height: 250px;
   display: flex;
+  flex-direction: row;
   padding: 16px;
   align-items: flex-start;
   border-top: 1px solid var(--border);
   width: 100%;
   min-width: 520px;
   max-width: 100%;
+}
+
+.horizontal-divider#advisor-resize-bar {
+  width: 16px;
+  min-width: 16px;
+  height: 90%;
+  background: transparent;
+  cursor: col-resize;
+  margin: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+.horizontal-divider#advisor-resize-bar .grip {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+}
+.horizontal-divider#advisor-resize-bar .grip-line {
+  width: 4px;
+  height: 18px;
+  background: var(--border);
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+.horizontal-divider#advisor-resize-bar:hover .grip-line {
+  background: var(--accent-hover);
 }
 
 .portfolio-summary-panel {
@@ -563,14 +595,14 @@ button.delete:hover {
   max-height: 220px;
   min-height: 220px;
   background: var(--bg-panel);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 8px;
-  padding: 16px 12px 12px 12px;
+  padding: 12px 12px 12px 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   display: flex;
   flex-direction: column;
   height: 100%;
-  margin-left: 8px;
+  outline: none;
 }
 
 .summary-tabs {
@@ -638,12 +670,13 @@ button.delete:hover {
 .textarea-wrapper {
   position: relative;
   border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
+  border: none;
+  background: var(--bg-panel);
   padding: 5px;
   padding-bottom: 60px;
   width: 700px;
   margin: 0 auto;
+  outline: none;
 }
 
 .textarea-wrapper textarea {
@@ -677,6 +710,7 @@ button.delete:hover {
   border: none;
   padding: 0.5rem;
   background: var(--portfolio-select-bg);
+  border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   font-size: 0.95rem;
@@ -687,7 +721,7 @@ button.delete:hover {
   flex: 1;
   padding: 0.5rem;
   border-radius: 6px;
-  border: 0px solid var(--border);
+  border: 1px solid var(--border);
   background: var(--accent);
   color: var(--text);
   font-weight: bold;
@@ -758,8 +792,7 @@ button.delete:hover {
   background: var(--portfolio-select-bg);
   color: var(--text);
   border-radius: 4px;
-  border: 1px solid var(--border);
-  width: 300px;
+  border: none;
 }
 
 #portfolio-name {
@@ -773,7 +806,6 @@ button.delete:hover {
   display: flex;
   align-items: center;
   background: var(--bg-light);
-  border: 1px solid var(--border);
   border-radius: 6px;
   margin-top: 10px;
   padding: 5px 5px;
@@ -1339,6 +1371,25 @@ div.grecaptcha-badge {
     min-width: 0;
     margin-left: 0;
     margin-top: 16px;
+  }
+  .horizontal-divider#advisor-resize-bar {
+    width: 100%;
+    min-width: 0;
+    height: 16px;
+    min-height: 16px;
+    cursor: row-resize;
+    margin: 8px 0;
+    flex-direction: row;
+  }
+  .horizontal-divider#advisor-resize-bar .grip {
+    flex-direction: row;
+    height: auto;
+    width: 40px;
+    gap: 7px;
+  }
+  .horizontal-divider#advisor-resize-bar .grip-line {
+    width: 18px;
+    height: 4px;
   }
 }
 

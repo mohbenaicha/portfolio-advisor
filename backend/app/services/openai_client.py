@@ -206,7 +206,7 @@ async def extract_entities(
             {memory}
 
             Instructions:
-            Extract and return a JSON object that is a list of 3 specific, focused search themes related to the user's quesiton, portfolio and investment objectives, suitable as Google News search queries.
+            Extract and return a JSON object that is a list of 2 specific, focused search themes related to the user's quesiton, portfolio and investment objectives, suitable as Google News search queries.
                 Each theme must include:  
                 - a key "theme" whose value is a concise, descriptive phrase reflecting a current news topic or trend tied to the user's question and portfolio (e.g., "US renewable energy policy", "emerging biotech startups in Europe")  
            
