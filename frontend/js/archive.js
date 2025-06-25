@@ -1,6 +1,7 @@
 import { getArchives, getArchivedResponse, loadArchives } from "./api.js";
 import { decodeHTML } from "./utils.js";
 import { showTab } from "./main.js";
+import { showThumbnailPreview, hideThumbnailPreview, moveThumbnailPreview } from './utils.js';
 
 
 export async function handle_load_archive(id, portfolios) {
@@ -57,7 +58,29 @@ export async function handle_load_archive(id, portfolios) {
         });
       }, idx * 150);
     });
+    setupArchiveThumbnailPreviews(container);
   }
+}
+
+function setupArchiveThumbnailPreviews(container) {
+  let currentLink = null;
+  container.addEventListener('mouseover', function(e) {
+    if (e.target.matches('a')) {
+      currentLink = e.target;
+      showThumbnailPreview(e.target, e.target.href, e);
+    }
+  });
+  container.addEventListener('mousemove', function(e) {
+    if (currentLink && e.target === currentLink) {
+      moveThumbnailPreview(e);
+    }
+  });
+  container.addEventListener('mouseout', function(e) {
+    if (e.target.matches('a')) {
+      hideThumbnailPreview();
+      currentLink = null;
+    }
+  });
 }
 
 export async function loadArchiveDropdown() {

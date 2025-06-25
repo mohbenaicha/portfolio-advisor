@@ -1,4 +1,5 @@
 import { analyzePrompt, saveArchive, getPortfolios } from "./api.js";
+import { showThumbnailPreview, hideThumbnailPreview, moveThumbnailPreview } from './utils.js';
 
 
 
@@ -297,4 +298,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Setup thumbnail previews for links in assistant chat bubbles
+  function setupChatBubbleThumbnails() {
+    const chatContainer = document.getElementById('chat-container');
+    let currentLink = null;
+    chatContainer.addEventListener('mouseover', async function(e) {
+      if (e.target.matches('.chat-bubble.assistant a')) {
+        currentLink = e.target;
+        showThumbnailPreview(e.target, e.target.href, e);
+      }
+    });
+    chatContainer.addEventListener('mousemove', function(e) {
+      if (currentLink && e.target === currentLink) {
+        moveThumbnailPreview(e);
+      }
+    });
+    chatContainer.addEventListener('mouseout', function(e) {
+      if (e.target.matches('.chat-bubble.assistant a')) {
+        hideThumbnailPreview();
+        currentLink = null;
+      }
+    });
+  }
+  setupChatBubbleThumbnails();
 });

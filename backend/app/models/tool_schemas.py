@@ -64,6 +64,6 @@ retrieve_tool_schema = {
 
 tools = [
     {"type": "function", "function": get_portfolio_tool_schema},
-    {"type": "function", "function": determine_tool_schema},
+    # {"type": "function", "function": determine_tool_schema},
     {"type": "function", "function": retrieve_tool_schema},
 ]

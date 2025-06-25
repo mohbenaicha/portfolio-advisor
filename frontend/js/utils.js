@@ -1,4 +1,5 @@
 import { BASE_URL } from './config.js';
+import { fetchThumbnail } from './api.js';
 
 
 const loginError = document.getElementById("login-error");
@@ -6,7 +7,9 @@ const tempLoadingScreen = document.getElementById("loading-screen");
 const sidebar = document.querySelector('.sidebar');
 const resizeHandle = sidebar.querySelector('.sidebar-resize-handle');
 
-// user to safely fetch responses from the server and handle errors
+let thumbnailPreviewDiv = null;
+
+
 export async function safeFetch(url, options = {}) {
   const res = await fetch(url, options);
   if (!res.ok) {
@@ -23,7 +26,7 @@ resizeHandle.addEventListener('mousedown', (e) => {
 });
 
 function resizeSidebar(e) {
-  const newWidth = e.clientX - sidebar.getBoundingClientRect().left; // Calculate width from the left edge
+  const newWidth = e.clientX - sidebar.getBoundingClientRect().left; 
   if (newWidth >= 100 && newWidth <= 600) {
     sidebar.style.width = `${newWidth}px`;
   }
@@ -44,8 +47,8 @@ export async function validateRecaptcha(recaptchaToken) {
   let instanceDown = false;
 
   try {
-    const maxAttempts = 30; // 1 minute total (30 attempts * 2 seconds)
-    const delay = 2000; // 2 seconds
+    const maxAttempts = 30; 
+    const delay = 2000; 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const response = await safeFetch(`${BASE_URL}/verify-recaptcha`, {
@@ -53,13 +56,13 @@ export async function validateRecaptcha(recaptchaToken) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: recaptchaToken }),
         });
-        return response; // Exit loop and return response if successful
+        return response; 
       } catch (err) {
         if (attempt === maxAttempts - 1) {
           instanceDown = true;
           throw new Error("Container did not start within the timeout period.");
         }
-        await new Promise(resolve => setTimeout(resolve, delay)); // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay)); 
       }
     }
     showElement(tempLoadingScreen, "Validating reCAPTCHA...");
@@ -83,8 +86,8 @@ export function revealArchiveSequentially(body, targetContainer, delay = 200) {
   const temp = document.createElement("div");
   temp.innerHTML = body.innerHTML;
 
-  const elements = Array.from(temp.children); // this gets the actual block-level elements
-  targetContainer.innerHTML = ""; // optional: clear existing
+  const elements = Array.from(temp.children); 
+  targetContainer.innerHTML = ""; 
 
   let i = 0;
   function revealNext() {
@@ -139,26 +142,25 @@ export const showElement = (element, additionContent) => {
 };
 
 export function showToast(message, duration = 3000) {
-  // Remove any existing toast
+  
   const existingToast = document.querySelector('.toast-notification');
   if (existingToast) {
     existingToast.remove();
   }
 
-  // Create new toast
+  
   const toast = document.createElement('div');
   toast.className = 'toast-notification';
   toast.textContent = message;
   
-  // Add to DOM
+  
   document.body.appendChild(toast);
   
-  // Trigger animation
   setTimeout(() => {
     toast.classList.add('show');
   }, 10);
   
-  // Hide after duration
+  
   setTimeout(() => {
     toast.classList.add('hide');
     setTimeout(() => {
@@ -167,4 +169,88 @@ export function showToast(message, duration = 3000) {
       }
     }, 300);
   }, duration);
+}
+
+export async function showThumbnailPreview(linkElement, url, mouseEvent) {
+  if (!thumbnailPreviewDiv) {
+    thumbnailPreviewDiv = document.createElement('div');
+    thumbnailPreviewDiv.id = 'link-thumbnail-preview';
+    thumbnailPreviewDiv.style.position = 'absolute';
+    thumbnailPreviewDiv.style.zIndex = 9999;
+    thumbnailPreviewDiv.style.background = '#222';
+    thumbnailPreviewDiv.style.padding = '6px';
+    thumbnailPreviewDiv.style.borderRadius = '8px';
+    thumbnailPreviewDiv.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+    thumbnailPreviewDiv.style.display = 'none';
+    thumbnailPreviewDiv.style.maxWidth = '220px';
+    document.body.appendChild(thumbnailPreviewDiv);
+  }
+  thumbnailPreviewDiv.innerHTML = `<div style='text-align:center;font-size:13px;color:#aaa;margin-bottom:4px;'>Loading preview...</div><div style='display:flex;align-items:center;justify-content:center;height:36px;'><span class='loading-spinner' style='width:24px;height:24px;border:3px solid #888;border-top:3px solid #fff;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;'></span></div>`;
+  let top = 0, left = 0;
+  if (mouseEvent && mouseEvent.clientX && mouseEvent.clientY) {
+    top = mouseEvent.clientY + window.scrollY + 16;
+    left = mouseEvent.clientX + window.scrollX + 16;
+  } else {
+    const rect = linkElement.getBoundingClientRect();
+    top = rect.bottom + window.scrollY + 8;
+    left = rect.left + window.scrollX;
+  }
+  thumbnailPreviewDiv.style.display = 'block';
+  thumbnailPreviewDiv.style.top = `${top}px`;
+  thumbnailPreviewDiv.style.left = `${left}px`;
+  await new Promise(resolve => setTimeout(resolve, 0));
+  const { image, source } = await fetchThumbnail(url);
+  const title = linkElement.innerText;
+  // Extract source from URL if backend didn't return one
+  let finalSource = source;
+  if (!finalSource) {
+    try {
+      const urlObj = new URL(url);
+      finalSource = urlObj.hostname.replace('www.', '');
+    } catch (e) {
+      finalSource = 'Unknown';
+    }
+  }
+  let html = '';
+  if (image) {
+    html += `<img src="${image}" style="max-width:210px;max-height:120px;display:block;margin:0 auto 6px auto;">`;
+  }
+  if (title) {
+    html += `<div style='font-weight:bold;font-size:15px;margin-bottom:2px;word-break:break-word;'>${title}</div>`;
+  }
+  if (finalSource) {
+    html += `<div style='font-size:12px;color:#aaa;'>${finalSource}</div>`;
+  }
+  if (!image && !title && !finalSource) {
+    html = 'No preview available';
+  }
+  thumbnailPreviewDiv.innerHTML = html;
+  thumbnailPreviewDiv.style.border = 'none';
+}
+
+export function moveThumbnailPreview(mouseEvent) {
+  if (!thumbnailPreviewDiv || !mouseEvent) return;
+  const previewRect = thumbnailPreviewDiv.getBoundingClientRect();
+  let top = mouseEvent.clientY + window.scrollY - previewRect.height - 16;
+  let left = mouseEvent.clientX + window.scrollX + 16;
+  // Clamp to viewport
+  if (left + previewRect.width > window.innerWidth - 8) {
+    left = window.innerWidth - previewRect.width - 8;
+  }
+  if (top < 8) top = 8;
+  thumbnailPreviewDiv.style.top = `${top}px`;
+  thumbnailPreviewDiv.style.left = `${left}px`;
+}
+
+if (!document.getElementById('thumbnail-spinner-style')) {
+  const style = document.createElement('style');
+  style.id = 'thumbnail-spinner-style';
+  style.innerHTML = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+  document.head.appendChild(style);
+}
+
+export function hideThumbnailPreview() {
+  if (thumbnailPreviewDiv) {
+    thumbnailPreviewDiv.style.display = 'none';
+  }
 }

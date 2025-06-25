@@ -6,6 +6,7 @@ from app.api.auth_routes import router as auth_router
 from app.api.provider_routes import router as provider_router
 from app.api.registration_routes import router as registration_router
 from app.api.recaptcha_route import router as recaptcha_router
+from app.api.thumbnail_route import router as thumbnail_router
 
 router = APIRouter()
 
@@ -19,4 +20,5 @@ router.include_router(provider_router, prefix="/tool", tags=["Tool"])
 router.include_router(auth_router, tags=["Auth"])
 router.include_router(registration_router, tags=["Registration"])
 router.include_router(recaptcha_router, tags=["reCAPTCHA"])
+router.include_router(thumbnail_router, tags=["Thumbnail"])
 

@@ -177,4 +177,14 @@ export async function saveArchive(payload) {
   });
 }
 
+export async function fetchThumbnail(url) {
+  try {
+    const resp = await safeFetch(`${BASE_URL}/thumbnail?url=${encodeURIComponent(url)}`);
+    // Expect resp: { image, title, source }
+    return resp;
+  } catch (e) {
+    return { image: null, title: null, source: null };
+  }
+}
+
 export { BASE_URL };

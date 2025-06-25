@@ -197,7 +197,7 @@ async def extract_entities(
     prompt = f"""
             You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
 
-            User question:
+            User quget_similar_articlesestion:
             "{question}"
 
             Here's the user's portfolio summary and exposures:
@@ -229,7 +229,11 @@ async def extract_entities(
 
 
 async def retrieve_news(
-    question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None, scrape: bool = True
+    question: str,
+    portfolio_id: str,
+    db: AsyncSession = None,
+    user_id: int = None,
+    scrape: bool = True,
 ):
     themes = await extract_entities(
         question=question,
@@ -270,19 +274,21 @@ async def retrieve_news(
             for article in fresh_articles:
                 # key added added to each article dict: raw_article - full scraped article content
                 try:
-                    article["raw_article"] = await extract_with_readability(article["link"])
+                    article["raw_article"] = await extract_with_readability(
+                        article["link"]
+                    )
                 except Exception as e:
                     article["raw_article"] = "Readability extraction failed."
 
         # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
-        # keys added: 
+        # keys added:
         #   summary - summarized version of each article by GPT-4o mini
         #   embedding - embedding vector for the summary
         articles = await summarize_and_embed_articles(articles=fresh_articles)
 
         # 6: Cache summaries in MongoDB
         await store_article_summaries(articles)
-            
+
         print("Retreived {} fresh articles".format(len(articles)))
         return articles + cached_articles if cached_articles else articles
     else:
