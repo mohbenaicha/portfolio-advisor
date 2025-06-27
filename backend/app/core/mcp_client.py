@@ -53,7 +53,7 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int, db: As
 
 
 async def construct_initial_messages(
-    question: str, db: AsyncSession, portfolio_id: int, user_id: int
+    question: str, portfolio_id: int, user_id: int
 ) -> list:
     """Construct the initial messages for OpenAI."""
     return [
@@ -142,7 +142,7 @@ async def run_mcp_client_pipeline(
     if validation_issue:
         return validation_issue
 
-    messages = await construct_initial_messages(question, db, portfolio_id, user_id)
+    messages = await construct_initial_messages(question, portfolio_id, user_id)
 
     tool_outputs = {}
     stop = False
@@ -172,6 +172,4 @@ async def run_mcp_client_pipeline(
         choice, messages, tool_outputs, _ = await handle_tool_call(
             choice, messages, tool_outputs, user_id, portfolio_id, stop
         )
-        # print("Stop: ", stop)
-        # if stop:
-        #     break
+        

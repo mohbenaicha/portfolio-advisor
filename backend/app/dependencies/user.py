@@ -4,6 +4,7 @@ from sqlalchemy.future import select
 from app.models.sql_models import User
 from fastapi import Depends
 from app.db.session import get_db
+from typing import cast
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> int:
     auth_header = request.headers.get("authorization")
@@ -19,5 +20,4 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-
-    return user.id
+    return cast(int, user.id)

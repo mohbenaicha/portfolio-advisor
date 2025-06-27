@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.db.archive import save_archive, get_archive_by_id, get_archived_responses
+from app.db.archive_crud import save_archive, get_archive_by_id, get_archived_responses
 from app.dependencies.user import get_current_user
 from app.models.schemas import ArchiveCreate, ArchiveOut
 from sqlalchemy.ext.asyncio import AsyncSession

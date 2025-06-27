@@ -9,13 +9,14 @@ if ENV == "DEV":
     load_dotenv()
 
 DATABASE_URL = getenv("DATABASE_URI").strip()
+TEST_DB_URL = getenv("TEST_DB_URI").strip()
 MONGO_URI = getenv("MONGO_URI").strip()
 OUTSCRAPER_API_KEY = getenv("OUTSCRAPER_API_KEY").strip()
 OPEN_AI_API_KEY = getenv("OPENAI_API_KEY").strip()  # Remove any surrounding quotes due to GCP cloud secter create
 BACKEND_BASE_URL = getenv("BACKEND_BASE_URL", "https://briefly-backend-459260001744.us-central1.run.app")
 ALLOWED_ORIGINS = [
     getenv("ALLOWED_ORIGIN", "https://project-briefly-2a809.web.app"),
-    "http://localhost:5173", "http://localhost:3000"
+    # "http://localhost:5173", "http://localhost:3000"
 ]
 PROVIDER_BASE_URL = "/".join([BACKEND_BASE_URL, "tool"])
 GMAIL_PWD = getenv("GMAIL_PWD", "").strip()
