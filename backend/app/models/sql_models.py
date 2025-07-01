@@ -131,3 +131,4 @@ class UserSession(Base):
         DateTime, nullable=True, default=datetime.now(timezone.utc).replace(tzinfo=None)
     )  # Last activity timestamp
     total_prompts_used = Column(Integer, nullable=False, default=0)  # Tracks usage
+    failed_prompts = Column(Integer, nullable=False, default=0)  # Tracks failed prompt attempts

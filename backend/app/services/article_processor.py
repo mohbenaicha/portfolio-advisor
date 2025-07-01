@@ -32,19 +32,46 @@ async def batch_embed(texts: list[str]) -> list[list[float]]:
     return await asnyc_loop.run_in_executor(None, sync_batch_embed, texts)
 
 
-async def embed_articles(articles: List[dict]) -> tuple[List[dict], int]:
+async def embed_articles(articles: List[dict]) -> List[dict]:
     texts = [a["summary"] for a in articles]
-    
+
     # Count input tokens for embeddings
     total_embedding_text = " ".join(texts)
     embedding_input_tokens = count_tokens(total_embedding_text, EMBEDDING_MODEL)
     print(f"Embedding input tokens: {embedding_input_tokens}")
-    
+
     embeddings = await batch_embed(texts)
     for article, emb in zip(articles, embeddings):
         article["summary_embedding"] = emb
-    
-    return articles, embedding_input_tokens
+
+    return articles
+
+
+async def process_article(article, splitter, chain, max_summary_length):
+    # Debug: Check what fields are actually available
+    print(f"DEBUG - Article: {article.get('link', 'unknown')} \n")
+
+    # Use raw_article as before (no assumptions)
+    content = article.get("raw_article", "")
+    if len(content) < 50:
+        return article, 0, 0
+
+    if len(content) > 8000:
+        content = content[:8000]
+
+    doc = Document(
+        page_content=content,
+        metadata={"url": article.get("link")},
+    )
+    chunks = splitter.split_documents([doc])
+
+    # Pass documents and max_length
+    response = await chain.arun(
+        {"input_documents": chunks, "max_length": max_summary_length}
+    )  # COMMENTED OUT TO SAVE API COSTS
+
+    article["summary"] = response
+    return article
 
 
 async def summarize_articles(articles, llm=summary_client, max_summary_length=300):
@@ -56,11 +83,13 @@ async def summarize_articles(articles, llm=summary_client, max_summary_length=30
             filtered_articles.append(article)
         else:
             print(f"SKIPPING: only {len(raw_article)} chars")
-    
-    print(f"Processing {len(filtered_articles)} articles (filtered from {len(articles)})")
-    
+
+    print(
+        f"Processing {len(filtered_articles)} articles (filtered from {len(articles)})"
+    )
+
     splitter = CharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
-    
+
     custom_prompt = """
     Summarize the following text in {max_length} characters or less. 
     Focus on key facts. Be concise and direct. 
@@ -71,61 +100,22 @@ async def summarize_articles(articles, llm=summary_client, max_summary_length=30
     Summary:"""
 
     from langchain.prompts import PromptTemplate
-    prompt = PromptTemplate(template=custom_prompt, input_variables=["text", "max_length"])
-    
+
+    prompt = PromptTemplate(
+        template=custom_prompt, input_variables=["text", "max_length"]
+    )
+
     # Use "stuff" chain type with custom prompt
     chain = load_summarize_chain(llm, chain_type="stuff", prompt=prompt)
 
-    async def process_article(article):
-        # Debug: Check what fields are actually available
-        print(f"DEBUG - Article: {article.get('link', 'unknown')} \n")
-        
-        # Use raw_article as before (no assumptions)
-        content = article.get("raw_article", "")
-        if len(content) < 50:
-            return article, 0, 0
-        
-        if len(content) > 8000:
-            content = content[:8000]
-            
-        doc = Document(
-            page_content=content,
-            metadata={"url": article.get("link")},
-        )
-        chunks = splitter.split_documents([doc])
-        
-        # Count input tokens for this article - use the actual chunks being processed
-        chunk_text = " ".join([chunk.page_content for chunk in chunks])
-        input_tokens = count_tokens(chunk_text, SUMMARY_LLM)
-        print(f"Article summarization input tokens: {input_tokens} (chunks content length: {len(chunk_text)} chars)")
-        
-        # Pass documents and max_length
-        response = await chain.arun({"input_documents": chunks, "max_length": max_summary_length})  # COMMENTED OUT TO SAVE API COSTS
-        
-        # Count output tokens for this article
-        output_tokens = count_tokens(response, SUMMARY_LLM)
-        print(f"Article summarization output tokens : {output_tokens} (summary length: {len(response)} chars)")
-        
-        article["summary"] = response
-        return article, input_tokens, output_tokens  # Return article, input tokens, and output tokens
-
-    results = await asyncio.gather(*[process_article(a) for a in filtered_articles])
-    summarized = [result[0] for result in results]
-    total_input_tokens = sum(result[1] for result in results)
-    total_output_tokens = sum(result[2] for result in results)
-
-    print("=" * 60)
-    print(f"TOTAL ARTICLE INPUT TOKENS: {total_input_tokens}")
-    print(f"TOTAL ARTICLE OUTPUT TOKENS: {total_output_tokens}")
-    print("=" * 60)
-
-    return summarized, total_input_tokens, total_output_tokens
+    results = await asyncio.gather(*[process_article(a, splitter, chain, max_summary_length) for a in filtered_articles])
+    summarized = [result for result in results]
+    return summarized
 
 
-async def summarize_and_embed_articles(articles, llm=summary_client) -> tuple[List[dict], int, int]:
+async def summarize_and_embed_articles(articles, llm=summary_client) -> List[dict]:
     print(f"Starting summarization of {len(articles)} articles...")
-    summarized, summary_input_tokens, summary_output_tokens = await summarize_articles(articles, llm=llm)
+    summarized = await summarize_articles(articles, llm=llm)
     print(f"Completed summarization, now embedding {len(summarized)} articles...")
-    
-    summarize_and_embedded, embedding_input_tokens = await embed_articles(summarized)
-    return summarize_and_embedded, summary_input_tokens, summary_output_tokens
+    summarize_and_embedded = await embed_articles(summarized)
+    return summarize_and_embedded

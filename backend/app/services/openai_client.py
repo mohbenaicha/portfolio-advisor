@@ -341,7 +341,7 @@ async def retrieve_news(
         # keys added:
         #   summary - summarized version of each article by GPT-4o mini
         #   embedding - embedding vector for the summary
-        articles, summary_input_tokens, summary_output_tokens = await summarize_and_embed_articles(articles=fresh_articles)
+        articles = await summarize_and_embed_articles(articles=fresh_articles)
 
         # 6: Cache summaries in MongoDB
         await store_article_summaries(articles)
@@ -352,10 +352,6 @@ async def retrieve_news(
         # Return articles with token counts
         return {
             "articles": filtered_articles,
-            "token_counts": {
-                "input_tokens": summary_input_tokens,
-                "output_tokens": summary_output_tokens
-            }
         }
     else:
         articles_to_return = cached_articles if cached_articles else []

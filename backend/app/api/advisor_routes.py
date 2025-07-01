@@ -10,10 +10,10 @@ router = APIRouter()
 
 @router.post("/analyze", response_model=PromptResponse)
 async def analyze(request: PromptRequest, db: AsyncSession = Depends(get_db), user_id: int = Depends(get_current_user)):
-    # try:
-    result = await run_mcp_client_pipeline(request.question, user_id, request.portfolio_id, db)
-    return result
-    # except Exception as e:
-    #     print(f"Error in analyze endpoint: {e}")
-    #     # traceback.print_exc() # DEBUG
-    #     raise HTTPException(status_code=500, detail=str(e))
+    try:
+        result = await run_mcp_client_pipeline(request.question, user_id, request.portfolio_id, db)
+        return result
+    except Exception as e:
+        print(f"Error in analyze endpoint: {e}")
+        # traceback.print_exc() # DEBUG
+        raise HTTPException(status_code=500, detail=str(e))

@@ -10,7 +10,7 @@ from app.utils.portfolio_utils import (
     get_portfolio_summary,
 )
 from fastapi.encoders import jsonable_encoder
-from app.config import PROVIDER_BASE_URL, LLM
+from app.config import PROVIDER_BASE_URL
 from app.db.user_session import UserSessionManager
 from app.utils.memory_utils import get_investment_objective
 
@@ -171,12 +171,12 @@ async def increment_prompt_usage(user_id: int, db: AsyncSession) -> None:
         },
     )
 
+LIMIT_MESSAGE = "<p>You have reached the maximum number of prompts allowed for today.</p>"
+
 async def check_prompt_limit(user_id: int) -> Tuple[bool, Union[dict[str, Union[bool, str]], None]]:
     prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
-    if prompt_count >= 3:
-        return True, {
-            "archived": False,
-            "summary": "<p>You have reached the maximum number of prompts allowed for today.</p>",
-        }
+    failed_count = await UserSessionManager.get_failed_prompts(user_id)
+    if prompt_count >= 3 or failed_count >= 15:
+        return True, {"archived": False, "summary": LIMIT_MESSAGE, "final_message": True}
     else:
         return False, None
