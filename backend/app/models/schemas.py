@@ -45,6 +45,7 @@ class ArchiveCreate(BaseModel):
     portfolio_id: int
     original_question: str
     openai_response: str
+    title: Optional[str] = None
 
 
 class ArchiveOut(BaseModel):
@@ -55,6 +56,7 @@ class ArchiveOut(BaseModel):
     openai_response: str
     timestamp: datetime
     summary_tags: List[str] = Field(default_factory=list)
+    title: Optional[str] = None
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 

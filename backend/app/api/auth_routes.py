@@ -46,7 +46,8 @@ async def authenticate_user(
         user_id=user.id, llm_memory=llm_memories, db=db
     )
  
-    if session:
+    # Check if session was actually loaded from database (has timestamp)
+    if session and session.get("timestamp"):
         return {"message": "Session loaded from database", "user_id": user.id}
 
     # Otherwise, create a new session

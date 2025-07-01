@@ -5,4 +5,5 @@ router = APIRouter()
 
 @router.get("/thumbnail")
 def get_thumbnail(url: str = Query(...)):
-    return extract_thumbnail_image(url) 
+    result = extract_thumbnail_image(url)
+    return result 

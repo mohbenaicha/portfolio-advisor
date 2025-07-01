@@ -7,9 +7,9 @@ if ENV == "DEV":
     print("Loading environment variables from .env file")
 
     load_dotenv()
+    TEST_DB_URL = getenv("TEST_DB_URI", "").strip()
 
 DATABASE_URL = getenv("DATABASE_URI").strip()
-TEST_DB_URL = getenv("TEST_DB_URI").strip()
 MONGO_URI = getenv("MONGO_URI").strip()
 OUTSCRAPER_API_KEY = getenv("OUTSCRAPER_API_KEY").strip()
 OPEN_AI_API_KEY = getenv("OPENAI_API_KEY").strip()  # Remove any surrounding quotes due to GCP cloud secter create

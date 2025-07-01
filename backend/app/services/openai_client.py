@@ -44,9 +44,6 @@ async def validate_prompt(
             Only return a json object...
             """
 
-    # Count input tokens
-    input_tokens = count_tokens(prompt, LLM)
-    print(f"validate_prompt input tokens: {input_tokens}")
 
     # send the prompt to OpenAI API for processing
     response = client.chat.completions.create(
@@ -54,9 +51,6 @@ async def validate_prompt(
     )
     raw_content = response.choices[0].message.content
 
-    # Count output tokens
-    output_tokens = response.usage.completion_tokens if response.usage else 0
-    print(f"validate_prompt output tokens: {output_tokens}")
 
     # process response
     if raw_content:
@@ -83,19 +77,18 @@ async def validate_investment_goal(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     )
     memory = await get_investment_objective(user_id, portfolio_id)
-
     prompt = f"""
             You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}.
-            Your job is to determine the user's investment object, based on the user's question, if it isn't provided below.
-
-            User question:
-            "{question}"
+            Your job is to determine the user's investment object, based on the user's question, if it isn't provided below:
             
-            User's portfolio:
-            {portfolio_summary}
+            User's query:
+            {question}
 
             User's investment objectives from memory:
             {memory if memory else "None"}
+
+            User's portfolio:
+            {portfolio_summary}
 
             Instructions:
             Return a JSON object with a 
@@ -105,9 +98,6 @@ async def validate_investment_goal(
             Only return a json object...
             """
 
-    # Count input tokens
-    input_tokens = count_tokens(prompt, LLM)
-    print(f"validate_investment_goal input tokens: {input_tokens}")
 
     max_retries = 3
     attempt = 0
@@ -121,9 +111,6 @@ async def validate_investment_goal(
         )
         raw_content = response.choices[0].message.content
 
-        # Count output tokens
-        output_tokens = response.usage.completion_tokens if response.usage else 0
-        print(f"validate_investment_goal output tokens: {output_tokens}")
 
         if raw_content:
             cleaned = re.sub(
@@ -135,18 +122,18 @@ async def validate_investment_goal(
 
             if st_obj or lt_obj:
                 break
-
-    await UserSessionManager.update_session(
-        user_id=user_id,
-        db=db,
-        updates={
-            "llm_memory": {
-                "short_term": st_obj or "",
-                "long_term": lt_obj or "",
-                "portfolio_id": portfolio_id,
-            }
-        },
-    )
+    if st_obj or lt_obj:
+        await UserSessionManager.update_session(
+            user_id=user_id,
+            db=db,
+            updates={
+                "llm_memory": {
+                    "short_term": st_obj or "",
+                    "long_term": lt_obj or "",
+                    "portfolio_id": portfolio_id,
+                }
+            },
+        )
 
     return cleaned_json if 'cleaned_json' in locals() else {"valid": False}
 
@@ -186,19 +173,11 @@ async def determine_if_augmentation_required(
             Only return a json object...
             """
     
-    # Count input tokens
-    input_tokens = count_tokens(prompt, LLM)
-    print(f"determine_if_augmentation_required input tokens: {input_tokens}")
-    
     # send the prompt to client API for processing
     response = client.chat.completions.create(
         model=LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
-    
-    # Count output tokens
-    output_tokens = response.usage.completion_tokens if response.usage else 0
-    print(f"determine_if_augmentation_required output tokens: {output_tokens}")
     
     # process response
     if raw_content:
@@ -248,19 +227,10 @@ async def extract_entities(
             Only return a json object...
             """
 
-    # Count input tokens
-    input_tokens = count_tokens(prompt, LLM)
-    print(f"extract_entities input tokens: {input_tokens}")
-
     response = client.chat.completions.create(
         model=LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
-
-    # Count output tokens
-    output_tokens = response.usage.completion_tokens if response.usage else 0
-    print(f"extract_entities output tokens: {output_tokens}")
-    print(f"extract_entities raw_content: {raw_content}")
 
     # # stripping markers needed here
     if raw_content:
@@ -278,7 +248,7 @@ async def retrieve_news(
     portfolio_id: int,
     db: AsyncSession | None = None,
     user_id: int | None = None,
-    scrape: bool = True,
+    scrape: bool = False,
 ):
     if not db or not portfolio_id or not user_id:
         return []
@@ -330,7 +300,6 @@ async def retrieve_news(
             for article in fresh_articles:
                 # key added added to each article dict: raw_article - full scraped article content
                 try:
-                    print("Extracting article with readability: ", article["link"], "\n")
                     article["raw_article"] = await extract_with_readability(
                         article["link"]
                     )

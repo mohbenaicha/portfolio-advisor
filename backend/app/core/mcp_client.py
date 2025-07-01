@@ -28,8 +28,6 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int, db: As
     )
     if not validate_prompt_resp.get("valid", False):
         response_msg = "<p>Invalid question. Please ask a relevant investment question.</p>"
-        output_tokens = count_tokens(response_msg, LLM)
-        print(f"Validation output tokens: {output_tokens}")
         return {
             "archived": False,
             "summary": response_msg,
@@ -77,7 +75,6 @@ async def construct_initial_messages(
 
 async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id, stop, total_input_tokens: int = 0, total_output_tokens: int = 0):
     for tool_call in choice.message.tool_calls:
-        print("Tool call: ", tool_call)
         name = tool_call.function.name
         args = json.loads(tool_call.function.arguments)
 
@@ -175,7 +172,6 @@ async def run_mcp_client_pipeline(
         if choice.finish_reason == "stop":
             if db:
                 await increment_prompt_usage(user_id, db)
-                print(f"Total prompts used: {await UserSessionManager.get_total_prompts_used(user_id)}")
       
             
             return {

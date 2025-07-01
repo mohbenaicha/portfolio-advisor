@@ -44,6 +44,7 @@ async def save_archive(db: AsyncSession = None, archive_data=None, user_id: int 
             user_id=user_id,
             original_question=archive_data.original_question,
             openai_response=escape(archive_data.openai_response),
+            title=archive_data.title,
             timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
         )
 

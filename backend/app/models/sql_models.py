@@ -102,6 +102,7 @@ class ArchivedResponse(Base):
     )
     original_question = Column(Text)
     openai_response = Column(Text)
+    title = Column(String(255), nullable=True)
 
 
 class LLMMemory(Base):
