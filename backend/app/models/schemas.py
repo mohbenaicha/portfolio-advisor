@@ -120,3 +120,25 @@ class ValidateInvestmentGoalPayload(BaseModel):
     question: str
     portfolio_id: int
     user_id: int
+
+
+class TokenCounts(BaseModel):
+    input_tokens: int
+    output_tokens: int
+
+
+class ValidatePromptResponse(BaseModel):
+    valid: bool
+    token_counts: Optional[TokenCounts] = None
+
+
+class ValidateInvestmentGoalResponse(BaseModel):
+    valid: bool
+    short_term_objective: Optional[str] = None
+    long_term_objective: Optional[str] = None
+    token_counts: Optional[TokenCounts] = None
+
+
+class RetrieveNewsResponse(BaseModel):
+    articles: List[dict]
+    token_counts: Optional[TokenCounts] = None

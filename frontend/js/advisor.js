@@ -199,7 +199,7 @@ async function renderPortfolioSummary() {
     summaryContent.innerHTML = '<div style="color: #aaa; text-align: center;">No portfolio selected.</div>';
     return;
   }
-  const portfolios = await getPortfolios();
+  const portfolios = window._portfolios || await getPortfolios();
   const portfolio = portfolios.find(p => p.id === portfolioId);
   if (!portfolio || !portfolio.assets || portfolio.assets.length === 0) {
     summaryContent.innerHTML = '<div style="color: #aaa; text-align: center;">No assets in this portfolio.</div>';
@@ -259,8 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const select = document.getElementById('portfolio-select');
   if (select) {
     select.addEventListener('change', renderPortfolioSummary);
-    // Initial render after portfolios load
-    setTimeout(renderPortfolioSummary, 600);
   }
 
   // --- Draggable divider logic for advisor tab ---
@@ -323,3 +321,5 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   setupChatBubbleThumbnails();
 });
+
+window.renderPortfolioSummary = renderPortfolioSummary;

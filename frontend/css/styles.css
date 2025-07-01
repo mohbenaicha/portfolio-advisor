@@ -466,14 +466,18 @@ button.delete:hover {
   background: var(--accent-hover);
 }
 
-.refresh-arch-btn {
+.archive-controls {
   position: sticky;
   bottom: 0;
   margin-top: auto;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  z-index: 10;
+}
+
+.refresh-arch-btn {
   padding: 10px 15px;
-  margin-right: auto;
-  left: 50%;
-  transform: translateX(-50%);
   font-size: var(--button-font-size);
   border: solid 1px var(--border) !important;
   background-color: var(--accent);
@@ -482,11 +486,26 @@ button.delete:hover {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  z-index: 10;
 }
 
 .refresh-arch-btn:hover {
   background-color: var(--accent-hover);
+}
+
+.delete-all-arch-btn {
+  padding: 10px 15px;
+  font-size: var(--button-font-size);
+  border: solid 1px var(--border) !important;
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-all-arch-btn:hover {
+  background-color: var(--danger-hover);
 }
 
 #add-asset-btn {

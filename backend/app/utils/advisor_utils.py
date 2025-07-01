@@ -1,6 +1,7 @@
 import httpx
 import asyncio
 import markdown
+import tiktoken
 from typing import Tuple, Union, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.portfolio_crud import get_portfolio_by_id
@@ -9,9 +10,19 @@ from app.utils.portfolio_utils import (
     get_portfolio_summary,
 )
 from fastapi.encoders import jsonable_encoder
-from app.config import PROVIDER_BASE_URL
+from app.config import PROVIDER_BASE_URL, LLM
 from app.db.user_session import UserSessionManager
 from app.utils.memory_utils import get_investment_objective
+
+
+def count_tokens(text: str, model: str = "gpt-4") -> int:
+    """Count tokens in text using tiktoken."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+        return len(encoding.encode(text))
+    except:
+        # Fallback for unknown models
+        return int(len(text.split()) * 1.3)
 
 
 def preprocess_markdown(markdown_text):
@@ -62,14 +73,14 @@ Do **not** provide personal tax or legal advice.
 Cite any key assumptions you rely on.  
 Write in concise, executive-level English — avoid jargon unless explained.
 
-User’s investment objectives:
+User's investment objectives:
 {memory}
 
 ### Deliverable
 
 Respond using **only** the following markdown section headings:
 
-## 1‑Sentence Answer  
+## 1-Sentence Answer  
 The punchline summary.
 
 ## Portfolio Impact Analysis  
@@ -85,7 +96,7 @@ Align suggestions to both short- and long-term user objectives.
 ## Key Risks & Unknowns  
 Bullet list of uncertainties or downside risks.
 
-## Confidence (0‑100%)  
+## Confidence (0-100%)  
 A single number with a one-line justification.
 
 ## References & Assumptions  
@@ -98,14 +109,14 @@ Format each citation as: [Title](URL) — Source
 **Constraints:**  
 Keep total length under 500 words (excluding citations). Use clean markdown formatting (headings, bullet points, short paragraphs).
 
-Assume no follow-up questions. Your response must be as decisive and complete as possible, or clearly explain what’s missing to provide valid recommendations.
+Assume no follow-up questions. Your response must be as decisive and complete as possible, or clearly explain what's missing to provide valid recommendations.
     """
 
 
 async def call_provider_endpoint(endpoint: str, payload: dict) -> Dict[str, Union[bool, str]]: 
     url = f"{PROVIDER_BASE_URL}{endpoint}"
     timeout = httpx.Timeout(600)  # 10 minutes timeout
-    retries = 3
+    retries = 1
     backoff = 2  # seconds
 
     for attempt in range(1, retries + 1):

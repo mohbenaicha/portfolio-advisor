@@ -1,4 +1,4 @@
-import { getArchives, getArchivedResponse, loadArchives } from "./api.js";
+import { getArchives, getArchivedResponse, loadArchives, deleteAllArchives } from "./api.js";
 import { decodeHTML } from "./utils.js";
 import { showTab } from "./main.js";
 import { showThumbnailPreview, hideThumbnailPreview, moveThumbnailPreview } from './utils.js';
@@ -104,6 +104,33 @@ export async function loadArchiveDropdown() {
 document.getElementById("refresh-archives-btn").addEventListener("click", () => {
   loadArchives();
 });
+
+document.getElementById("delete-all-archives-btn").addEventListener("click", async () => {
+  const confirmDelete = window.confirm("Are you sure you want to delete ALL archives? This action cannot be undone and will permanently remove all your previous chat history.");
+  if (!confirmDelete) return;
+
+  try {
+    const response = await deleteAllArchives();
+    if (response.deleted) {
+      // Clear the archive list
+      const archiveSelect = document.getElementById("archive-list");
+      archiveSelect.innerHTML = "";
+      
+      // Reset the viewer
+      const viewer = document.getElementById("archive-viewer");
+      viewer.innerHTML = "<p>Select an archive to view its details.</p>";
+      
+      // Show success message
+      alert("All archives have been deleted successfully.");
+    } else {
+      alert("Failed to delete archives. Please try again.");
+    }
+  } catch (error) {
+    console.error("Error deleting all archives:", error);
+    alert("An error occurred while deleting archives. Please try again.");
+  }
+});
+
 window.loadArchiveDropdown = loadArchiveDropdown;
 
 

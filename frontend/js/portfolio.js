@@ -9,8 +9,8 @@ let selectedPortfolioId = null;
 window.getPortfolios = getPortfolios;
 window.selectedPortfolioId = selectedPortfolioId;
 
-export async function loadPortfolioDropdown() {
-  const portfolios = await getPortfolios();
+export async function loadPortfolioDropdown(portfolios) {
+  portfolios = portfolios || await getPortfolios();
   const dropdownIds = ["portfolio-dropdown", "portfolio-select"];
 
   dropdownIds.forEach((id) => {
@@ -39,9 +39,9 @@ export async function loadPortfolioDropdown() {
   });
 }
 
-export async function loadPortfolio() {
+export async function loadPortfolio(portfolios) {
   const id = parseInt(document.getElementById("portfolio-dropdown").value);
-  const portfolios = await getPortfolios();
+  portfolios = portfolios || await getPortfolios();
   const selected = portfolios.find(p => p.id === id);
   if (!selected) {
     console.warn("No matching portfolio found.");
@@ -68,14 +68,14 @@ export async function loadPortfolio() {
   calculateTotals(selected.assets);
 }
 
-export async function initialUpdateQuestionPlaceholder() {
+export async function initialUpdateQuestionPlaceholder(portfolios) {
   const dropdown = document.getElementById("portfolio-dropdown");
   if (dropdown) {
-    dropdown.addEventListener("change", loadPortfolio);
-    await loadPortfolioDropdown();
+    dropdown.addEventListener("change", () => loadPortfolio(window._portfolios));
+    await loadPortfolioDropdown(portfolios);
     if (dropdown.options.length > 0) {
       dropdown.selectedIndex = 0;
-      await loadPortfolio();
+      await loadPortfolio(portfolios);
     }
   }
 }
@@ -98,11 +98,18 @@ export async function createPortfolio() {
     const newPortfolio = await createPortfolioAPI("", assets);
     selectedPortfolioId = newPortfolio.id;
 
-    await loadPortfolioDropdown();
-
+    // Refresh cache and update dropdown
+    const portfolios = await getPortfolios(true); // force refresh
+    window._portfolios = portfolios;
+    
+    // Store current selection before updating dropdown
+    const currentSelection = selectedPortfolioId;
+    await loadPortfolioDropdown(portfolios);
+    
+    // Restore the current selection
     const dropdown = document.getElementById("portfolio-dropdown");
-    if (dropdown && selectedPortfolioId) {
-      dropdown.value = selectedPortfolioId.toString(); // force string match
+    if (dropdown && currentSelection) {
+      dropdown.value = currentSelection.toString(); // force string match
       // Don't call loadPortfolio() for new portfolios - keep name input empty
     }
 
@@ -124,8 +131,10 @@ export async function deletePortfolio() {
     // Set selectedPortfolioId so the existing portfolio isn't overwritten
     selectedPortfolioId = null;
 
-    // Reset dropdown
-    await loadPortfolioDropdown();
+    // Refresh cache and reset dropdown
+    const portfolios = await getPortfolios(true); // force refresh
+    window._portfolios = portfolios;
+    await loadPortfolioDropdown(portfolios);
     document.getElementById("portfolio-name").value = "";
     document.querySelector("#asset-table tbody").innerHTML = "";
 
@@ -138,7 +147,7 @@ export async function deletePortfolio() {
     const dropdown = document.getElementById("portfolio-dropdown");
     if (dropdown.options.length > 0) {
       dropdown.selectedIndex = 0;
-      await loadPortfolio();
+      await loadPortfolio(portfolios);
     }
 
   } catch (err) {
@@ -295,7 +304,20 @@ export async function saveAssets() {
 
   try {
     await createPortfolioAPI(name, assets, selectedPortfolioId);
-    await loadPortfolioDropdown();
+    
+    // Refresh cache and update dropdown
+    const portfolios = await getPortfolios(true); // force refresh
+    window._portfolios = portfolios;
+    
+    // Store current selection before updating dropdown
+    const currentSelection = selectedPortfolioId;
+    await loadPortfolioDropdown(portfolios);
+    
+    // Restore the current selection
+    const dropdown = document.getElementById("portfolio-dropdown");
+    if (dropdown && currentSelection) {
+      dropdown.value = currentSelection.toString();
+    }
     
     // Show success notification
     showToast("💾 Portfolio saved successfully!", 2500);
@@ -355,8 +377,10 @@ export async function duplicatePortfolio() {
     // Update the selected portfolio ID to the new one
     selectedPortfolioId = newPortfolio.id;
     
-    // Reload the dropdown to include the new portfolio
-    await loadPortfolioDropdown();
+    // Refresh cache and reload the dropdown to include the new portfolio
+    const updatedPortfolios = await getPortfolios(true); // force refresh
+    window._portfolios = updatedPortfolios;
+    await loadPortfolioDropdown(updatedPortfolios);
     
     // Select the new portfolio in the dropdown
     const dropdown = document.getElementById("portfolio-dropdown");
@@ -380,7 +404,7 @@ export async function duplicatePortfolio() {
     }
     
     // Reload the portfolio to show the duplicated assets
-    await loadPortfolio();
+    await loadPortfolio(updatedPortfolios);
     
     showToast("Portfolio duplicated successfully! 📋", 2500);
     
@@ -396,6 +420,7 @@ window.loadPortfolio = loadPortfolio;
 window.deletePortfolio = deletePortfolio;
 window.duplicatePortfolio = duplicatePortfolio;
 window.addAssetRow = addAssetRow;
+window.createAssetRow = createAssetRow;
 
 // logic for uploading portfoloi
 function initPortfolioUpload() {

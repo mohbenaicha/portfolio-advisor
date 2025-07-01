@@ -17,6 +17,14 @@ async def delete_archive_by_id(db: AsyncSession, archive_id: int, user_id: int) 
     return result.rowcount > 0
 
 
+async def delete_all_archives_by_user_id(db: AsyncSession, user_id: int) -> bool:
+    query = delete(ArchivedResponse).where(ArchivedResponse.user_id == user_id)
+    _ = await db.execute(query)
+    await db.commit()
+    
+    return True  # Always return True as we're deleting all archives for the user
+
+
 # TODO: order arguments consitently
 async def save_archive(db: AsyncSession = None, archive_data=None, user_id: int = None):
     if archive_data:

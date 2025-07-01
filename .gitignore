@@ -8,6 +8,11 @@
 write_code_to_txt.py
 test_fetch_articles.py
 backend/populate_demo_portfolios.py
+backend/app/core/mcp_client_backup.py
+backend/app/services/article_processor_backup.py
+backend/app/services/openai_client_backup.py
+backend/tests/ref_data/
+
 *.pptx
 .vscode
 *.backup

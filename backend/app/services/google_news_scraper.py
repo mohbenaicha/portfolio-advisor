@@ -40,8 +40,8 @@ async def fetch_articles(themes):
         return False
     news_response = []
     for theme in themes:
-        print(f"Fetching news for theme: {theme.get('theme', '')}")
-        response = fetch_news(theme.get("theme", ""), 1, time_range="w")
+        print(f"Fetching news for theme: {theme}")
+        response = fetch_news(theme, 1, time_range="w")
         if response and response[0] != []:
             for article in response[0]:
                 news_response.append(article)

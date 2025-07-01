@@ -7,12 +7,12 @@ from app.utils.portfolio_utils import get_exposure_summary, get_portfolio_summar
 from app.db.session import AsyncSession
 from app.db.user_session import UserSessionManager
 from app.utils.memory_utils import get_investment_objective
-from app.config import LLM, OPEN_AI_API_KEY
+from app.config import ALT_LLM, LLM, OPEN_AI_API_KEY
 from app.db.mongo import get_similar_articles, store_article_summaries
 from app.services.google_news_scraper import fetch_articles
 from app.services.article_processor import summarize_and_embed_articles
 from app.utils.article_utils import extract_with_readability
-from app.utils.advisor_utils import construct_prompt_for_embedding
+from app.utils.advisor_utils import construct_prompt_for_embedding, count_tokens
 from openai import OpenAI
 
 client = OpenAI(api_key=OPEN_AI_API_KEY)
@@ -44,26 +44,40 @@ async def validate_prompt(
             Only return a json object...
             """
 
+    # Count input tokens
+    input_tokens = count_tokens(prompt, LLM)
+    print(f"validate_prompt input tokens: {input_tokens}")
+
     # send the prompt to OpenAI API for processing
     response = client.chat.completions.create(
-        model=LLM, messages=[{"role": "user", "content": prompt}]
+        model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
 
+    # Count output tokens
+    output_tokens = response.usage.completion_tokens if response.usage else 0
+    print(f"validate_prompt output tokens: {output_tokens}")
+
     # process response
-    cleaned = re.sub(
-        r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
-    )
-    cleaned_json = json.loads(cleaned)
-    return cleaned_json
+    if raw_content:
+        cleaned = re.sub(
+            r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
+        )
+        cleaned_json = json.loads(cleaned)
+        return cleaned_json
+    else:
+        return {"valid": False}
 
 
 async def validate_investment_goal(
     question: str,
-    user_id: int = None,
-    portfolio_id: int = None,
-    db: AsyncSession = None,
+    user_id: int | None = None,
+    portfolio_id: int | None = None,
+    db: AsyncSession | None = None,
 ) -> Dict[str, bool]:
+
+    if not db or not portfolio_id or not user_id:
+        return {"valid": False}
 
     portfolio_summary = get_portfolio_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
@@ -91,6 +105,10 @@ async def validate_investment_goal(
             Only return a json object...
             """
 
+    # Count input tokens
+    input_tokens = count_tokens(prompt, LLM)
+    print(f"validate_investment_goal input tokens: {input_tokens}")
+
     max_retries = 3
     attempt = 0
     st_obj, lt_obj = "", ""
@@ -99,19 +117,24 @@ async def validate_investment_goal(
         print("Attempt # ", attempt + 1, "to validate investment goal")
         attempt += 1
         response = client.chat.completions.create(
-            model=LLM, messages=[{"role": "user", "content": prompt}]
+            model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
         )
         raw_content = response.choices[0].message.content
 
-        cleaned = re.sub(
-            r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
-        )
-        cleaned_json = json.loads(cleaned)
-        st_obj = cleaned_json.get("short_term_objective", "")
-        lt_obj = cleaned_json.get("long_term_objective", "")
+        # Count output tokens
+        output_tokens = response.usage.completion_tokens if response.usage else 0
+        print(f"validate_investment_goal output tokens: {output_tokens}")
 
-        if st_obj or lt_obj:
-            break
+        if raw_content:
+            cleaned = re.sub(
+                r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
+            )
+            cleaned_json = json.loads(cleaned)
+            st_obj = cleaned_json.get("short_term_objective", "")
+            lt_obj = cleaned_json.get("long_term_objective", "")
+
+            if st_obj or lt_obj:
+                break
 
     await UserSessionManager.update_session(
         user_id=user_id,
@@ -125,12 +148,15 @@ async def validate_investment_goal(
         },
     )
 
-    return cleaned_json
+    return cleaned_json if 'cleaned_json' in locals() else {"valid": False}
 
 
 async def determine_if_augmentation_required(
-    question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
+    question: str, portfolio_id: int, db: AsyncSession | None = None, user_id: int | None = None
 ) -> bool:
+    if not db or not portfolio_id or not user_id:
+        return False
+        
     exposure_summary = get_exposure_summary(
         jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
     )
@@ -159,26 +185,38 @@ async def determine_if_augmentation_required(
               - key "additional_data_required" whose value is a boolean indicating whether the user's question requires additional information or augmentation to provide a comprehensive answer.
             Only return a json object...
             """
+    
+    # Count input tokens
+    input_tokens = count_tokens(prompt, LLM)
+    print(f"determine_if_augmentation_required input tokens: {input_tokens}")
+    
     # send the prompt to client API for processing
     response = client.chat.completions.create(
         model=LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
+    
+    # Count output tokens
+    output_tokens = response.usage.completion_tokens if response.usage else 0
+    print(f"determine_if_augmentation_required output tokens: {output_tokens}")
+    
     # process response
-    cleaned = re.sub(
-        r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
-    )
-    cleaned_json = json.loads(cleaned)
-    return cleaned_json.get("additional_data_required", False)
+    if raw_content:
+        cleaned = re.sub(
+            r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
+        )
+        cleaned_json = json.loads(cleaned)
+        return cleaned_json.get("additional_data_required", False)
+    else:
+        return False
 
 
 async def extract_entities(
-    question: str, portfolio_id: str, db: AsyncSession = None, user_id: int = None
-) -> Tuple[
-    List[Dict[str, str]],
-    Dict[str, Union[int, str, List[Dict[str, Union[int, str, float, bool]]]]],
-    str,
-]:
+    question: str, portfolio_id: int, db: AsyncSession | None = None, user_id: int | None = None
+) -> List[Dict[str, str]]:
+
+    if not db or not portfolio_id or not user_id:
+        return []
 
     portfolio_assets = None
     portfolio_summary = ""
@@ -197,7 +235,7 @@ async def extract_entities(
     prompt = f"""
             You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
 
-            User quget_similar_articlesestion:
+            User question:
             "{question}"
 
             Here's the user's portfolio summary and exposures:
@@ -206,35 +244,45 @@ async def extract_entities(
             {memory}
 
             Instructions:
-            Extract and return a JSON object that is a list of 2 specific, focused search themes related to the user's quesiton, portfolio and investment objectives, suitable as Google News search queries.
-                Each theme must include:  
-                - a key "theme" whose value is a concise, descriptive phrase reflecting a current news topic or trend tied to the user's question and portfolio (e.g., "US renewable energy policy", "emerging biotech startups in Europe")  
-           
+            Extract and return a JSON object that strictly is a list of 2 specific, focused search themes related to the user's quesiton, portfolio and investment objectives, suitable as Google News search queries.           
             Only return a json object...
             """
+
+    # Count input tokens
+    input_tokens = count_tokens(prompt, LLM)
+    print(f"extract_entities input tokens: {input_tokens}")
 
     response = client.chat.completions.create(
         model=LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
 
+    # Count output tokens
+    output_tokens = response.usage.completion_tokens if response.usage else 0
+    print(f"extract_entities output tokens: {output_tokens}")
+    print(f"extract_entities raw_content: {raw_content}")
+
     # # stripping markers needed here
-    themes = re.sub(
-        r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
-    )
-
-    themes = json.loads(themes)
-
-    return themes
+    if raw_content:
+        themes = re.sub(
+            r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
+        )
+        themes = json.loads(themes)
+        return themes
+    else:
+        return []
 
 
 async def retrieve_news(
     question: str,
-    portfolio_id: str,
-    db: AsyncSession = None,
-    user_id: int = None,
+    portfolio_id: int,
+    db: AsyncSession | None = None,
+    user_id: int | None = None,
     scrape: bool = True,
 ):
+    if not db or not portfolio_id or not user_id:
+        return []
+        
     themes = await extract_entities(
         question=question,
         portfolio_id=portfolio_id,
@@ -264,6 +312,14 @@ async def retrieve_news(
             article["_id"] = str(article["_id"])
             article["stored_at"] = article["stored_at"].isoformat()
 
+    def filter_article_fields(article):
+        return {
+            "title": article.get("title", ""),
+            "summary": article.get("summary", ""),
+            "source": article.get("source", ""),
+            "link": article.get("link", "")
+        }
+
     if scrape:
         # 3: Fetch articles from Alpha Vantage
         # list of dicts; keys: query, position, title, body, posted, source, link
@@ -274,6 +330,7 @@ async def retrieve_news(
             for article in fresh_articles:
                 # key added added to each article dict: raw_article - full scraped article content
                 try:
+                    print("Extracting article with readability: ", article["link"], "\n")
                     article["raw_article"] = await extract_with_readability(
                         article["link"]
                     )
@@ -284,12 +341,29 @@ async def retrieve_news(
         # keys added:
         #   summary - summarized version of each article by GPT-4o mini
         #   embedding - embedding vector for the summary
-        articles = await summarize_and_embed_articles(articles=fresh_articles)
+        articles, summary_input_tokens, summary_output_tokens = await summarize_and_embed_articles(articles=fresh_articles)
 
         # 6: Cache summaries in MongoDB
         await store_article_summaries(articles)
 
         print("Retreived {} fresh articles".format(len(articles)))
-        return articles + cached_articles if cached_articles else articles
+        articles_to_return = articles + cached_articles if cached_articles else articles
+        filtered_articles = [filter_article_fields(a) for a in articles_to_return]
+        # Return articles with token counts
+        return {
+            "articles": filtered_articles,
+            "token_counts": {
+                "input_tokens": summary_input_tokens,
+                "output_tokens": summary_output_tokens
+            }
+        }
     else:
-        return cached_articles if cached_articles else []
+        articles_to_return = cached_articles if cached_articles else []
+        filtered_articles = [filter_article_fields(a) for a in articles_to_return]
+        return {
+            "articles": filtered_articles,
+            "token_counts": {
+                "input_tokens": 0,
+                "output_tokens": 0
+            }
+        }

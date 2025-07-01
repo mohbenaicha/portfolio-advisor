@@ -34,10 +34,12 @@ async function login(token) {
     appScreen.style.display = "flex";
     
     handleLoginErrorDisplay(false);
-    await loadArchiveDropdown();
     await loadArchives();
-    await initialUpdateQuestionPlaceholder();
-    await loadPortfolioOptions();
+    const portfolios = await getPortfolios(true); // force refresh on login
+    window._portfolios = portfolios;
+    await initialUpdateQuestionPlaceholder(portfolios);
+    // Trigger summary panel render if function exists
+    if (window.renderPortfolioSummary) window.renderPortfolioSummary();
 
   } catch (err) {
     handleLoginErrorDisplay(true, "Invalid token or authentication failed.");

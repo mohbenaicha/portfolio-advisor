@@ -16,7 +16,7 @@ OPEN_AI_API_KEY = getenv("OPENAI_API_KEY").strip()  # Remove any surrounding quo
 BACKEND_BASE_URL = getenv("BACKEND_BASE_URL", "https://briefly-backend-459260001744.us-central1.run.app")
 ALLOWED_ORIGINS = [
     getenv("ALLOWED_ORIGIN", "https://project-briefly-2a809.web.app"),
-    # "http://localhost:5173", "http://localhost:3000"
+    "http://localhost:5173", "http://localhost:3000"
 ]
 PROVIDER_BASE_URL = "/".join([BACKEND_BASE_URL, "tool"])
 GMAIL_PWD = getenv("GMAIL_PWD", "").strip()
@@ -39,9 +39,9 @@ if not RECAPTCHA_SECRET_KEY:
 
 SESSION_EXPIRY_HOURS = 24
 SCRAPER_HEADERS = {"User-Agent": "Mozilla/5.0"}
-SUMMARY_LLM = "gpt-4.1-mini"
-LLM = "gpt-4.1-mini"
-ALT_LLM = "gpt-4.1"
+SUMMARY_LLM = "gpt-4o-mini"
+LLM = "gpt-4o-mini"
+ALT_LLM = "gpt-4.1-mini"
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMAIL_ADDRESS = "mohamedbenaicha1992@gmail.com"
 

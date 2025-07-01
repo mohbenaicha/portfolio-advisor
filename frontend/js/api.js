@@ -28,10 +28,15 @@ export function getAuthHeaders() {
 }
 
 // Portfolio APIs
-export async function getPortfolios() {
-  return safeFetch(`${BASE_URL}/portfolios`, {
+export async function getPortfolios(forceRefresh = false) {
+  if (!forceRefresh && window._portfolios) {
+    return window._portfolios;
+  }
+  const data = await safeFetch(`${BASE_URL}/portfolios`, {
     headers: getAuthHeaders(),
   });
+  window._portfolios = data;
+  return data;
 }
 
 export async function loadPortfolioOptions() {
@@ -63,6 +68,9 @@ export async function loadArchives() {
   const archiveSelect = document.getElementById("archive-list");
   archiveSelect.innerHTML = "";
 
+  // Fetch portfolios ONCE and reuse
+  const portfolios = await getPortfolios();
+
   archives.forEach(async (a) => {
     const div = document.createElement("div");
     div.className = "archive-item";
@@ -75,8 +83,6 @@ export async function loadArchives() {
     `;
 
     // Handle archive item click
-    const portfolios = await getPortfolios();
-
     div.onclick = async () => {
       div.classList.add("active");
       handle_load_archive(a.id, portfolios)
@@ -165,6 +171,13 @@ export async function getArchives() {
 
 export async function getArchivedResponse(id) {
   return safeFetch(`${BASE_URL}/responses/${id}`, {
+    headers: getAuthHeaders(),
+  });
+}
+
+export async function deleteAllArchives() {
+  return safeFetch(`${BASE_URL}/archives`, {
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
 }
