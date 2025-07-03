@@ -78,7 +78,7 @@ export async function loadArchives() {
     div.innerHTML = `
       <div class="archive-title-wrapper">
         <button class="delete-archive-btn">❌</button>  
-        <span class="archive-title">${a.original_question}</span>
+        <span class="archive-title">${a.title || a.original_question}</span>
       </div>
     `;
 
@@ -196,8 +196,39 @@ export async function fetchThumbnail(url) {
     // Expect resp: { image, title, source }
     return resp;
   } catch (e) {
+    console.error('[fetchThumbnail] Error:', e);
     return { image: null, title: null, source: null };
   }
+}
+
+// Profile APIs
+export async function getProfiles() {
+  return safeFetch(`${BASE_URL}/profiles`, {
+    headers: getAuthHeaders(),
+  });
+}
+
+export async function createProfile(profile) {
+  return safeFetch(`${BASE_URL}/profiles`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(profile),
+  });
+}
+
+export async function updateProfile(profile_id, profile) {
+  return safeFetch(`${BASE_URL}/profiles/${profile_id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(profile),
+  });
+}
+
+export async function deleteProfileAPI(profile_id) {
+  return safeFetch(`${BASE_URL}/profiles/${profile_id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
 }
 
 export { BASE_URL };

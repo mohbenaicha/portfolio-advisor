@@ -38,6 +38,7 @@ html,
 body {
   height: 100%;
   font-family: 'Lato', sans-serif;
+  font-weight: 500;
   background: var(--bg);
   color: var(--text);
 }
@@ -149,7 +150,6 @@ body {
   align-items: center;
   background: var(--bg-panel);
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
   min-width: 450px;
 }
 
@@ -551,7 +551,7 @@ button.delete:hover {
    ADVISOR TAB
    ========================================================================== */
 
-#advisor.tab {
+#advisor {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -563,13 +563,14 @@ button.delete:hover {
 }
 
 .advisor-box {
-  height: 250px;
+  height: 100%;
   min-height: 250px;
+  max-height: 250px;
   display: flex;
   flex-direction: row;
+  margin: 1px;
   padding: 16px;
   align-items: flex-start;
-  border-top: 1px solid var(--border);
   width: 100%;
   min-width: 520px;
   max-width: 100%;
@@ -772,7 +773,7 @@ button.delete:hover {
 }
 
 #response {
-  height: 70%;
+  height: 100%;
   overflow-y: auto;
   overflow-x: auto;
   font-size: var(--para-font-size);
@@ -988,7 +989,7 @@ button.delete:hover {
 }
 
 .viewer-box .chat-bubble.assistant {
-  background: #444;
+  background: #44444400;
   color: #fff;
   align-self: flex-start;
   margin-right: auto;
@@ -1592,5 +1593,407 @@ div.grecaptcha-badge {
   align-self: flex-start;
   margin-right: auto;
   max-width: 85%;
+}
+
+.btn-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  width: max-content;
+  background: var(--bg-panel);
+  color: var(--text);
+  text-align: center;
+  border-radius: 6px;
+  padding: 4px 10px;
+  position: absolute;
+  z-index: 10;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transition: opacity 0.2s;
+  pointer-events: none;
+  border: 1px solid var(--border);
+}
+
+.refresh-arch-btn, .delete-all-arch-btn {
+  position: relative;
+}
+
+.refresh-arch-btn:hover .btn-tooltip,
+.delete-all-arch-btn:hover .btn-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Tooltip for top navigation tabs (below the button) */
+.tab-button {
+  position: relative;
+  overflow: visible !important;
+}
+.tab-button .btn-tooltip {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  min-width: 160px;
+  z-index: 30;
+  pointer-events: none;
+  white-space: normal;
+  line-height: 1.3;
+  padding: 6px 12px;
+  min-height: 28px;
+  display: block;
+}
+.tab-button:hover .btn-tooltip,
+.tab-button:focus .btn-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Tooltip for summary tabs (above the button) */
+.summary-tab {
+  position: relative;
+}
+.summary-tab .btn-tooltip {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  min-width: 180px;
+  z-index: 30;
+  pointer-events: none;
+}
+.summary-tab:hover .btn-tooltip,
+.summary-tab:focus .btn-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Tooltip for portfolio dropdown in chat area (above the select) */
+.input-footer select {
+  position: relative;
+  z-index: 2;
+}
+.input-footer .btn-tooltip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -32px;
+  margin: auto;
+  min-width: 180px;
+  max-width: 260px;
+  white-space: pre-line;
+  z-index: 20;
+  pointer-events: none;
+}
+.input-footer:hover .btn-tooltip,
+.input-footer:focus-within .btn-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Ensure tooltips are always on top */
+.tab-button .btn-tooltip,
+.summary-tab .btn-tooltip {
+  z-index: 9999;
+}
+
+/* Prevent leftmost tab tooltip from being covered or overflowing */
+.tab-button:first-child .btn-tooltip {
+  left: 20px;
+  transform: none;
+}
+
+/* Prevent rightmost summary tab tooltip from clipping */
+.summary-tab:last-child .btn-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+  text-align: right;
+}
+
+
+@media (max-width: 600px) {
+  .tab-button .btn-tooltip,
+  .summary-tab .btn-tooltip {
+    min-width: 120px;
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+}
+
+.tabs {
+  overflow: visible !important;
+}
+
+/* Profile Tab Styles */
+.profile-div {
+  background: var(--bg-panel);
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  color: var(--text);
+  max-width: 1000px;
+  min-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.profile-div select {
+  width: 440px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-light);
+  color: var(--text);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.add-profile-btn {
+  display: block;
+  margin: 16px auto;
+  padding: 9px 19px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  border-color: var(--border);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  transition: background 0.2s, color 0.2s;
+}
+.add-profile-btn:hover {
+  background: var(--accent-hover);
+  color: var(--success);
+}
+
+.profile-div .profile-actions {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+  align-items: center;
+}
+.profile-div button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: var(--text);
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+  outline: none;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.profile-div button[title="Save Profile"] {
+  color: var(--success);
+  background: var(--bg-panel);
+  border: 1px solid var(--success);
+}
+.profile-div button[title="Save Profile"]:hover {
+  background: var(--success);
+  color: var(--bg-panel);
+}
+.profile-div button[title="Delete Profile"] {
+  color: var(--danger);
+  background: var(--bg-panel);
+  border: 1px solid var(--danger);
+}
+.profile-div button[title="Delete Profile"]:hover {
+  background: var(--danger);
+  color: var(--bg-panel);
+}
+
+/* Tooltip for profile buttons */
+.profile-div button[title]::after {
+  content: attr(title);
+  position: absolute;
+  visibility: hidden;
+  opacity: 0;
+  width: max-content;
+  background: var(--bg-panel);
+  color: var(--text);
+  text-align: center;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transition: opacity 0.2s;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.profile-div button[title]:hover::after {
+  visibility: visible;
+  opacity: 1;
+}
+
+.multi-select-wrapper {
+  margin-bottom: 0.7rem;
+}
+.multi-select-wrapper label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+  display: block;
+  color: var(--text);
+}
+.bubble-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+.bubble {
+  background: var(--accent-hover);
+  color: var(--text);
+  border-radius: 16px;
+  padding: 0.2rem 0.6rem 0.2rem 0.6rem;
+  display: flex;
+  align-items: center;
+  font-size: 0.97rem;
+  position: relative;
+}
+.bubble-remove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 30px !important;
+  margin-left: 0.3rem;
+  cursor: pointer;
+  padding: 0 !important;
+  margin: 0 0 0 10px !important;
+}
+
+.bubble-remove:hover {
+  color: var(--danger-hover);
+}
+
+.multi-select-wrapper input[type="text"] {
+  width: 440px;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-top: 0.2rem;
+  background: var(--bg-light);
+  color: var(--text);
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+  z-index: 10;
+  margin-top: 0.2rem;
+  width: 220px;
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: 8px;
+  scrollbar-color: var(--accent-hover) var(--bg-panel);
+}
+.autocomplete-item {
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--bg-panel);
+}
+.autocomplete-item:hover {
+  background: var(--accent-hover);
+  color: var(--success);
+}
+
+.profile-div button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+  color: var(--text);
+  transition: color 0.2s;
+}
+.profile-div button[title="Save Profile"]:hover {
+  color: var(--success);
+}
+.profile-div button[title="Delete Profile"]:hover {
+  color: var(--danger);
+}
+
+@media (max-width: 600px) {
+  .profile-div, .multi-select-wrapper input[type="text"], .profile-div select, .autocomplete-dropdown {
+    width: 100% !important;
+    min-width: 0;
+  }
+}
+
+.tab#profile {
+  overflow-y: auto;
+  max-height: 80vh;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 2rem;
+}
+
+.tab#profile::-webkit-scrollbar {
+  width: 8px;
+}
+.tab#profile::-webkit-scrollbar-thumb {
+  background: var(--accent-hover);
+  border-radius: 8px;
+}
+.tab#profile::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+
+.autocomplete-dropdown {
+  scrollbar-width: 8px;
+  scrollbar-color: var(--accent-hover) var(--bg-panel);
+}
+.autocomplete-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+.autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background: var(--accent-hover);
+  border-radius: 8px;
+}
+.autocomplete-dropdown::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+
+.profile-div {
+  max-width: 1000px;
+  min-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.profile-buttons-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 16px auto;
+}
+
+.profile-buttons-container .add-profile-btn {
+  margin: 0;
 }
 

@@ -1,11 +1,10 @@
 import json, re
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict
 from fastapi.encoders import jsonable_encoder
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import get_exposure_summary, get_portfolio_summary
 from app.db.session import AsyncSession
-from app.db.user_session import UserSessionManager
 from app.utils.memory_utils import get_investment_objective
 from app.config import ALT_LLM, LLM, OPEN_AI_API_KEY
 from app.db.mongo import get_similar_articles, store_article_summaries
@@ -44,7 +43,7 @@ async def validate_prompt(
             Only return a json object...
             """
 
-
+    print("prompt for validation", prompt)
     # send the prompt to OpenAI API for processing
     response = client.chat.completions.create(
         model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
@@ -62,132 +61,6 @@ async def validate_prompt(
     else:
         return {"valid": False}
 
-
-async def validate_investment_goal(
-    question: str,
-    user_id: int | None = None,
-    portfolio_id: int | None = None,
-    db: AsyncSession | None = None,
-) -> Dict[str, bool]:
-
-    if not db or not portfolio_id or not user_id:
-        return {"valid": False}
-
-    portfolio_summary = get_portfolio_summary(
-        jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
-    )
-    memory = await get_investment_objective(user_id, portfolio_id)
-    prompt = f"""
-            You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}.
-            Your job is to determine the user's investment object, based on the user's question, if it isn't provided below:
-            
-            User's query:
-            {question}
-
-            User's investment objectives from memory:
-            {memory if memory else "None"}
-
-            User's portfolio:
-            {portfolio_summary}
-
-            Instructions:
-            Return a JSON object with a 
-              - key "valid" whose value is a boolean indicating whether the user has a clear investment objective from the above
-              - key "short_term_objective" whose value is the user's short-term investment objective if it has changed based on the question, or leave it as is if it has not changed
-              - key "long_term_objective" whose value is the user's long-term investment objective if it has changed based on the question, or leave it as is if it has not changed
-            Only return a json object...
-            """
-
-
-    max_retries = 3
-    attempt = 0
-    st_obj, lt_obj = "", ""
-
-    while attempt < max_retries and not (st_obj or lt_obj):
-        print("Attempt # ", attempt + 1, "to validate investment goal")
-        attempt += 1
-        response = client.chat.completions.create(
-            model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
-        )
-        raw_content = response.choices[0].message.content
-
-
-        if raw_content:
-            cleaned = re.sub(
-                r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
-            )
-            cleaned_json = json.loads(cleaned)
-            st_obj = cleaned_json.get("short_term_objective", "")
-            lt_obj = cleaned_json.get("long_term_objective", "")
-
-            if st_obj or lt_obj:
-                break
-    if st_obj or lt_obj:
-        await UserSessionManager.update_session(
-            user_id=user_id,
-            db=db,
-            updates={
-                "llm_memory": {
-                    "short_term": st_obj or "",
-                    "long_term": lt_obj or "",
-                    "portfolio_id": portfolio_id,
-                }
-            },
-        )
-
-    return cleaned_json if 'cleaned_json' in locals() else {"valid": False}
-
-
-async def determine_if_augmentation_required(
-    question: str, portfolio_id: int, db: AsyncSession | None = None, user_id: int | None = None
-) -> bool:
-    if not db or not portfolio_id or not user_id:
-        return False
-        
-    exposure_summary = get_exposure_summary(
-        jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
-    )
-    portfolio_summary = get_portfolio_summary(
-        jsonable_encoder(await get_portfolio_by_id(db, portfolio_id, user_id))
-    )
-    memory = await get_investment_objective(user_id, portfolio_id)
-    prompt = f"""
-            You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")}
-            User question:
-            "{question}"
-
-            Summary of user's portfolio:
-            {portfolio_summary}
-            
-            Summary of user's portfolio exposures:
-            {exposure_summary}
-            
-            User's investment objectives: 
-            {memory}
-            
-            Instructions:
-            Determine if additional current news data is required to be able to answer the user's question confidently.
-
-            Return a JSON object with a 
-              - key "additional_data_required" whose value is a boolean indicating whether the user's question requires additional information or augmentation to provide a comprehensive answer.
-            Only return a json object...
-            """
-    
-    # send the prompt to client API for processing
-    response = client.chat.completions.create(
-        model=LLM, messages=[{"role": "user", "content": prompt}]
-    )
-    raw_content = response.choices[0].message.content
-    
-    # process response
-    if raw_content:
-        cleaned = re.sub(
-            r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
-        )
-        cleaned_json = json.loads(cleaned)
-        return cleaned_json.get("additional_data_required", False)
-    else:
-        return False
 
 
 async def extract_entities(
@@ -272,9 +145,9 @@ async def retrieve_news(
     composite_prompt = await construct_prompt_for_embedding(
         db=db, portfolio_id=portfolio_id, user_id=user_id, question=question
     )
-    cached_articles = await get_similar_articles(
+    cached_articles = (await get_similar_articles(
         composite_prompt, start_date=start_date, end_date=end_date
-    )
+    ))[:1]
     print("Found {} chached articles".format(len(cached_articles)))
 
     if len(cached_articles) > 0:
@@ -332,3 +205,49 @@ async def retrieve_news(
                 "output_tokens": 0
             }
         }
+
+async def extract_profile_details(
+    question: str,
+    current_profile: dict | None,
+) -> dict:
+    """
+    Uses LLM to extract or update user profile fields from a user's question, given the current profile and the profile schema.
+    Returns a dict with only the fields that should be updated.
+    """
+    current_profile_str = json.dumps(current_profile, indent=2) if current_profile else "None"
+    prompt = f"""
+        Your job is to extract or update the user's investment profile based on the user's prompt. The user may not
+        explicitly mention their investment profile, but you should infer it from the user's prompt. Each field is a 
+        comma separated string. Extend the existing profile with new information, only remove preferences if you are 
+        certain that they are no longer relevant.
+
+        User's prompt:
+        {question}
+
+        User's current profile (as JSON):
+        {current_profile_str}
+
+
+        Instructions:
+        - Return a JSON object with only the fields from the schema that can be inferred from the user's prompt.
+        - If a field is not mentioned or cannot be inferred, leave it blank.
+        - Only return a valid JSON object, no explanations or extra text.
+    """
+    print("prompt", prompt)
+    response = client.chat.completions.create(
+        model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
+    )
+    raw_content = response.choices[0].message.content
+    print("raw_content", raw_content)
+    if raw_content:
+        cleaned = re.sub(
+            r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
+        )
+        try:
+            cleaned_json = json.loads(cleaned)
+            print("cleaned_json", cleaned_json)
+        except Exception:
+            cleaned_json = {}
+        return cleaned_json
+    else:
+        return {}

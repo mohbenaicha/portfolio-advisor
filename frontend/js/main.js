@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (portfolioBtn) portfolioBtn.addEventListener("click", () => showTab('portfolio'));
   const archiveBtn = document.querySelector("button[data-tab='archive']");
   if (archiveBtn) archiveBtn.addEventListener("click", () => showTab('archive'));
+  const profileBtn = document.querySelector("button[data-tab='profile']");
+  if (profileBtn) profileBtn.addEventListener("click", () => showTab('profile'));
 });
 
 // shows various tabs
@@ -21,6 +23,7 @@ export function showTab(tabId) {
   );
   const activeBtn = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
   if (activeBtn) activeBtn.classList.add("active-tab");
+  
 }
 
 showTab('advisor');

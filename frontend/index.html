@@ -63,17 +63,18 @@
         <h2>Previous chats</h2>
         <div id="archive-list" class="archive-list"></div>
         <div class="archive-controls">
-          <button id="refresh-archives-btn" class="refresh-arch-btn">⟳</button>
-          <button id="delete-all-archives-btn" class="delete-all-arch-btn">🗑</button>
+          <button id="refresh-archives-btn" class="refresh-arch-btn">⟳<span class="btn-tooltip">Refresh archives</span></button>
+          <button id="delete-all-archives-btn" class="delete-all-arch-btn">🗑<span class="btn-tooltip">Delete all archives</span></button>
         </div>
       </aside>
       <main class="main">
         <!-- Top Navigation -->
         <div class="topbar">
           <div class="tabs">
-            <button class="tab-button active-tab" data-tab="advisor">Advisor</button>
-            <button class="tab-button" data-tab="portfolio">Portfolios</button>
-            <button class="tab-button" data-tab="archive">Archives</button>
+            <button class="tab-button active-tab" data-tab="advisor">Advisor<span class="btn-tooltip">Chat with the AI advisor</span></button>
+            <button class="tab-button" data-tab="portfolio">Portfolios<span class="btn-tooltip">Manage your portfolios</span></button>
+            <button class="tab-button" data-tab="archive">Archives<span class="btn-tooltip">View your archived chats</span></button>
+            <button class="tab-button" data-tab="profile" id="profile-tab-link">Profile<span class="btn-tooltip">Manage your investment profiles</span></button>
           </div>
           <button id="logout-btn" onclick="logout()" class="logout-button">Logout</button>
         </div>
@@ -87,7 +88,10 @@
             <div class="textarea-wrapper">
               <textarea id="question" placeholder="Ask a question about your portfolio..."></textarea>
               <div class="input-footer">
-                <select id="portfolio-select"></select>
+                <select id="portfolio-select">
+                  <!-- options -->
+                </select>
+                <span class="btn-tooltip" style="left:unset;right:0;top:-32px;transform:none;">Select a portfolio to chat about</span>
                 <button>Ask</button>
               </div>
             </div>
@@ -100,9 +104,9 @@
             </div>
             <div class="portfolio-summary-panel">
               <div class="summary-tabs">
-                <button class="summary-tab active" data-summary="exposure">Asset</button>
-                <button class="summary-tab" data-summary="region">Region</button>
-                <button class="summary-tab" data-summary="sector">Sector</button>
+                <button class="summary-tab active" data-summary="exposure">Asset<span class="btn-tooltip">Asset composition of selected portfolio</span></button>
+                <button class="summary-tab" data-summary="region">Region<span class="btn-tooltip">Regional exposure of selected portfolio</span></button>
+                <button class="summary-tab" data-summary="sector">Sector<span class="btn-tooltip">Sector exposure of selected portfolio</span></button>
               </div>
               <div id="summary-content"></div>
             </div>
@@ -155,6 +159,8 @@
             <p>Select an archive to view its details.</p>
           </div>
         </section>
+
+        <section id="profile" class="tab hidden"></section>
       </main>
     </div>
     <footer class="footer">
@@ -183,7 +189,7 @@
   <script src="./js/advisor.js" type="module"></script>
   <script src="./js/register.js" type="module"></script>
   <script src="./js/utils.js" type="module"></script>
-
+  <script src="./js/profile.js" type="module"></script>
   <!-- Upload Portfolio Modal -->
   <div id="upload-modal" class="upload-modal hidden">
     <div class="upload-modal-content">

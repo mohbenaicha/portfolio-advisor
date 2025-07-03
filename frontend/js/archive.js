@@ -18,7 +18,6 @@ export async function handle_load_archive(id, portfolios) {
   const portfolio = portfolios.find(p => p.id === archive.portfolio_id);
 
   viewer.innerHTML = `
-    <h2>${archive.original_question}</h2>
     <p class="timestamp">${new Date(archive.timestamp).toLocaleString()}</p>
     <p class="portfolio-name"><strong>Portfolio:</strong> ${portfolio?.name || 'Unknown'}</p>
     <h3>Advice</h3>

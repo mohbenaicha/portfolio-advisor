@@ -137,3 +137,44 @@ class ValidateInvestmentGoalResponse(BaseModel):
 
 class RetrieveNewsResponse(BaseModel):
     articles: List[dict]
+
+
+class UserProfileBase(BaseModel):
+    portfolio_id: Optional[int] = None  # None = all portfolios
+    short_term_objectives: Optional[List[str]] = []
+    long_term_objectives: Optional[List[str]] = []
+    sector_preferences: Optional[List[str]] = []
+    regional_preferences: Optional[List[str]] = []
+    asset_preferences: Optional[List[str]] = []
+
+
+class UserProfileCreate(UserProfileBase):
+    pass
+
+
+class UserProfileUpdate(UserProfileBase):
+    pass
+
+
+class UserProfileResponse(UserProfileBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class ProfileDeleteRequest(BaseModel):
+    profile_id: int
+
+
+class ProfileDeleteResponse(BaseModel):
+    deleted: bool
+
+
+class GetUserProfilesPayload(BaseModel):
+    user_id: int
+    portfolio_id: int
+    question: str | None = None

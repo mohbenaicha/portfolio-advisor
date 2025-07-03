@@ -9,7 +9,8 @@ from sqlalchemy import (
     DateTime,
     Date,
     Text,
-    MetaData
+    MetaData,
+    UniqueConstraint
 )
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime, timezone
@@ -133,3 +134,22 @@ class UserSession(Base):
     )  # Last activity timestamp
     total_prompts_used = Column(Integer, nullable=False, default=0)  # Tracks usage
     failed_prompts = Column(Integer, nullable=False, default=0)  # Tracks failed prompt attempts
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+    __table_args__ = (
+        UniqueConstraint('user_id', 'portfolio_id', name='uix_user_portfolio'),
+        {"schema": "public"}
+    )
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    portfolio_id = Column(Integer, ForeignKey("portfolios.id"), nullable=True)  # null = all portfolios
+    short_term_objectives = Column(String, nullable=True)  # comma-separated
+    long_term_objectives = Column(String, nullable=True)   # comma-separated
+    sector_preferences = Column(String, nullable=True)     # comma-separated
+    regional_preferences = Column(String, nullable=True)   # comma-separated
+    asset_preferences = Column(String, nullable=True)      # comma-separated
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

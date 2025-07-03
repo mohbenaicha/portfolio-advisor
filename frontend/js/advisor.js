@@ -1,5 +1,6 @@
 import { analyzePrompt, saveArchive, getPortfolios } from "./api.js";
-import { showThumbnailPreview, hideThumbnailPreview, moveThumbnailPreview } from './utils.js';
+import { showThumbnailPreview, hideThumbnailPreview, moveThumbnailPreview, generateArchiveTitle } from './utils.js';
+import { refreshProfiles } from './profile.js';
 
 
 
@@ -8,7 +9,13 @@ async function submitPrompt() {
 
   const select = document.getElementById("portfolio-select");
   const questionInput = document.getElementById("question");
-  const question = document.getElementById("question").value.trim();
+  // Gather all previous user chat bubbles
+  const userBubbles = Array.from(document.querySelectorAll('#chat-container .chat-bubble.user'));
+  const previousUserMessages = userBubbles.map(b => b.textContent.trim()).filter(Boolean);
+  // Append current input
+  const currentInput = questionInput.value.trim();
+  // Combine all user messages, separated by newlines
+  const question = [...previousUserMessages, currentInput].join('\n');
   const portfolioId = parseInt(select.value);
   const responseDiv = document.getElementById("response");
 
@@ -22,7 +29,7 @@ async function submitPrompt() {
     return;
   }
 
-  if (!question || question.replace(/[^a-zA-Z0-9]/g, "").trim() === "" || question.length > 1000) {
+  if (!question || question.replace(/[^a-zA-Z0-9]/g, "").trim() === "" || question.length > 500) {
     questionInput.value = "Please enter a valid question.";
     questionInput.style.color = "red";
     questionInput.addEventListener("input", () => {
@@ -79,8 +86,8 @@ async function submitPrompt() {
       askButton.disabled = true;
     }
     // Do NOT clear chat history here!
-    // Append user message as a chat bubble
-    appendMessageToChat(question, 'user');
+    // Append only the current input as a chat bubble
+    appendMessageToChat(currentInput, 'user');
     // Add buffering bubble for assistant
     const chatContainer = document.getElementById('chat-container');
     const bufferingBubble = document.createElement('div');
@@ -100,13 +107,22 @@ async function submitPrompt() {
     if (result.archived) {
       // Archive the entire chat history
       const chatHistoryHTML = document.getElementById('chat-container').innerHTML;
-      await saveArchive({
+      // Use utility to generate archive title
+      const archiveTitle = generateArchiveTitle();
+      const archivePayload = {
         portfolio_id: portfolioId,
         original_question: question,
         openai_response: chatHistoryHTML,
-      });
+        title: archiveTitle,
+      };
+      await saveArchive(archivePayload);
       // Change the button text to "New Chat"
       askButton.textContent = "New Chat";
+    }
+
+    if (result.final_message === true) {
+      askButton.textContent = "New Chat";
+      await refreshProfiles();
     }
 
     if (refreshArchivesBtn) {
@@ -121,7 +137,8 @@ async function submitPrompt() {
       bufferingBubble.parentNode.removeChild(bufferingBubble);
     }
     // Append error as assistant message instead of destroying chat
-    appendMessageToChat(`<p style="color: red;">Failed to generate response. Please try again.</p>`, 'assistant');
+    appendMessageToChat(`<p style=\"color: red;\">Failed to generate response. Please try again.</p>`, 'assistant');
+    askButton.textContent = "New Chat";
   } finally {
     questionTextarea.disabled = false; // Re-enable the textarea
     askButton.disabled = false; // Re-enable the button
@@ -147,6 +164,9 @@ function renderResponse(data) {
 
 
 const questionBox = document.getElementById("question");
+if (questionBox) {
+  questionBox.setAttribute("maxlength", "500");
+}
 const advisorDropdown = document.getElementById("portfolio-select");
 const askButton = document.querySelector(".input-footer button");
 
@@ -162,6 +182,10 @@ if (advisorDropdown && questionBox) {
 askButton.addEventListener("click", () => {
   if (askButton.textContent === "Ask") {
     submitPrompt();
+    const questionInput = document.getElementById("question");
+    if (questionInput) questionInput.value = "";
+    const counter = document.getElementById("char-counter");
+    if (counter) counter.textContent = `0/500`;
   } else if (askButton.textContent === "New Chat") {
     const questionInput = document.getElementById("question");
     const chatContainer = document.getElementById("chat-container");
@@ -320,6 +344,53 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   setupChatBubbleThumbnails();
+
+  // Character counter for question input
+  setupCharCounter();
 });
 
 window.renderPortfolioSummary = renderPortfolioSummary;
+
+// Character counter for question input
+function setupCharCounter() {
+  const questionBox = document.getElementById("question");
+  if (!questionBox) return;
+  let counter = document.getElementById("char-counter");
+  if (!counter) {
+    counter = document.createElement("span");
+    counter.id = "char-counter";
+    counter.style.position = "absolute";
+    counter.style.right = "12px";
+    counter.style.top = "8px";
+    counter.style.fontSize = "12px";
+    counter.style.color = "#aaa";
+    counter.style.zIndex = "10";
+    counter.style.pointerEvents = "none";
+    counter.style.background = "#141517";
+    counter.style.borderRadius = "6px";
+    counter.style.padding = "2px 8px";
+    // Ensure wrapper is relative
+    const wrapper = questionBox.closest('.textarea-wrapper');
+    if (wrapper) {
+      wrapper.style.position = "relative";
+      wrapper.appendChild(counter);
+    }
+  }
+  function updateCounter() {
+    counter.textContent = `${questionBox.value.length}/500`;
+  }
+  questionBox.addEventListener("input", updateCounter);
+  updateCounter();
+}
+
+// Bind Enter key to Ask/New Chat
+const questionInputEl = document.getElementById("question");
+if (questionInputEl) {
+  questionInputEl.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const askButton = document.querySelector(".input-footer button");
+      if (askButton) askButton.click();
+    }
+  });
+}

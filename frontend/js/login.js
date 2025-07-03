@@ -61,7 +61,6 @@ async function handleLoginClick() {
   try {
     const recaptchaToken = await grecaptcha.execute(reCAPTCHA_SITE_KEY);
     captchaValidated = await validateRecaptcha(recaptchaToken);
-    console.log("Recaptcha validation result:", captchaValidated);
   }
   catch (err) {
     console.error("Recaptcha validation failed:", err.message);

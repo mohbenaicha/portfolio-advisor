@@ -92,7 +92,6 @@ export function revealArchiveSequentially(body, targetContainer, delay = 200) {
   let i = 0;
   function revealNext() {
     if (i < elements.length) {
-      console.log("Appending:", elements[i]);
       const clone = elements[i].cloneNode(true);
       targetContainer.appendChild(clone);
       i++;
@@ -253,4 +252,15 @@ export function hideThumbnailPreview() {
   if (thumbnailPreviewDiv) {
     thumbnailPreviewDiv.style.display = 'none';
   }
+}
+
+// Utility to generate archive title in the format 'Archive Item - YYYY/MM/DD - HH:MM'
+export function generateArchiveTitle() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `Archive Item - ${year}/${month}/${day} - ${hours}:${minutes}`;
 }

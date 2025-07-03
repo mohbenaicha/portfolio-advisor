@@ -4,24 +4,8 @@ validate_prompt_schema = {
     "description": "Validate if user question is relevant and investment objective is clear.",
     "parameters": {
         "type": "object",
-        "properties": {
-            "question": {"type": "string"},
-            # user_id and portfolio_id removed from properties
-        },
-        "required": ["question"],
-    },
-}
-
-
-validate_investment_goal_schema = {
-    "name": "validate_investment_goal",
-    "description": "Validate user's investment goal clarity.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "question": {"type": "string"},
-        },
-        "required": ["question"],
+        "properties": {},
+        "required": [],
     },
 }
 
@@ -37,33 +21,28 @@ get_portfolio_tool_schema = {
     },
 }
 
-determine_tool_schema = {
-    "name": "determine_if_augmentation_required",
-    "description": "Decide if current news data is needed to answer the investment question.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "question": {"type": "string"},
-        },
-        "required": ["question"],
-    },
-}
-
-retrieve_tool_schema = {
+scrape_news_tool_schema = {
     "name": "retrieve_news",
     "description": "Fetch and summarize relevant news articles based on the user's question and portfolio exposure.",
     "parameters": {
         "type": "object",
-        "properties": {
-            "question": {"type": "string"},
-        },
-        "required": ["question"],
+        "properties": {},
+        "required": [],
     },
 }
 
+get_user_profiles_tool_schema = {
+    "name": "get_user_profiles",
+    "description": "Return a text summary of the user's investment profile for a selected portfolio, including both the specific profile and the 'All Portfolios' profile, with reconciliation logic if they conflict.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    },
+}
 
 tools = [
     {"type": "function", "function": get_portfolio_tool_schema},
-    # {"type": "function", "function": determine_tool_schema},
-    {"type": "function", "function": retrieve_tool_schema},
+    {"type": "function", "function": scrape_news_tool_schema},
+    {"type": "function", "function": get_user_profiles_tool_schema},
 ]

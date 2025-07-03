@@ -33,31 +33,8 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int, db: As
             "summary": response_msg,
             
         }
-
-    validate_investment_goal_resp = await call_provider_endpoint(
-        endpoint_map["validate_investment_goal"],
-        {"question": question, "user_id": user_id, "portfolio_id": portfolio_id},
-    )
-
-    if not validate_investment_goal_resp.get("valid", False):
-        if db:
-            result = await db.execute(
-                select(Portfolio.name).where(
-                    Portfolio.id == portfolio_id, 
-                    Portfolio.user_id == user_id
-                )
-            )
-            portfolio_name = result.scalar_one_or_none()
-        else:
-            portfolio_name = "Unknown"
-        
-        response_msg = "<p>" + f"I cannot find your investment objectives in my memory for the portfolio: <code>{portfolio_name}</code>. " + "Could you please share your short-term and long-term investment objectives so I can better advise you" + "(e.g. growth, dividend income, capital preservation, etc.)." + "</p>"
-        return {
-            "archived": False,
-            "summary": response_msg,
-        }
     
-    return None
+    return {}
 
 
 async def construct_initial_messages(
@@ -73,7 +50,7 @@ async def construct_initial_messages(
     ]
 
 
-async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id, stop, total_input_tokens: int = 0, total_output_tokens: int = 0):
+async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id, stop, question: str | None = None, total_input_tokens: int = 0, total_output_tokens: int = 0):
     for tool_call in choice.message.tool_calls:
         name = tool_call.function.name
         args = json.loads(tool_call.function.arguments)
@@ -87,6 +64,10 @@ async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id
             "portfolio_id": portfolio_id,
         }
 
+        # Pass the actual question manually for all tools
+        if question:
+            payload["question"] = question
+
         endpoint = endpoint_map.get(name)
         if not endpoint:
             messages.append(
@@ -99,6 +80,7 @@ async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id
             )
             continue
 
+        print(f"[TOOL CALL] Invoking tool: {name}")
         tool_result = await call_provider_endpoint(endpoint, payload)
         tool_outputs[name] = tool_result
 
@@ -190,7 +172,7 @@ async def run_mcp_client_pipeline(
             )
 
         choice, messages, tool_outputs, stop = await handle_tool_call(
-            choice, messages, tool_outputs, user_id, portfolio_id, stop
+            choice, messages, tool_outputs, user_id, portfolio_id, stop, question
         )
 
     # For all other returns (prompt limit, validation, etc), add final_message: False if not already present
