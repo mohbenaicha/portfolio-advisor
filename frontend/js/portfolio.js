@@ -450,7 +450,6 @@ function initPortfolioUpload() {
   ];
 
   // schema sample
-  // TODO: add sample csv
   schemaSample.innerHTML =
     `<b>Required columns:</b><br>` +
     schemaCols.map(col => {
@@ -494,7 +493,6 @@ function initPortfolioUpload() {
 
   function parseAndValidateCSV(text) {
     errorsDiv.textContent = '';
-    // todo: replace with csv parser
     const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) {
       errorsDiv.textContent = 'CSV must have a header and at least one row.';

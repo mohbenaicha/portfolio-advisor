@@ -1,22 +1,16 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.sql_models import UserProfile
-from datetime import datetime, timezone
 
-# TODO: remove for existing functionality
 async def get_user_profiles(db: AsyncSession, user_id: int):
     result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
     return result.scalars().all()
 
-# TODO: remove for existing functionality
 async def get_user_profile_for_portfolio(db: AsyncSession, user_id: int, portfolio_id: int):
-    # Get specific profile for portfolio
     result = await db.execute(
         select(UserProfile).where(UserProfile.user_id == user_id, UserProfile.portfolio_id == portfolio_id)
     )
     specific = result.scalars().first()
-    # INSERT_YOUR_CODE
-    # If a specific profile exists, fetch the portfolio name and set it as an attribute on the profile object
     if specific and specific.portfolio_id is not None:
         from app.models.sql_models import Portfolio
         portfolio_result = await db.execute(

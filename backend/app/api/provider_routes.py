@@ -5,7 +5,6 @@ from app.db.session import get_db
 from app.services.openai_client import (
     retrieve_news,
     validate_prompt,
-    # validate_investment_goal,  # removed because function is commented out
 )
 from app.models.schemas import *
 from app.utils.profile_utils import profile_to_text
@@ -35,36 +34,6 @@ async def api_validate_prompt(
 
     return result
 
-
-# @router.post("/validate-investment-goal", response_model=ValidateInvestmentGoalResponse)
-# async def api_validate_investment_goal(
-#     payload: ValidateInvestmentGoalPayload,
-#     db: AsyncSession = Depends(get_db),
-# ):
-#
-#     result = await validate_investment_goal(
-#         question=payload.question,
-#         portfolio_id=payload.portfolio_id,
-#         user_id=payload.user_id,
-#         db=db,
-#     )
-#
-#     # Create response with token counts
-#     if isinstance(result, dict):
-#         short_term = result.get("short_term_objective")
-#         long_term = result.get("long_term_objective")
-#
-#         # Ensure they are strings or None
-#         short_term_str = str(short_term) if short_term is not None else None
-#         long_term_str = str(long_term) if long_term is not None else None
-#
-#         return ValidateInvestmentGoalResponse(
-#             valid=result.get("valid", False),
-#             short_term_objective=short_term_str,
-#             long_term_objective=long_term_str,
-#         )
-#
-#     return result
 
 
 @router.post("/retrieve-news", response_model=RetrieveNewsResponse)
@@ -167,6 +136,4 @@ async def api_get_user_profiles(
         summary += profile_to_text(general, "all portfolios") + "\n\n"
     if specific and general:
         summary += "If general profile conflicts with the specific portfolio investment profile, try to reconcile between the two, otherwise prioritize the specific profile investment profile."
-    print("investment profile summary", summary)
-    exit(0)
     return summary

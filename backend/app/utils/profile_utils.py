@@ -1,5 +1,4 @@
 def profile_to_text(profile, label):
-    # TODO: remove for existing functionality
     if not profile:
         return ""
     exclude = {"id", "user_id", "portfolio_id", "name", "created_at", "updated_at"}
