@@ -204,13 +204,13 @@ export async function fetchThumbnail(url) {
 
 // Profile APIs
 export async function getProfiles() {
-  return safeFetch(`${BASE_URL}/profiles`, {
+  return safeFetch(`${BASE_URL}/profiles/`, {
     headers: getAuthHeaders(),
   });
 }
 
 export async function createProfile(profile) {
-  return safeFetch(`${BASE_URL}/profiles`, {
+  return safeFetch(`${BASE_URL}/profiles/`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(profile),
