@@ -30,16 +30,16 @@ async def validate_prompt(
     prompt = f"""
             You are a professional investment advisor. It is {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
 
-            User question:
+            User query:
             "{question}"
 
             User's portfolio:
             {portfolio_summary}
 
             Instructions:
-            Determine if the user's question is related to finance, investing, and the user's portfolio.
+            Determine if the user's query is related to investing.
             Return a JSON object with a 
-              - key "valid" whose value is a boolean indicating whether the user's question is valid and relevant investment question
+              - key "valid" whose value is a boolean indicating whether the user's query is valid and relevant investment query
             Only return a json object...
             """
 
@@ -49,7 +49,6 @@ async def validate_prompt(
         model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
-
 
     # process response
     if raw_content:
@@ -62,9 +61,11 @@ async def validate_prompt(
         return {"valid": False}
 
 
-
 async def extract_entities(
-    question: str, portfolio_id: int, db: AsyncSession | None = None, user_id: int | None = None
+    question: str,
+    portfolio_id: int,
+    db: AsyncSession | None = None,
+    user_id: int | None = None,
 ) -> List[Dict[str, str]]:
 
     if not db or not portfolio_id or not user_id:
@@ -125,7 +126,7 @@ async def retrieve_news(
 ):
     if not db or not portfolio_id or not user_id:
         return []
-        
+
     themes = await extract_entities(
         question=question,
         portfolio_id=portfolio_id,
@@ -145,9 +146,9 @@ async def retrieve_news(
     composite_prompt = await construct_prompt_for_embedding(
         db=db, portfolio_id=portfolio_id, user_id=user_id, question=question
     )
-    cached_articles = (await get_similar_articles(
+    cached_articles = await get_similar_articles(
         composite_prompt, start_date=start_date, end_date=end_date
-    ))[:1]
+    )
     print("Found {} chached articles".format(len(cached_articles)))
 
     if len(cached_articles) > 0:
@@ -160,7 +161,7 @@ async def retrieve_news(
             "title": article.get("title", ""),
             "summary": article.get("summary", ""),
             "source": article.get("source", ""),
-            "link": article.get("link", "")
+            "link": article.get("link", ""),
         }
 
     if scrape:
@@ -200,11 +201,9 @@ async def retrieve_news(
         filtered_articles = [filter_article_fields(a) for a in articles_to_return]
         return {
             "articles": filtered_articles,
-            "token_counts": {
-                "input_tokens": 0,
-                "output_tokens": 0
-            }
+            "token_counts": {"input_tokens": 0, "output_tokens": 0},
         }
+
 
 async def extract_profile_details(
     question: str,
@@ -214,7 +213,9 @@ async def extract_profile_details(
     Uses LLM to extract or update user profile fields from a user's question, given the current profile and the profile schema.
     Returns a dict with only the fields that should be updated.
     """
-    current_profile_str = json.dumps(current_profile, indent=2) if current_profile else "None"
+    current_profile_str = (
+        json.dumps(current_profile, indent=2) if current_profile else "None"
+    )
     prompt = f"""
         Your job is to extract or update the user's investment profile based on the user's prompt. The user may not
         explicitly mention their investment profile, but you should infer it from the user's prompt. Each field is a 
@@ -227,10 +228,20 @@ async def extract_profile_details(
         User's current profile (as JSON):
         {current_profile_str}
 
+        Profile schema:
+            dict(
+            "short_term_objectives":list of comma separated strings,
+            "long_term_objectives": list of comma separated strings,
+            "sector_preferences": list of comma separated strings,
+            "regional_preferences": list of comma separated strings,
+            "asset_preferences": list of comma separated strings,
+            )
 
         Instructions:
         - Return a JSON object with only the fields from the schema that can be inferred from the user's prompt.
-        - If a field is not mentioned or cannot be inferred, leave it blank.
+        - If a field is not mentioned or cannot be inferred, from the user's prompt leave it blank.
+        - If a field exists in the current profile but is not mentioned in the user's prompt, keep it as is.
+        - If a field is mentioned in the user's prompt, update it in the returned JSON object
         - Only return a valid JSON object, no explanations or extra text.
     """
     print("prompt", prompt)
@@ -245,9 +256,11 @@ async def extract_profile_details(
         )
         try:
             cleaned_json = json.loads(cleaned)
+            if all(not value for value in cleaned_json.values()):
+                return False
             print("cleaned_json", cleaned_json)
         except Exception:
             cleaned_json = {}
-        return cleaned_json
+        return False
     else:
-        return {}
+        return False

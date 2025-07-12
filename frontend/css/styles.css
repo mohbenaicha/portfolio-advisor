@@ -1588,7 +1588,7 @@ div.grecaptcha-badge {
   margin-left: auto;
 }
 .chat-bubble.assistant {
-  background: #444;
+  background: #44444400;
   color: #fff;
   align-self: flex-start;
   margin-right: auto;

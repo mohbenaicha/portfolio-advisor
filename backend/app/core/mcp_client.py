@@ -1,9 +1,7 @@
 import json
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from openai import OpenAI
 from app.db.user_session import UserSessionManager
-from app.models.sql_models import Portfolio
 from app.models.tool_schemas import tools
 from app.utils.advisor_utils import (
     build_system_prompt,

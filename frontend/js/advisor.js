@@ -77,14 +77,7 @@ async function submitPrompt() {
   const questionTextarea = document.getElementById("question");
   const askButton = document.querySelector(".input-footer button");
   try {
-    if (refreshArchivesBtn) refreshArchivesBtn.disabled = true;
-    if (questionTextarea) {
-      questionTextarea.disabled = true;
-    }
-
-    if (askButton) {
-      askButton.disabled = true;
-    }
+    
     // Do NOT clear chat history here!
     // Append only the current input as a chat bubble
     appendMessageToChat(currentInput, 'user');
@@ -125,9 +118,6 @@ async function submitPrompt() {
       await refreshProfiles();
     }
 
-    if (refreshArchivesBtn) {
-      refreshArchivesBtn.disabled = false; // Re-enable the button
-    }
 
   } catch (err) {
     console.warn("Error occurred:", err.message);
@@ -139,10 +129,8 @@ async function submitPrompt() {
     // Append error as assistant message instead of destroying chat
     appendMessageToChat(`<p style=\"color: red;\">Failed to generate response. Please try again.</p>`, 'assistant');
     askButton.textContent = "New Chat";
-  } finally {
-    questionTextarea.disabled = false; // Re-enable the textarea
-    askButton.disabled = false; // Re-enable the button
-  }
+  } 
+
 }
 
 // Helper to append a chat bubble

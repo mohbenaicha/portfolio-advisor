@@ -125,9 +125,11 @@ async def api_get_user_profiles(
             updated_profile = await update_user_profile_fields(db, payload.user_id, payload.portfolio_id, update_fields)
             if updated_profile:
                 specific = updated_profile
+        else:
+            return {"error": "Investment profile details could not be determined from database or user query."}
 
     if not specific and not general:
-        return {"error": "Profile not found"}
+        return {"error": "No investment profile found."}
 
     summary = ""
     if specific:
@@ -136,4 +138,5 @@ async def api_get_user_profiles(
         summary += profile_to_text(general, "all portfolios") + "\n\n"
     if specific and general:
         summary += "If general profile conflicts with the specific portfolio investment profile, try to reconcile between the two, otherwise prioritize the specific profile investment profile."
-    return summary
+    print("get investment profile tool call: ", summary)
+    return {"investment_profile": summary}
