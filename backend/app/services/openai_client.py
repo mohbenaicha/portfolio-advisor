@@ -43,7 +43,6 @@ async def validate_prompt(
             Only return a json object...
             """
 
-    print("prompt for validation", prompt)
     # send the prompt to OpenAI API for processing
     response = client.chat.completions.create(
         model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
@@ -122,7 +121,7 @@ async def retrieve_news(
     portfolio_id: int,
     db: AsyncSession | None = None,
     user_id: int | None = None,
-    scrape: bool = False,
+    scrape: bool = True,
 ):
     if not db or not portfolio_id or not user_id:
         return []
@@ -137,7 +136,7 @@ async def retrieve_news(
     start_date = datetime.now(timezone.utc) - timedelta(days=8)
     end_date = datetime.now(timezone.utc)
 
-    print(" Looking for Cached Articles :", themes)
+    print("DEBUG: Looking for Cached Articles :", themes)
     # keys: link, posted (date published), query, query_tags, source (publisher), stored_at (d/t), summary, title
     # cached_articles = await get_cached_articles(
     #     themes, start_date=start_date, end_date=end_date
@@ -149,7 +148,7 @@ async def retrieve_news(
     cached_articles = await get_similar_articles(
         composite_prompt, start_date=start_date, end_date=end_date
     )
-    print("Found {} chached articles".format(len(cached_articles)))
+    print("DEBUG: Found {} chached articles".format(len(cached_articles)))
 
     if len(cached_articles) > 0:
         for article in cached_articles:
@@ -189,7 +188,7 @@ async def retrieve_news(
         # 6: Cache summaries in MongoDB
         await store_article_summaries(articles)
 
-        print("Retreived {} fresh articles".format(len(articles)))
+        print("DEBUG: Retreived {} fresh articles".format(len(articles)))
         articles_to_return = articles + cached_articles if cached_articles else articles
         filtered_articles = [filter_article_fields(a) for a in articles_to_return]
         # Return articles with token counts
@@ -244,12 +243,10 @@ async def extract_profile_details(
         - If a field is mentioned in the user's prompt, update it in the returned JSON object
         - Only return a valid JSON object, no explanations or extra text.
     """
-    print("prompt", prompt)
     response = client.chat.completions.create(
         model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
-    print("raw_content", raw_content)
     if raw_content:
         cleaned = re.sub(
             r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
@@ -258,7 +255,6 @@ async def extract_profile_details(
             cleaned_json = json.loads(cleaned)
             if all(not value for value in cleaned_json.values()):
                 return False
-            print("cleaned_json", cleaned_json)
         except Exception:
             cleaned_json = {}
         return False

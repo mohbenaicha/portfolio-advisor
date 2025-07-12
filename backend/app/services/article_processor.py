@@ -38,8 +38,6 @@ async def embed_articles(articles: List[dict]) -> List[dict]:
     # Count input tokens for embeddings
     total_embedding_text = " ".join(texts)
     embedding_input_tokens = count_tokens(total_embedding_text, EMBEDDING_MODEL)
-    print(f"Embedding input tokens: {embedding_input_tokens}")
-
     embeddings = await batch_embed(texts)
     for article, emb in zip(articles, embeddings):
         article["summary_embedding"] = emb
@@ -49,8 +47,7 @@ async def embed_articles(articles: List[dict]) -> List[dict]:
 
 async def process_article(article, splitter, chain, max_summary_length):
     # Debug: Check what fields are actually available
-    print(f"DEBUG - Article: {article.get('link', 'unknown')} \n")
-
+    
     # Use raw_article as before (no assumptions)
     content = article.get("raw_article", "")
     if len(content) < 50:
@@ -81,13 +78,6 @@ async def summarize_articles(articles, llm=summary_client, max_summary_length=30
         raw_article = article.get("raw_article", "")
         if len(raw_article) >= 50:
             filtered_articles.append(article)
-        else:
-            print(f"SKIPPING: only {len(raw_article)} chars")
-
-    print(
-        f"Processing {len(filtered_articles)} articles (filtered from {len(articles)})"
-    )
-
     splitter = CharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
 
     custom_prompt = """
@@ -114,8 +104,6 @@ async def summarize_articles(articles, llm=summary_client, max_summary_length=30
 
 
 async def summarize_and_embed_articles(articles, llm=summary_client) -> List[dict]:
-    print(f"Starting summarization of {len(articles)} articles...")
     summarized = await summarize_articles(articles, llm=llm)
-    print(f"Completed summarization, now embedding {len(summarized)} articles...")
     summarize_and_embedded = await embed_articles(summarized)
     return summarize_and_embedded

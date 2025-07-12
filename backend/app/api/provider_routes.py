@@ -138,5 +138,5 @@ async def api_get_user_profiles(
         summary += profile_to_text(general, "all portfolios") + "\n\n"
     if specific and general:
         summary += "If general profile conflicts with the specific portfolio investment profile, try to reconcile between the two, otherwise prioritize the specific profile investment profile."
-    print("get investment profile tool call: ", summary)
+    print("DEBUG: get investment profile tool call: ", summary)
     return {"investment_profile": summary}

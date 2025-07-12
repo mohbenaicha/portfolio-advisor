@@ -20,7 +20,7 @@ def start_scheduler():
         next_run_time=datetime.now()
     )
     scheduler.start()
-    print(f"Scheduler started for session cleanup every {interval} hr(s).")
+    print(f"INFO: Scheduler started for session cleanup every {interval} hr(s).")
 
 def shutdown_scheduler():
     scheduler.shutdown()

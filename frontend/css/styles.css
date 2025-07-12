@@ -135,7 +135,6 @@ body {
   padding: 8px;
   margin-bottom: 16px;
   border-radius: 4px;
-  border: 1px solid var(--border);
   background: var(--bg-light);
   color: var(--text);
 }
@@ -155,7 +154,6 @@ body {
 
 .tabs button {
   background: var(--bg-light);
-  border: 1px solid var(--border);
   border-radius: 8px 8px 0 0;
   padding: 8px 16px;
   font-weight: bold;
@@ -183,7 +181,6 @@ body {
 .topbar select {
   padding: 6px;
   border-radius: 4px;
-  border: 1px solid var(--border);
   background: var(--bg-light);
   color: var(--text);
 }
@@ -249,7 +246,7 @@ body {
   width: 100%;
   max-width: 500px;
   padding: 9px;
-  background: var(--input-bg);
+  background: var(--accent-hover);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 25px;
@@ -259,6 +256,7 @@ body {
 #token-input,
 #email-input {
   border: 2px solid var(--border);
+  background: var(--accent-hover) !important;
   border-radius: 25px;
   padding-left: 15px;
   padding-right: 15px;
@@ -482,7 +480,6 @@ button.delete:hover {
   border: solid 1px var(--border) !important;
   background-color: var(--accent);
   color: white;
-  border: none;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -498,7 +495,6 @@ button.delete:hover {
   border: solid 1px var(--border) !important;
   background-color: var(--danger);
   color: white;
-  border: none;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -634,7 +630,6 @@ button.delete:hover {
 .summary-tab {
   flex: 1;
   background: var(--bg-light);
-  border: 1px solid var(--border);
   border-radius: 6px 6px 0 0;
   padding: 8px 0;
   font-weight: bold;
@@ -679,7 +674,6 @@ button.delete:hover {
   flex: 1;
   padding: 12px;
   background: var(--input-bg);
-  border: 1px solid var(--border);
   border-radius: 6px;
   min-height: 80px;
   max-height: 150px;
@@ -730,7 +724,6 @@ button.delete:hover {
   border: none;
   padding: 0.5rem;
   background: var(--portfolio-select-bg);
-  border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   font-size: 0.95rem;
@@ -779,6 +772,123 @@ button.delete:hover {
   font-size: var(--para-font-size);
   scrollbar-width: 20px;
   scrollbar-color: var(--accent-hover) var(--bg-light);
+}
+
+.chat-controls {
+  display: none;
+  gap: 8px;
+  padding-top: 10px;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.chat-controls.visible {
+  display: flex;
+}
+
+.chat-control-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: var(--text);
+  font-weight: bold;
+  font-size: var(--button-font-size);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+.chat-control-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* ==========================================================================
+   CUSTOM ALERT MODAL
+   ========================================================================== */
+
+.custom-alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.custom-alert-modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  animation: alertSlideIn 0.3s ease-out;
+}
+
+.custom-alert-message {
+  color: var(--text);
+  font-size: 16px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.custom-alert-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.custom-alert-button {
+  padding: 8px 24px;
+  background: var(--accent);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s ease;
+  min-width: 80px;
+}
+
+.custom-alert-button:hover {
+  background: var(--accent-hover);
+}
+
+.custom-alert-button.confirm-primary {
+  background: var(--danger);
+}
+
+.custom-alert-button.confirm-primary:hover {
+  background: var(--danger-hover);
+}
+
+.custom-alert-button.confirm-secondary {
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+}
+
+.custom-alert-button.confirm-secondary:hover {
+  background: var(--accent-hover);
+}
+
+@keyframes alertSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* ==========================================================================
@@ -1045,9 +1155,8 @@ button.delete:hover {
 
 .delete-archive-btn {
   flex-shrink: 0;
-  background: var(--danger);
-  color: rgb(255, 255, 255);
-  border: 5px rgba(0, 0, 0, 0);
+  color: var(--danger);
+  background-color: #0d0d0c00;
   border-radius: 4px;
   padding: 2px;
   cursor: pointer;
@@ -1749,7 +1858,7 @@ div.grecaptcha-badge {
   width: 440px;
   padding: 0.4rem 0.8rem;
   border-radius: 4px;
-  border: 1px solid var(--border);
+  border: 1px transparent;
   background: var(--bg-light);
   color: var(--text);
   font-size: 1rem;
@@ -1778,8 +1887,7 @@ div.grecaptcha-badge {
 
 .profile-div .profile-actions {
   display: flex;
-  gap: 0.7rem;
-  margin-top: 0.7rem;
+  margin-top: 10px;
   align-items: center;
 }
 .profile-div button {
@@ -1802,6 +1910,7 @@ div.grecaptcha-badge {
   color: var(--success);
   background: var(--bg-panel);
   border: 1px solid var(--success);
+  padding: 5px 5px;
 }
 .profile-div button[title="Save Profile"]:hover {
   background: var(--success);
@@ -1811,10 +1920,12 @@ div.grecaptcha-badge {
   color: var(--danger);
   background: var(--bg-panel);
   border: 1px solid var(--danger);
+  padding: 5px 13px;
+
 }
 .profile-div button[title="Delete Profile"]:hover {
   background: var(--danger);
-  color: var(--bg-panel);
+  color: white !important;
 }
 
 /* Tooltip for profile buttons */

@@ -78,7 +78,7 @@ async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id
             )
             continue
 
-        print(f"[TOOL CALL] Invoking tool: {name}")
+        print(f"DEBUG: [TOOL CALL] Invoking tool: {name}")
         tool_result = await call_provider_endpoint(endpoint, payload)
         tool_outputs[name] = tool_result
 

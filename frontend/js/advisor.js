@@ -1,5 +1,5 @@
 import { analyzePrompt, saveArchive, getPortfolios } from "./api.js";
-import { showThumbnailPreview, hideThumbnailPreview, moveThumbnailPreview, generateArchiveTitle } from './utils.js';
+import { showThumbnailPreview, hideThumbnailPreview, moveThumbnailPreview, generateArchiveTitle, customAlert, customConfirm } from './utils.js';
 import { refreshProfiles } from './profile.js';
 
 
@@ -97,24 +97,13 @@ async function submitPrompt() {
       throw new Error("No summary returned from the backend or prompt limit reached.");
     }
 
-    if (result.archived) {
-      // Archive the entire chat history
-      const chatHistoryHTML = document.getElementById('chat-container').innerHTML;
-      // Use utility to generate archive title
-      const archiveTitle = generateArchiveTitle();
-      const archivePayload = {
-        portfolio_id: portfolioId,
-        original_question: question,
-        openai_response: chatHistoryHTML,
-        title: archiveTitle,
-      };
-      await saveArchive(archivePayload);
-      // Change the button text to "New Chat"
-      askButton.textContent = "New Chat";
+    // Show chat controls after first response
+    const chatControls = document.querySelector(".chat-controls");
+    if (chatControls) {
+      chatControls.classList.add("visible");
     }
 
     if (result.final_message === true) {
-      askButton.textContent = "New Chat";
       await refreshProfiles();
     }
 
@@ -128,7 +117,6 @@ async function submitPrompt() {
     }
     // Append error as assistant message instead of destroying chat
     appendMessageToChat(`<p style=\"color: red;\">Failed to generate response. Please try again.</p>`, 'assistant');
-    askButton.textContent = "New Chat";
   } 
 
 }
@@ -146,6 +134,69 @@ function appendMessageToChat(message, sender) {
 // Render the response as a chat bubble
 function renderResponse(data) {
   appendMessageToChat(data.summary, 'assistant');
+}
+
+// Clear the current chat
+function clearChat() {
+  const questionInput = document.getElementById("question");
+  const chatContainer = document.getElementById("chat-container");
+  const chatControls = document.querySelector(".chat-controls");
+
+  if (questionInput) {
+    questionInput.value = "";
+  }
+
+  if (chatContainer) {
+    chatContainer.innerHTML = "";
+  }
+
+  if (chatControls) {
+    chatControls.classList.remove("visible");
+  }
+}
+
+// Archive the current chat
+async function archiveChat() {
+  const select = document.getElementById("portfolio-select");
+  const portfolioId = parseInt(select.value);
+  const chatContainer = document.getElementById('chat-container');
+  
+  if (!portfolioId) {
+    await customAlert("Please select a portfolio first.");
+    return;
+  }
+  
+  if (!chatContainer.innerHTML.trim()) {
+    await customAlert("No chat to archive.");
+    return;
+  }
+
+  // Ask for confirmation before archiving
+  const shouldArchive = await customConfirm("Are you sure you want to archive this chat? This will clear the current conversation.", "Archive", "Cancel");
+  if (!shouldArchive) {
+    return;
+  }
+
+  try {
+    // Archive the entire chat history
+    const chatHistoryHTML = chatContainer.innerHTML;
+    // Use utility to generate archive title
+    const archiveTitle = generateArchiveTitle();
+    const archivePayload = {
+      portfolio_id: portfolioId,
+      original_question: "Chat conversation", // Generic since it's the full chat
+      openai_response: chatHistoryHTML,
+      title: archiveTitle,
+    };
+    await saveArchive(archivePayload);
+    await customAlert("Chat archived successfully!");
+    
+    // Clear the chat after archiving
+    clearChat();
+  } catch (error) {
+    console.error("Error archiving chat:", error);
+    await customAlert("Failed to archive chat. Please try again.");
+  }
 }
 
 
@@ -168,26 +219,11 @@ if (advisorDropdown && questionBox) {
 }
 
 askButton.addEventListener("click", () => {
-  if (askButton.textContent === "Ask") {
-    submitPrompt();
-    const questionInput = document.getElementById("question");
-    if (questionInput) questionInput.value = "";
-    const counter = document.getElementById("char-counter");
-    if (counter) counter.textContent = `0/500`;
-  } else if (askButton.textContent === "New Chat") {
-    const questionInput = document.getElementById("question");
-    const chatContainer = document.getElementById("chat-container");
-
-    if (questionInput) {
-      questionInput.value = "";
-    }
-
-    if (chatContainer) {
-      chatContainer.innerHTML = "";
-    }
-
-    askButton.textContent = "Ask";
-  }
+  submitPrompt();
+  const questionInput = document.getElementById("question");
+  if (questionInput) questionInput.value = "";
+  const counter = document.getElementById("char-counter");
+  if (counter) counter.textContent = `0/500`;
 });
 
 window.submitPrompt = submitPrompt;
@@ -271,6 +307,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const select = document.getElementById('portfolio-select');
   if (select) {
     select.addEventListener('change', renderPortfolioSummary);
+  }
+
+  // Wire up chat control buttons
+  const newChatBtn = document.getElementById('new-chat-btn');
+  const archiveChatBtn = document.getElementById('archive-chat-btn');
+  
+  if (newChatBtn) {
+    newChatBtn.addEventListener('click', clearChat);
+  }
+  
+  if (archiveChatBtn) {
+    archiveChatBtn.addEventListener('click', archiveChat);
   }
 
   // --- Draggable divider logic for advisor tab ---

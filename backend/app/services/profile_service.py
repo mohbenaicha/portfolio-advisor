@@ -64,16 +64,16 @@ async def update_profile(db: AsyncSession, user_id: int, profile_id: int, profil
     return new_profile
 
 async def delete_profile(db: AsyncSession, user_id: int, profile_id: int) -> bool:
-    print(f"DEBUG delete_profile: user_id={user_id}, profile_id={profile_id}")
+    print(f"DEBUG: delete_profile: user_id={user_id}, profile_id={profile_id}")
     result = await db.execute(
         select(UserProfile).where(UserProfile.id == profile_id, UserProfile.user_id == user_id)
     )
     profile = result.scalars().first()
-    print(f"DEBUG found profile: {profile}")
+    print(f"DEBUG: found profile: {profile}")
     if not profile:
-        print("DEBUG profile not found")
+        print("DEBUG: profile not found")
         return False
     await db.delete(profile)
     await db.commit()
-    print("DEBUG profile deleted")
+    print("DEBUG: profile deleted")
     return True 

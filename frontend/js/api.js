@@ -1,4 +1,4 @@
-import { safeFetch, decodeHTML } from "./utils.js";
+import { safeFetch, decodeHTML, customAlert, customConfirm } from "./utils.js";
 import { BASE_URL } from "./config.js";
 import { handle_load_archive } from "./archive.js";
 let currentToken = null;
@@ -92,7 +92,8 @@ export async function loadArchives() {
     const deleteButton = div.querySelector(".delete-archive-btn");
     deleteButton.addEventListener("click", async (event) => {
       event.stopPropagation(); // Prevent triggering the archive item click event
-      if (confirm("Are you sure you want to delete this archive?")) {
+      const shouldDelete = await customConfirm("Are you sure you want to delete this archive?", "Delete", "Cancel");
+      if (shouldDelete) {
         try {
           const response = await safeFetch(`${BASE_URL}/archives/${a.id}`, {
             method: "DELETE",
@@ -104,10 +105,10 @@ export async function loadArchives() {
           if (response.deleted) {
             div.remove(); // Remove the archive item from the DOM
           } else {
-            alert("Failed to delete archive.");
+            await customAlert("Failed to delete archive.");
           }
         } catch (error) {
-          alert("An error occurred while deleting the archive.");
+          await customAlert("An error occurred while deleting the archive.");
         }
       }
     });

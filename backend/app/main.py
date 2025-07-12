@@ -7,7 +7,7 @@ from app.db.session import engine
 from app.scheduler.session_cleanup import start_scheduler, shutdown_scheduler
 from app.config import DATABASE_URL, ALLOWED_ORIGINS
 
-print("SQL Database URL:", DATABASE_URL)
+print("DEBUG: SQL Database URL:", DATABASE_URL)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -48,7 +48,7 @@ class UserSessionManager:
             }
             return session_store[user_id]
         else:
-            print(f"No session found for user {user_id} in database")
+            print(f"DEBUG: No session found for user {user_id} in database")
             session_store[user_id] = {  # type: ignore
                 "llm_memory": {},
                 "timestamp": None,

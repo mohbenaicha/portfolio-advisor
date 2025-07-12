@@ -40,7 +40,7 @@ async def fetch_articles(themes):
         return False
     news_response = []
     for theme in themes:
-        print(f"Fetching news for theme: {theme}")
+        print(f"DEBUG: Fetching news for theme: {theme}")
         response = fetch_news(theme, 1, time_range="w")
         if response and response[0] != []:
             for article in response[0]:

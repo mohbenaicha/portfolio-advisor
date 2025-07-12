@@ -132,7 +132,7 @@ async def call_provider_endpoint(endpoint: str, payload: dict) -> Dict[str, Unio
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             if attempt == retries:
                 raise  # re raise on last atempt
-            print(f"[Retry] Attempt {attempt} failed: {e}. Retrying in {backoff}s...")
+            print(f"INFO: [Retry] Attempt {attempt} failed: {e}. Retrying in {backoff}s...")
             await asyncio.sleep(backoff)
             backoff *= 2
     return {"archived": False, "summary": "Error calling provider endpoint"}
@@ -180,7 +180,7 @@ LIMIT_MESSAGE = "<p>You have reached the maximum number of prompts allowed for t
 async def check_prompt_limit(user_id: int) -> Tuple[bool, Union[dict[str, Union[bool, str]], None]]:
     prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
     failed_count = await UserSessionManager.get_failed_prompts(user_id)
-    if prompt_count >= 3 or failed_count >= 15:
+    if prompt_count >= 6 or failed_count >= 15:
         return True, {"archived": False, "summary": LIMIT_MESSAGE, "final_message": True}
     else:
         return False, None

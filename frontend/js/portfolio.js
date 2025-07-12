@@ -3,7 +3,7 @@ import {
   createPortfolioAPI,
   deletePortfolioAPI
 } from './api.js';
-import { showToast } from './utils.js';
+import { showToast, customConfirm } from './utils.js';
 
 let selectedPortfolioId = null;
 window.getPortfolios = getPortfolios;
@@ -121,7 +121,7 @@ export async function createPortfolio() {
 export async function deletePortfolio() {
   if (!selectedPortfolioId) return;
 
-  const confirmDelete = window.confirm("Are you sure you want to delete this portfolio? You cannot undo this action. Archived advice associated with this portfolio will be deleted.");
+  const confirmDelete = await customConfirm("Are you sure you want to delete this portfolio? You cannot undo this action. Archived advice associated with this portfolio will be deleted.", "Delete Portfolio", "Cancel");
   if (!confirmDelete) return; // Cancel deletion if user clicks "Cancel"
 
 

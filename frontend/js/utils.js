@@ -264,3 +264,114 @@ export function generateArchiveTitle() {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   return `Archive Item - ${year}/${month}/${day} - ${hours}:${minutes}`;
 }
+
+// Custom alert function to replace browser alerts
+export function customAlert(message) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('custom-alert-overlay');
+    const messageEl = document.getElementById('custom-alert-message');
+    const buttonsContainer = document.getElementById('custom-alert-buttons');
+    
+    if (!overlay || !messageEl || !buttonsContainer) {
+      // Fallback to browser alert if elements not found
+      alert(message);
+      resolve();
+      return;
+    }
+    
+    messageEl.textContent = message;
+    buttonsContainer.innerHTML = '<button id="custom-alert-ok" class="custom-alert-button">OK</button>';
+    const button = document.getElementById('custom-alert-ok');
+    
+    overlay.style.display = 'flex';
+    button.focus();
+    
+    // Handle button click
+    const closeAlert = () => {
+      overlay.style.display = 'none';
+      button.removeEventListener('click', closeAlert);
+      document.removeEventListener('keydown', keyHandler);
+      overlay.removeEventListener('click', overlayClickHandler);
+      resolve();
+    };
+    
+    // Handle Escape key and Enter key
+    const keyHandler = (e) => {
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        closeAlert();
+      }
+    };
+    
+    // Handle overlay background click
+    const overlayClickHandler = (e) => {
+      if (e.target === overlay) {
+        closeAlert();
+      }
+    };
+    
+    button.addEventListener('click', closeAlert);
+    document.addEventListener('keydown', keyHandler);
+    overlay.addEventListener('click', overlayClickHandler);
+  });
+}
+
+// Custom confirm function to replace browser confirms
+export function customConfirm(message, confirmText = 'Confirm', cancelText = 'Cancel') {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('custom-alert-overlay');
+    const messageEl = document.getElementById('custom-alert-message');
+    const buttonsContainer = document.getElementById('custom-alert-buttons');
+    
+    if (!overlay || !messageEl || !buttonsContainer) {
+      // Fallback to browser confirm if elements not found
+      resolve(confirm(message));
+      return;
+    }
+    
+    messageEl.textContent = message;
+    buttonsContainer.innerHTML = `
+      <button id="custom-confirm-cancel" class="custom-alert-button confirm-secondary">${cancelText}</button>
+      <button id="custom-confirm-ok" class="custom-alert-button confirm-primary">${confirmText}</button>
+    `;
+    
+    const confirmBtn = document.getElementById('custom-confirm-ok');
+    const cancelBtn = document.getElementById('custom-confirm-cancel');
+    
+    overlay.style.display = 'flex';
+    cancelBtn.focus(); // Focus cancel by default for safety
+    
+    // Handle button clicks
+    const closeConfirm = (result) => {
+      overlay.style.display = 'none';
+      confirmBtn.removeEventListener('click', confirmHandler);
+      cancelBtn.removeEventListener('click', cancelHandler);
+      document.removeEventListener('keydown', keyHandler);
+      overlay.removeEventListener('click', overlayClickHandler);
+      resolve(result);
+    };
+    
+    const confirmHandler = () => closeConfirm(true);
+    const cancelHandler = () => closeConfirm(false);
+    
+    // Handle Escape key (cancel) and Enter key (confirm)
+    const keyHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeConfirm(false);
+      } else if (e.key === 'Enter') {
+        closeConfirm(true);
+      }
+    };
+    
+    // Handle overlay background click (cancel)
+    const overlayClickHandler = (e) => {
+      if (e.target === overlay) {
+        closeConfirm(false);
+      }
+    };
+    
+    confirmBtn.addEventListener('click', confirmHandler);
+    cancelBtn.addEventListener('click', cancelHandler);
+    document.addEventListener('keydown', keyHandler);
+    overlay.addEventListener('click', overlayClickHandler);
+  });
+}

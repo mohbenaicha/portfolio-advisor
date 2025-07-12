@@ -20,7 +20,7 @@
       <h1>💼 Briefly<sup>©</sup> </h1>
       <hr />
       <p class="subline">An LLM-Powered Investment Advisor</p>
-      <input type="text" id="token-input" placeholder="Enter your token" />
+      <input type="text" id="token-input" placeholder="Enter your login token" />
       <p id="login-error" class="error-msg hidden">Could not authenticate token</p>
       <button id="login-btn">Login <span class="arrow">→</span></button>
       <button id="register-btn"> Get a login key <span class="arrow">⌵</span></button>
@@ -74,7 +74,7 @@
             <button class="tab-button active-tab" data-tab="advisor">Advisor<span class="btn-tooltip">Chat with the AI advisor</span></button>
             <button class="tab-button" data-tab="portfolio">Portfolios<span class="btn-tooltip">Manage your portfolios</span></button>
             <button class="tab-button" data-tab="archive">Archives<span class="btn-tooltip">View your archived chats</span></button>
-            <button class="tab-button" data-tab="profile" id="profile-tab-link">Profile<span class="btn-tooltip">Manage your investment profiles</span></button>
+            <button class="tab-button" data-tab="profile" id="profile-tab-link">Profiles<span class="btn-tooltip">Manage your investment profiles</span></button>
           </div>
           <button id="logout-btn" onclick="logout()" class="logout-button">Logout</button>
         </div>
@@ -83,6 +83,10 @@
         <section id="advisor" class="tab hidden">
           <div id="response" class="response-box scrollable">
             <div id="chat-container"></div>
+          </div>
+          <div class="chat-controls">
+            <button id="new-chat-btn" class="chat-control-btn">New Chat</button>
+            <button id="archive-chat-btn" class="chat-control-btn">Archive Chat</button>
           </div>
           <div class="advisor-box">
             <div class="textarea-wrapper">
@@ -190,6 +194,16 @@
   <script src="./js/register.js" type="module"></script>
   <script src="./js/utils.js" type="module"></script>
   <script src="./js/profile.js" type="module"></script>
+  <!-- Custom Alert Modal -->
+  <div id="custom-alert-overlay" class="custom-alert-overlay">
+    <div class="custom-alert-modal">
+      <div id="custom-alert-message" class="custom-alert-message"></div>
+      <div id="custom-alert-buttons" class="custom-alert-buttons">
+        <button id="custom-alert-button" class="custom-alert-button">OK</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Upload Portfolio Modal -->
   <div id="upload-modal" class="upload-modal hidden">
     <div class="upload-modal-content">

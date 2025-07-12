@@ -1,5 +1,5 @@
 import { getArchives, getArchivedResponse, loadArchives, deleteAllArchives } from "./api.js";
-import { decodeHTML } from "./utils.js";
+import { decodeHTML, customAlert, customConfirm } from "./utils.js";
 import { showTab } from "./main.js";
 import { showThumbnailPreview, hideThumbnailPreview, moveThumbnailPreview } from './utils.js';
 
@@ -105,7 +105,7 @@ document.getElementById("refresh-archives-btn").addEventListener("click", () => 
 });
 
 document.getElementById("delete-all-archives-btn").addEventListener("click", async () => {
-  const confirmDelete = window.confirm("Are you sure you want to delete ALL archives? This action cannot be undone and will permanently remove all your previous chat history.");
+  const confirmDelete = await customConfirm("Are you sure you want to delete ALL archives? This action cannot be undone and will permanently remove all your previous chat history.", "Delete All", "Cancel");
   if (!confirmDelete) return;
 
   try {
@@ -120,13 +120,13 @@ document.getElementById("delete-all-archives-btn").addEventListener("click", asy
       viewer.innerHTML = "<p>Select an archive to view its details.</p>";
       
       // Show success message
-      alert("All archives have been deleted successfully.");
+      await customAlert("All archives have been deleted successfully.");
     } else {
-      alert("Failed to delete archives. Please try again.");
+      await customAlert("Failed to delete archives. Please try again.");
     }
   } catch (error) {
     console.error("Error deleting all archives:", error);
-    alert("An error occurred while deleting archives. Please try again.");
+    await customAlert("An error occurred while deleting archives. Please try again.");
   }
 });
 

@@ -1,7 +1,7 @@
 import { INVESTMENT_OBJECTIVES, SECTOR_PREFERENCES, REGIONAL_PREFERENCES, ASSET_PREFERENCES } from './profile_options.js';
 import { getPortfolios, getProfiles, createProfile, updateProfile, deleteProfileAPI } from './api.js';
 import { BASE_URL } from './config.js';
-import { showToast } from './utils.js';
+import { showToast, customAlert, customConfirm } from './utils.js';
 
 document.addEventListener("DOMContentLoaded", () => {
   const profileBtn = document.querySelector("button[data-tab='profile']");
@@ -123,11 +123,11 @@ function createProfileDiv(profile, idx, allProfiles) {
     }
   });
   portfolioSelect.value = (profile.portfolio_id === null) ? '' : (profile.portfolio_id === -1 ? '' : profile.portfolio_id);
-  portfolioSelect.onchange = e => {
+  portfolioSelect.onchange = async (e) => {
     if (!e.target.value) {
       // 'All Portfolios' selected
       if (!available.has('ALL') && profile.portfolio_id !== null) {
-        alert('A profile for All Portfolios already exists.');
+        await customAlert('A profile for All Portfolios already exists.');
         portfolioSelect.value = (profile.portfolio_id === null) ? '' : (profile.portfolio_id === -1 ? '' : profile.portfolio_id);
         return;
       }
@@ -135,7 +135,7 @@ function createProfileDiv(profile, idx, allProfiles) {
     } else {
       const val = parseInt(e.target.value);
       if (!available.has(val) && val !== profile.portfolio_id) {
-        alert('A profile for this portfolio already exists.');
+        await customAlert('A profile for this portfolio already exists.');
         portfolioSelect.value = (profile.portfolio_id === null) ? '' : (profile.portfolio_id === -1 ? '' : profile.portfolio_id);
         return;
       }
@@ -338,8 +338,9 @@ async function saveProfile(profile, idx, allProfiles) {
   }
 }
 
-function confirmDeleteProfile(idx, allProfiles) {
-  if (confirm('Are you sure you want to delete this profile?')) {
+async function confirmDeleteProfile(idx, allProfiles) {
+  const shouldDelete = await customConfirm('Are you sure you want to delete this profile?', 'Delete', 'Cancel');
+  if (shouldDelete) {
     deleteProfile(idx, allProfiles);
   }
 }
@@ -356,7 +357,7 @@ async function deleteProfile(idx, allProfiles) {
     renderProfileTab();
   } catch (err) {
     if (!err.message.includes('Unexpected end of JSON input')) {
-      alert('Failed to delete profile: ' + err.message);
+      await customAlert('Failed to delete profile: ' + err.message);
     }
   }
 }
