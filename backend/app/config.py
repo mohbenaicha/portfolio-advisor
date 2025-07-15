@@ -18,10 +18,13 @@ ALLOWED_ORIGINS = [
     getenv("ALLOWED_ORIGIN", "https://project-briefly-2a809.web.app"),
 ]
 
+if ENV == "TEST":
+    ALLOWED_ORIGINS.append("http://localhost:8089")
+
 if ENV == "DEV":
     ALLOWED_ORIGINS.extend([
         "http://localhost:5173", 
-        "http://localhost:3000"
+        "http://localhost:3000",
     ])
     
 PROVIDER_BASE_URL = "/".join([BACKEND_BASE_URL, "tool"])
