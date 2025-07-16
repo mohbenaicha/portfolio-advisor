@@ -178,3 +178,7 @@ class GetUserProfilesPayload(BaseModel):
     user_id: int
     portfolio_id: int
     question: str | None = None
+
+
+class AdminPortfolioRequest(BaseModel):
+    user_id: int

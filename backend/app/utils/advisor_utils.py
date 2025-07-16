@@ -4,15 +4,15 @@ import markdown
 import tiktoken
 from typing import Tuple, Union, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import (
+    fetch_portfolio_from_service,
     get_exposure_summary,
     get_portfolio_summary,
 )
+from utils.profile_utils import fetch_profile_from_service
 from fastapi.encoders import jsonable_encoder
 from app.config import PROVIDER_BASE_URL
 from app.db.user_session import UserSessionManager
-from app.utils.memory_utils import get_investment_objective
 
 
 def count_tokens(text: str, model: str = "gpt-4") -> int:
@@ -59,9 +59,6 @@ def convert_markdown_to_html(markdown_text):
 
 async def build_system_prompt(user_id: int, portfolio_id: int) -> str:
 
-    memory = await UserSessionManager.get_llm_memory(
-        user_id=user_id, portfolio_id=portfolio_id
-    )
     return f"""
         You are Titan, a senior buy-side investment strategist (CFA, 15+ years of experience).
 
@@ -142,45 +139,50 @@ async def construct_prompt_for_embedding(
     db: AsyncSession, portfolio_id: int, user_id: int, question: str
 ) -> str:
     portfolio_assets = jsonable_encoder(
-        await get_portfolio_by_id(db, portfolio_id, user_id)
+        await fetch_portfolio_from_service(portfolio_id, user_id)
+        # await get_portfolio_by_id(db, portfolio_id, user_id)
     )
+
+
     portfolio_summary = "\n".join(
         [
             get_portfolio_summary(portfolio_assets),
             get_exposure_summary(portfolio_assets),
         ]
     )
-
-    memory = await get_investment_objective(user_id, portfolio_id)
+    
+    investment_profile = await fetch_profile_from_service(portfolio_id)
     return f"""
-{question}
+                {question}
 
-My portfolio:
-{portfolio_summary}
+                My portfolio:
+                {portfolio_summary}
 
-My investment objectives:
-{memory}
+                My investment profile:
+                {investment_profile}
             """
 
 
 async def increment_prompt_usage(user_id: int, db: AsyncSession) -> None:
-    await UserSessionManager.update_session(
-        user_id=user_id,
-        db=db,
-        updates={
-            "total_prompts_used": await UserSessionManager.get_total_prompts_used(
-                user_id
-            )
-            + 1
-        },
-    )
+    with UserSessionManager.use_advisor_session():
+        await UserSessionManager.update_session(
+            user_id=user_id,
+            db=db,
+            updates={
+                "total_prompts_used": await UserSessionManager.get_total_prompts_used(
+                    user_id
+                )
+                + 1
+            },
+        )
 
 LIMIT_MESSAGE = "<p>You have reached the maximum number of prompts allowed for today.</p>"
 
 async def check_prompt_limit(user_id: int) -> Tuple[bool, Union[dict[str, Union[bool, str]], None]]:
-    prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
-    failed_count = await UserSessionManager.get_failed_prompts(user_id)
-    if prompt_count >= 6 or failed_count >= 15:
-        return True, {"archived": False, "summary": LIMIT_MESSAGE, "final_message": True}
-    else:
-        return False, None
+    with UserSessionManager.use_advisor_session():
+        prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
+        failed_count = await UserSessionManager.get_failed_prompts(user_id)
+        if prompt_count >= 6 or failed_count >= 15:
+            return True, {"archived": False, "summary": LIMIT_MESSAGE, "final_message": True}
+        else:
+            return False, None

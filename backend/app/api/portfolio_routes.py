@@ -7,19 +7,19 @@ from app.db.portfolio_crud import (
     get_portfolio_by_id,
     get_user_portfolios
 )
-from app.models.schemas import PortfolioCreate, PortfolioOut
+from app.models.schemas import PortfolioCreate, PortfolioOut, AdminPortfolioRequest
 from app.dependencies.user import get_current_user
 from app.db.session import get_db
 
-router = APIRouter()
+router = APIRouter(prefix="/portfolios", tags=["portfolios"])
 
 
-@router.get("/portfolios", response_model=list[PortfolioOut])
+@router.get("/", response_model=list[PortfolioOut])
 async def read_user_portfolios(user_id: int = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     portfolios = await get_user_portfolios(user_id=user_id, db=db)
     return [PortfolioOut.model_validate(p) for p in portfolios]
 
-@router.post("/portfolios", response_model=PortfolioOut)
+@router.post("/", response_model=PortfolioOut)
 async def add_portfolio(
     portfolio: PortfolioCreate,
     db: AsyncSession = Depends(get_db),
@@ -29,7 +29,7 @@ async def add_portfolio(
     return PortfolioOut.model_validate(created)
 
 
-@router.delete("/portfolios/{id}")
+@router.delete("/{id}")
 async def remove_portfolio(
     id: int,
     db: AsyncSession = Depends(get_db),
@@ -41,7 +41,7 @@ async def remove_portfolio(
     return {"deleted": True}
 
 
-@router.put("/portfolios/{id}", response_model=PortfolioOut)
+@router.put("/{id}", response_model=PortfolioOut)
 async def update_portfolio_route(
     id: int,
     portfolio: PortfolioCreate,
@@ -52,7 +52,7 @@ async def update_portfolio_route(
     return PortfolioOut.model_validate(updated)
 
 
-@router.get("/portfolios/{id}", response_model=PortfolioOut)
+@router.get("/{id}", response_model=PortfolioOut)
 async def get_portfolio(
     id: int,
     db: AsyncSession = Depends(get_db),
@@ -63,3 +63,14 @@ async def get_portfolio(
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return PortfolioOut.model_validate(portfolio)
 
+
+@router.get("/admin/{id}", response_model=PortfolioOut)
+async def get_portfolio_as_admin(
+    id: int,
+    request: AdminPortfolioRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    portfolio = await get_portfolio_by_id(db, id, request.user_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    return PortfolioOut.model_validate(portfolio)

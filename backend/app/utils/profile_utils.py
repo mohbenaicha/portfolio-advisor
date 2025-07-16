@@ -1,3 +1,5 @@
+import httpx
+from app.config import SYSTEM_USER_TOKEN, BACKEND_SERVICE_MAP
 def profile_to_text(profile, label):
     if not profile:
         return ""
@@ -15,3 +17,13 @@ def profile_to_text(profile, label):
         value = getattr(profile, field, None)
         lines.append(f"{field}: {fmt(value)}")
     return "\n".join(lines) 
+
+
+async def fetch_profile(portfolio_id: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BACKEND_SERVICE_MAP.get('profile')}/profiles/portfolio/{portfolio_id}",
+            headers={"Authorization": f"Bearer {SYSTEM_USER_TOKEN}"}
+        )
+        response.raise_for_status()
+        return response.json()

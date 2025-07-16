@@ -66,10 +66,10 @@ async def api_get_user_portfolio(
     payload: GetUserPortfolioPayload,
     db: AsyncSession = Depends(get_db),
 ) -> Union[dict[str, str], str]:
-    from app.utils.portfolio_utils import get_portfolio
+    from app.utils.portfolio_utils import portfolio_to_text
     from app.db.portfolio_crud import get_portfolio_by_id
 
-    portfolio = get_portfolio(
+    portfolio = portfolio_to_text(
         jsonable_encoder(
             await get_portfolio_by_id(db, payload.portfolio_id, payload.user_id)
         )

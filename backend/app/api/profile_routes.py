@@ -75,3 +75,20 @@ async def delete_user_profile(
     if not success:
         raise HTTPException(status_code=404, detail="Profile not found")
     return ProfileDeleteResponse(deleted=True) 
+
+
+@router.get("/portfolio/{portfolio_id}", response_model=UserProfileResponse)
+async def get_portfolio_profile(
+    portfolio_id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    profiles = await get_profiles(db, user)
+    profile = next((p for p in profiles if getattr(p, 'portfolio_id') == portfolio_id), None)
+    if not profile:
+        # attempt to get the general profile with null id
+        profile = next((p for p in profiles if getattr(p, 'portfolio_id') is None), None)
+    if not profile:
+        # if still not found, raise an error
+            raise HTTPException(status_code=404, detail="Profile not found for this portfolio")
+    return profile_to_response(profile)

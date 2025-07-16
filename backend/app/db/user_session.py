@@ -4,7 +4,8 @@ from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, insert, delete
-from app.core.session_state import session_store
+from contextlib import contextmanager
+from app.core.session_state import session_store, advisor_session_store
 from app.models.sql_models import (
     UserSession,
     LLMMemory,
@@ -20,6 +21,16 @@ class UserSessionManager:
     session_expiry_hours = SESSION_EXPIRY_HOURS
 
     @staticmethod
+    @contextmanager
+    def use_advisor_session():
+        original_store = UserSessionManager.active_session_store
+        try:
+            UserSessionManager.active_session_store = advisor_session_store
+            yield
+        finally:
+            UserSessionManager.active_session_store = original_store
+            
+    @staticmethod
     def get_session(user_id: int):
         return session_store[user_id]
 
@@ -34,11 +45,14 @@ class UserSessionManager:
                 "error in user_session.py/UserSessionManager::load_session_from_db: Database session and user_id are required"
             )
 
+        # Check if user_id exists in database    
         result = await db.execute(
             select(UserSession).where(UserSession.user_id == user_id)
         )
 
         session = result.scalar_one_or_none()
+
+        # If session exists, load it into session_store
         if session:
             session_store[user_id] = {  # type: ignore
                 "llm_memory": dict(llm_memory),
@@ -48,6 +62,7 @@ class UserSessionManager:
             }
             return session_store[user_id]
         else:
+            # If no session exists, create a new one
             print(f"DEBUG: No session found for user {user_id} in database")
             session_store[user_id] = {  # type: ignore
                 "llm_memory": {},
@@ -180,6 +195,7 @@ class UserSessionManager:
         ]
         for user_id in expired_users:
             del session_store[user_id]
+            del advisor_session_store[user_id]
         await db.execute(
             delete(UserSession).where(
                 UserSession.timestamp != None,

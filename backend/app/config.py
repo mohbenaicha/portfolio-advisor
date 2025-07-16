@@ -1,5 +1,5 @@
 from os import getenv
-
+import json
 ENV = getenv("ENV", "DEV")  # Default to "DEV" if ENV is not set
 
 if ENV == "DEV":
@@ -14,9 +14,17 @@ MONGO_URI = getenv("MONGO_URI").strip()
 OUTSCRAPER_API_KEY = getenv("OUTSCRAPER_API_KEY").strip()
 OPEN_AI_API_KEY = getenv("OPENAI_API_KEY").strip()  # Remove any surrounding quotes due to GCP cloud secter create
 BACKEND_BASE_URL = getenv("BACKEND_BASE_URL", "https://briefly-backend-459260001744.us-central1.run.app")
+SYSTEM_USER_TOKEN = getenv("SYSTEM_USER_TOKEN", "").strip()
+
 ALLOWED_ORIGINS = [
     getenv("ALLOWED_ORIGIN", "https://project-briefly-2a809.web.app"),
 ]
+
+raw_endpoint_str = getenv("BACKEND_SERVICE_MAP")
+if raw_endpoint_str:
+    BACKEND_SERVICE_MAP = json.loads(raw_endpoint_str.strip()) # ("core" "advisor" "archive" "portfolio" "profile")
+else:
+    BACKEND_SERVICE_MAP = {}
 
 if ENV == "TEST":
     ALLOWED_ORIGINS.append("http://localhost:8089")

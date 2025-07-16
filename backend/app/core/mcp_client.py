@@ -115,7 +115,8 @@ async def run_mcp_client_pipeline(
     validation_issue = await validate_prompt(question, user_id, portfolio_id, db)
     if validation_issue:
         if db:
-            await UserSessionManager.increment_failed_prompts(user_id, db)
+            with UserSessionManager.use_advisor_session():
+                await UserSessionManager.increment_failed_prompts(user_id, db)
             # Re-check limit after increment
             limit_hit, limit_response = await check_prompt_limit(user_id)
             if limit_hit:
@@ -126,7 +127,8 @@ async def run_mcp_client_pipeline(
             validation_issue["final_message"] = False
         return validation_issue
 
-    prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
+    with UserSessionManager.use_advisor_session():
+        prompt_count = await UserSessionManager.get_total_prompts_used(user_id)
     if prompt_count >= 3:
         return {
             "archived": False,

@@ -1,3 +1,5 @@
+import httpx
+from app.config import SYSTEM_USER_TOKEN, BACKEND_SERVICE_MAP
 def get_portfolio_summary(selected_portfolio):
     return f"""
 Asset names: {list({asset["name"]for asset in selected_portfolio.get("assets", [])})}
@@ -59,7 +61,7 @@ Asset Types: {exposure_summary["asset_types"]}
     return assets_representation_str
 
 
-def get_portfolio(selected_portfolio: dict) -> str:
+def portfolio_to_text(selected_portfolio: dict) -> str:
     portfolio_summary = get_portfolio_summary(selected_portfolio)
     assets_representation = get_asset_representation(selected_portfolio)
     exposure_summary = get_exposure_summary(selected_portfolio)
@@ -73,3 +75,15 @@ Portfolio Exposure Summary:
 {exposure_summary}
 """
     return portfolio_str
+
+
+async def fetch_portfolio_from_service(portfolio_id: str, user_id: int) -> dict:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BACKEND_SERVICE_MAP.get('portfolio')}/portfolios/{portfolio_id}",
+            headers={"Authorization": f"Bearer {SYSTEM_USER_TOKEN}"},
+            params={"user_id": user_id}  # Explicitly pass the target user_id since system user is able to access any portfolio
+        )
+
+        response.raise_for_status()
+        return response.json()

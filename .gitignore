@@ -4,6 +4,7 @@
 **/*.7z
 **.txt
 **/deploy.sh
+**/_deploy.sh
 *.sql
 write_code_to_txt.py
 test_fetch_articles.py
