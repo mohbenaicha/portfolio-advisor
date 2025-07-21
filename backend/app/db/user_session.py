@@ -19,7 +19,7 @@ from collections import defaultdict
 class UserSessionManager:
 
     session_expiry_hours = SESSION_EXPIRY_HOURS
-
+    active_session_store = session_store
     @staticmethod
     @contextmanager
     def use_advisor_session():

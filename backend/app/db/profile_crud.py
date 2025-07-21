@@ -22,8 +22,8 @@ async def get_user_profile_for_portfolio(db: AsyncSession, user_id: int, portfol
     # Get general profile (All Portfolios)
     result_all = await db.execute(
         select(UserProfile).where(UserProfile.user_id == user_id, UserProfile.portfolio_id == None)
-    )
-    general = result_all.scalars().first()
+    ) # should only return one
+    general = result_all.scalars().first() # .first() incase there are multiple due to some error | TODO: handle this case properly
     return specific, general
 
 async def create_user_profile(db: AsyncSession, user_id: int, portfolio_id: int, profile_data: dict | None = None):

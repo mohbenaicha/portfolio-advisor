@@ -37,7 +37,6 @@ async def embed_articles(articles: List[dict]) -> List[dict]:
 
     # Count input tokens for embeddings
     total_embedding_text = " ".join(texts)
-    embedding_input_tokens = count_tokens(total_embedding_text, EMBEDDING_MODEL)
     embeddings = await batch_embed(texts)
     for article, emb in zip(articles, embeddings):
         article["summary_embedding"] = emb

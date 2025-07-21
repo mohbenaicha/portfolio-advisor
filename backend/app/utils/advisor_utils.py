@@ -4,13 +4,13 @@ import markdown
 import tiktoken
 from typing import Tuple, Union, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.encoders import jsonable_encoder
 from app.utils.portfolio_utils import (
     fetch_portfolio_from_service,
     get_exposure_summary,
     get_portfolio_summary,
 )
-from utils.profile_utils import fetch_profile_from_service
-from fastapi.encoders import jsonable_encoder
+from app.utils.profile_utils import fetch_profile_from_service, profile_to_text
 from app.config import PROVIDER_BASE_URL
 from app.db.user_session import UserSessionManager
 
@@ -116,6 +116,7 @@ async def build_system_prompt(user_id: int, portfolio_id: int) -> str:
 
 async def call_provider_endpoint(endpoint: str, payload: dict) -> Dict[str, Union[bool, str]]: 
     url = f"{PROVIDER_BASE_URL}{endpoint}"
+    print("URL OF PROVIDER ENDPOINT:", url)
     timeout = httpx.Timeout(600)  # 10 minutes timeout
     retries = 1
     backoff = 2  # seconds
@@ -151,7 +152,13 @@ async def construct_prompt_for_embedding(
         ]
     )
     
-    investment_profile = await fetch_profile_from_service(portfolio_id)
+    profiles = await fetch_profile_from_service(portfolio_id, user_id)
+    profile = profiles.get("specific", profiles.get("general", "Not available.")) # get specific, if not fall back to general if not available
+    print("Profile in advisor_utils.py:", profile)
+    # get attributes of profile
+    print("Profile attributes:", vars(profile) if isinstance(profile, object) else profile)
+    if isinstance(profile, dict):
+        profile = profile_to_text(profile)
     return f"""
                 {question}
 
@@ -159,7 +166,7 @@ async def construct_prompt_for_embedding(
                 {portfolio_summary}
 
                 My investment profile:
-                {investment_profile}
+                {profile}
             """
 
 

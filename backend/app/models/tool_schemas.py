@@ -31,8 +31,8 @@ scrape_news_tool_schema = {
     },
 }
 
-get_user_profiles_tool_schema = {
-    "name": "get_user_profiles",
+get_user_profile_tool_schema = {
+    "name": "get_user_profile",
     "description": "Return a text summary of the user's investment profile for a selected portfolio, including both the specific profile and the 'All Portfolios' profile, with reconciliation logic if they conflict.",
     "parameters": {
         "type": "object",
@@ -44,5 +44,5 @@ get_user_profiles_tool_schema = {
 tools = [
     {"type": "function", "function": get_portfolio_tool_schema},
     {"type": "function", "function": scrape_news_tool_schema},
-    {"type": "function", "function": get_user_profiles_tool_schema},
+    {"type": "function", "function": get_user_profile_tool_schema},
 ]

@@ -166,6 +166,16 @@ class UserProfileResponse(UserProfileBase):
         orm_mode = True
 
 
+# Multiple profiles for a user, specific and general
+class UserProfilePairResponse(BaseModel):
+    specific: UserProfileResponse
+    general: UserProfileResponse
+
+    class Config:
+        orm_mode = True
+    
+
+
 class ProfileDeleteRequest(BaseModel):
     profile_id: int
 
@@ -181,4 +191,7 @@ class GetUserProfilesPayload(BaseModel):
 
 
 class AdminPortfolioRequest(BaseModel):
+    user_id: int
+    
+class AdminProfileRequest(BaseModel):
     user_id: int

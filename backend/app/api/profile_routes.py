@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.schemas import UserProfileCreate, UserProfileUpdate, UserProfileResponse, ProfileDeleteResponse
+from app.models.schemas import UserProfileCreate, UserProfileUpdate, UserProfileResponse, ProfileDeleteResponse, UserProfilePairResponse, AdminProfileRequest
 from app.services.profile_service import (
     create_profile, get_profiles, update_profile, delete_profile, str_to_list
 )
@@ -77,18 +77,45 @@ async def delete_user_profile(
     return ProfileDeleteResponse(deleted=True) 
 
 
-@router.get("/portfolio/{portfolio_id}", response_model=UserProfileResponse)
+@router.get("/portfolio/{portfolio_id}", response_model=UserProfilePairResponse)
 async def get_portfolio_profile(
     portfolio_id: int,
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user)
 ):
+    specific, general = None, None
     profiles = await get_profiles(db, user)
-    profile = next((p for p in profiles if getattr(p, 'portfolio_id') == portfolio_id), None)
-    if not profile:
-        # attempt to get the general profile with null id
-        profile = next((p for p in profiles if getattr(p, 'portfolio_id') is None), None)
-    if not profile:
-        # if still not found, raise an error
-            raise HTTPException(status_code=404, detail="Profile not found for this portfolio")
-    return profile_to_response(profile)
+    specific = next((p for p in profiles if getattr(p, 'portfolio_id') == portfolio_id), None)
+    general = next((p for p in profiles if getattr(p, 'portfolio_id') is None), None)
+    specific = profile_to_response(specific) if specific else None
+    general = profile_to_response(general) if general else None
+    return UserProfilePairResponse(
+        specific=specific,
+        general=general
+    ) 
+
+
+@router.post("/admin/portfolio/{portfolio_id}", response_model=UserProfilePairResponse)
+async def get_portfolio_profile_as_admin(
+    request: Request,
+    body: AdminProfileRequest,    
+    portfolio_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    user_id = await get_current_user(request, db)
+    if user_id != 0:  # Ensure the user is admin
+        raise HTTPException(status_code=403, detail="Access denied")
+    specific, general = None, None
+    profiles = await get_profiles(db, body.user_id)
+    print("Retrieved Profiles:", profiles)
+    specific = next((p for p in profiles if getattr(p, 'portfolio_id') == portfolio_id), None)
+    general = next((p for p in profiles if getattr(p, 'portfolio_id') is None), None)
+    specific = profile_to_response(specific) if specific else None
+    general = profile_to_response(general) if general else None
+    # validate specific and general types and content
+    print("Specific Profile:", specific)
+    print("General Profile:", general)
+    return UserProfilePairResponse(
+        specific=specific,
+        general=general
+    ) 

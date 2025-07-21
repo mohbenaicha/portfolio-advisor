@@ -64,7 +64,7 @@ async def get_portfolio(
     return PortfolioOut.model_validate(portfolio)
 
 
-@router.get("/admin/{id}", response_model=PortfolioOut)
+@router.post("/admin/{id}", response_model=PortfolioOut)
 async def get_portfolio_as_admin(
     id: int,
     request: AdminPortfolioRequest,

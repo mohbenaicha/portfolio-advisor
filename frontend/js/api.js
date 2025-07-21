@@ -1,5 +1,5 @@
-import { safeFetch, decodeHTML, customAlert, customConfirm } from "./utils.js";
-import { BASE_URL } from "./config.js";
+import { safeFetch, customAlert, customConfirm } from "./utils.js";
+import { BASE_URL, PROFILES_URL, PORTFOLIO_URL, ARCHIVE_URL as ARHCIVE_URL, ADVISOR_URL } from "./config.js";
 import { handle_load_archive } from "./archive.js";
 let currentToken = null;
 
@@ -32,7 +32,7 @@ export async function getPortfolios(forceRefresh = false) {
   if (!forceRefresh && window._portfolios) {
     return window._portfolios;
   }
-  const data = await safeFetch(`${BASE_URL}/portfolios`, {
+  const data = await safeFetch(`${PORTFOLIO_URL}/portfolios`, {
     headers: getAuthHeaders(),
   });
   window._portfolios = data;
@@ -95,7 +95,7 @@ export async function loadArchives() {
       const shouldDelete = await customConfirm("Are you sure you want to delete this archive?", "Delete", "Cancel");
       if (shouldDelete) {
         try {
-          const response = await safeFetch(`${BASE_URL}/archives/${a.id}`, {
+          const response = await safeFetch(`${ARHCIVE_URL}/archives/${a.id}`, {
             method: "DELETE",
             headers: getAuthHeaders(),
           });
@@ -141,7 +141,7 @@ export async function loadArchives() {
 
 export async function createPortfolioAPI(name, assets, id = null) {
   const method = id ? "PUT" : "POST";
-  const url = id ? `${BASE_URL}/portfolios/${id}` : `${BASE_URL}/portfolios`;
+  const url = id ? `${PORTFOLIO_URL}/portfolios/${id}` : `${PORTFOLIO_URL}/portfolios`;
   return safeFetch(url, {
     method,
     headers: getAuthHeaders(),
@@ -150,14 +150,14 @@ export async function createPortfolioAPI(name, assets, id = null) {
 }
 
 export async function deletePortfolioAPI(id) {
-  await safeFetch(`${BASE_URL}/portfolios/${id}`, {
+  await safeFetch(`${PORTFOLIO_URL}/portfolios/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
 }
 
 export async function analyzePrompt(question, portfolio_id) {
-  return safeFetch(`${BASE_URL}/analyze`, {
+  return safeFetch(`${ADVISOR_URL}/analyze`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ question, portfolio_id }),
@@ -165,7 +165,7 @@ export async function analyzePrompt(question, portfolio_id) {
 }
 
 export async function getArchives() {
-  return safeFetch(`${BASE_URL}/archives`, {
+  return safeFetch(`${ARHCIVE_URL}/archives`, {
     headers: getAuthHeaders(),
   });
 }
@@ -177,14 +177,14 @@ export async function getArchivedResponse(id) {
 }
 
 export async function deleteAllArchives() {
-  return safeFetch(`${BASE_URL}/archives`, {
+  return safeFetch(`${ARHCIVE_URL}/archives`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
 }
 
 export async function saveArchive(payload) {
-  return safeFetch(`${BASE_URL}/archives`, {
+  return safeFetch(`${ARHCIVE_URL}/archives`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(payload),
@@ -204,13 +204,13 @@ export async function fetchThumbnail(url) {
 
 // Profile APIs
 export async function getProfiles() {
-  return safeFetch(`${BASE_URL}/profiles/`, {
+  return safeFetch(`${PROFILES_URL}/profiles/`, {
     headers: getAuthHeaders(),
   });
 }
 
 export async function createProfile(profile) {
-  return safeFetch(`${BASE_URL}/profiles/`, {
+  return safeFetch(`${PROFILES_URL}/profiles/`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(profile),
@@ -218,7 +218,7 @@ export async function createProfile(profile) {
 }
 
 export async function updateProfile(profile_id, profile) {
-  return safeFetch(`${BASE_URL}/profiles/${profile_id}`, {
+  return safeFetch(`${PROFILES_URL}/profiles/${profile_id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(profile),
@@ -226,7 +226,7 @@ export async function updateProfile(profile_id, profile) {
 }
 
 export async function deleteProfileAPI(profile_id) {
-  return safeFetch(`${BASE_URL}/profiles/${profile_id}`, {
+  return safeFetch(`${PROFILES_URL}/profiles/${profile_id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });

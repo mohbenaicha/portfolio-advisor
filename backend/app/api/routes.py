@@ -12,11 +12,11 @@ from app.api.profile_routes import router as profile_router
 router = APIRouter()
 
 # Routers for core functionalities
-router.include_router(portfolio_router, tags=["Portfolio"])
-router.include_router(archive_router, tags=["Archive"])
-router.include_router(advisor_router, tags=["Advisor"])
-router.include_router(provider_router, prefix="/tool", tags=["Tool"])
-router.include_router(profile_router, tags=["Profile"])
+# router.include_router(portfolio_router, tags=["Portfolio"])
+# router.include_router(archive_router, tags=["Archive"])
+# router.include_router(advisor_router, tags=["Advisor"])
+# router.include_router(provider_router, prefix="/tool", tags=["Tool"])
+# router.include_router(profile_router, tags=["Profile"])
 
 # login, registration and validation
 router.include_router(auth_router, tags=["Auth"])

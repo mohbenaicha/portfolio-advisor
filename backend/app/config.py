@@ -1,26 +1,29 @@
 from os import getenv
 import json
+import os
+
+# Debug: Print all environment variables
+print("All environment variables:")
+for k, v in os.environ.items():
+    if any(x in k for x in ['DATABASE', 'ENV', 'MONGO', 'OPENAI']):
+        print(f"{k}: {v}")
+        
 ENV = getenv("ENV", "DEV")  # Default to "DEV" if ENV is not set
 
 if ENV == "DEV":
-    from dotenv import load_dotenv
-    print("Loading environment variables from .env file")
-
-    load_dotenv()
     TEST_DB_URL = getenv("TEST_DB_URI", "").strip()
 
 DATABASE_URL = getenv("DATABASE_URI").strip()
 MONGO_URI = getenv("MONGO_URI").strip()
 OUTSCRAPER_API_KEY = getenv("OUTSCRAPER_API_KEY").strip()
 OPEN_AI_API_KEY = getenv("OPENAI_API_KEY").strip()  # Remove any surrounding quotes due to GCP cloud secter create
-BACKEND_BASE_URL = getenv("BACKEND_BASE_URL", "https://briefly-backend-459260001744.us-central1.run.app")
 SYSTEM_USER_TOKEN = getenv("SYSTEM_USER_TOKEN", "").strip()
 
 ALLOWED_ORIGINS = [
     getenv("ALLOWED_ORIGIN", "https://project-briefly-2a809.web.app"),
 ]
 
-raw_endpoint_str = getenv("BACKEND_SERVICE_MAP")
+raw_endpoint_str = getenv("BACKEND_URLS")
 if raw_endpoint_str:
     BACKEND_SERVICE_MAP = json.loads(raw_endpoint_str.strip()) # ("core" "advisor" "archive" "portfolio" "profile")
 else:
@@ -29,13 +32,8 @@ else:
 if ENV == "TEST":
     ALLOWED_ORIGINS.append("http://localhost:8089")
 
-if ENV == "DEV":
-    ALLOWED_ORIGINS.extend([
-        "http://localhost:5173", 
-        "http://localhost:3000",
-    ])
     
-PROVIDER_BASE_URL = "/".join([BACKEND_BASE_URL, "tool"])
+PROVIDER_BASE_URL = "/".join([getenv("ADVISOR_INTERNAL_BASE_URI"), "tool"])
 GMAIL_PWD = getenv("GMAIL_PWD", "").strip()
 RECAPTCHA_SECRET_KEY = getenv("RECAPTCHA_SECRET_KEY", "").strip()
 
@@ -47,12 +45,18 @@ if not OUTSCRAPER_API_KEY:
     raise ValueError("OUTSCRAPER_API_KEY environment variable isn't set")
 if not OPEN_AI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable isn't set")
-if not BACKEND_BASE_URL:
-    raise ValueError("BACKEND_BASE_URL environment variable isn't set")
 if not GMAIL_PWD:
     raise ValueError("GMAIL_PWD environment variable isn't set")
 if not RECAPTCHA_SECRET_KEY:
     raise ValueError("RECAPTCHA_SECRET_KEY environment variable isn't set")
+if not SYSTEM_USER_TOKEN:
+    raise ValueError("SYSTEM_USER_TOKEN environment variable isn't set")
+if not BACKEND_SERVICE_MAP:
+    raise ValueError("BACKEND_SERVICE_MAP environment variable isn't set or is empty")
+if not ALLOWED_ORIGINS:
+    raise ValueError("ALLOWED_ORIGINS environment variable isn't set or is empty")
+if not PROVIDER_BASE_URL:
+    raise ValueError("PROVIDER_BASE_URL environment variable isn't set or is empty")
 
 SESSION_EXPIRY_HOURS = 24
 SCRAPER_HEADERS = {"User-Agent": "Mozilla/5.0"}
@@ -69,7 +73,6 @@ def print_env_variables():
         "MONGO_URI": MONGO_URI,
         "OUTSCRAPER_API_KEY": OUTSCRAPER_API_KEY,
         "OPEN_AI_API_KEY": OPEN_AI_API_KEY,
-        "BACKEND_BASE_URL": BACKEND_BASE_URL,
         "ALLOWED_ORIGIN": ALLOWED_ORIGINS,
         "PROVIDER_BASE_URL": PROVIDER_BASE_URL,
         "GMAIL_PWD": GMAIL_PWD,

@@ -1,5 +1,7 @@
 import httpx
-from app.config import SYSTEM_USER_TOKEN, BACKEND_SERVICE_MAP
+from app.config import SYSTEM_USER_TOKEN, BACKEND_SERVICE_MAP, ENV
+
+
 def get_portfolio_summary(selected_portfolio):
     return f"""
 Asset names: {list({asset["name"]for asset in selected_portfolio.get("assets", [])})}
@@ -10,7 +12,7 @@ Regions: {list({asset["region"] for asset in selected_portfolio.get("assets", []
 """
 
 
-def get_asset_representation(selected_portfolio):
+def get_asset_representation(selected_portfolio) -> str:
 
     assets_representation = "\n".join(
         [
@@ -29,7 +31,7 @@ Assets Representation:
     return assets_representation_str
 
 
-def get_exposure_summary(selected_portfolio):
+def get_exposure_summary(selected_portfolio) -> str:
     exposure_summary = {
         "regions": {},
         "sectors": {},
@@ -66,24 +68,30 @@ def portfolio_to_text(selected_portfolio: dict) -> str:
     assets_representation = get_asset_representation(selected_portfolio)
     exposure_summary = get_exposure_summary(selected_portfolio)
 
-    portfolio_str = f"""
-Portfolio Summary:
-{portfolio_summary}
-Assets Representation:
-{assets_representation}
-Portfolio Exposure Summary:
-{exposure_summary}
-"""
+    portfolio_str = f"""    
+                    Portfolio Summary:
+                    {portfolio_summary}
+                    Assets Representation:
+                    {assets_representation}
+                    Portfolio Exposure Summary:
+                    {exposure_summary}
+                    """
     return portfolio_str
 
 
 async def fetch_portfolio_from_service(portfolio_id: str, user_id: int) -> dict:
     async with httpx.AsyncClient() as client:
-        response = await client.get(
-            f"{BACKEND_SERVICE_MAP.get('portfolio')}/portfolios/{portfolio_id}",
+       
+        portfolio_service_url = BACKEND_SERVICE_MAP.get("portfolio")
+        print("fetch_portfolio_from_service: URL:", portfolio_service_url)
+        response = await client.post(
+            f"{portfolio_service_url}/portfolios/admin/{portfolio_id}",
             headers={"Authorization": f"Bearer {SYSTEM_USER_TOKEN}"},
-            params={"user_id": user_id}  # Explicitly pass the target user_id since system user is able to access any portfolio
+            json={
+                "user_id": user_id
+            },  # Explicitly pass the target user_id since system user is able to access any portfolio
         )
 
         response.raise_for_status()
+        print("Retrieved portfolio from service:", response.json())
         return response.json()
