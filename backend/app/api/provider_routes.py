@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.services.openai_client import (
@@ -99,6 +98,9 @@ async def api_get_user_profile(
     specific = profiles.get("specific")
     general = profiles.get("general")
 
+    print("DEBUG: get user profile tool call specigic: ", specific)
+    print("DEBUG: get user profile tool call general: ", general)
+
     # specific, general = await get_user_profile_for_portfolio(
     #     db, payload.user_id, payload.portfolio_id
     # )
@@ -154,16 +156,16 @@ async def api_get_user_profile(
             if updated_profile:
                 specific = updated_profile
         else:
-            return {
-                "error": "Investment profile details could not be determined from database or user query."
-            }
+            print("DEBUG: No profile updates extracted from user question.")
 
     if not specific and not general:
+        print("DEBUG: No investment profile found.")
         return {"error": "No investment profile found."}
 
     summary = ""
     if specific:
-        portfolio_name = await fetch_portfolio_from_service(payload.portfolio_id).get('name', 'unknown')
+        portfolio_name = await fetch_portfolio_from_service(payload.portfolio_id, payload.user_id)
+        portfolio_name = portfolio_name.get("name", "unknown")
         summary += (
             profile_to_text(
                 specific,

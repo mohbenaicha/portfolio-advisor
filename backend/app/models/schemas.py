@@ -31,7 +31,7 @@ class Portfolio(BaseModel):
 
 
 class PromptRequest(BaseModel):
-    question: str
+    conversation: str
     portfolio_id: int
 
 

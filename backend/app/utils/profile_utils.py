@@ -2,21 +2,22 @@ import httpx
 from app.config import SYSTEM_USER_TOKEN, BACKEND_SERVICE_MAP
 
 
-def profile_to_text(profile, label = None) -> str:
+def profile_to_text(profile, label=None) -> str:
     if not profile:
         return ""
     exclude = {"id", "user_id", "portfolio_id", "name", "created_at", "updated_at"}
+    
     def fmt(val):
         if isinstance(val, list):
             return ', '.join(str(v) for v in val) if val else 'N/A'
         if isinstance(val, str):
             return val if val else 'N/A'
         return str(val) if val else 'N/A'
+    
     lines = [f"Profile for {label}:"] if label else []
-    for field in vars(profile):
+    for field, value in profile.items():  # Iterate directly over the dictionary
         if field in exclude:
             continue
-        value = getattr(profile, field, None)
         lines.append(f"{field}: {fmt(value)}")
     return "\n".join(lines) 
 

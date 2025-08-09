@@ -13,7 +13,11 @@ validate_prompt_schema = {
 # Tool schemas for the LLM orchestrator
 get_portfolio_tool_schema = {
     "name": "get_user_portfolio",
-    "description": "Retrieve the user's portfolio for reference when providing investment advice.",
+    "description": (
+        "Always call this tool before answering if you need any information about "
+        "the user's portfolio of assets (asset types, regions, and sectors) for "
+        "the selected portfolio. Do not ask the user — fetch it here."
+    ),
     "parameters": {
         "type": "object",
         "properties": {},
@@ -23,7 +27,12 @@ get_portfolio_tool_schema = {
 
 scrape_news_tool_schema = {
     "name": "retrieve_news",
-    "description": "Fetch and summarize relevant news articles based on the user's question and portfolio exposure.",
+    "description": (
+        "Always call this tool before answering if you need any information about "
+        "the the latest news related to the user's portfolio or investment profile for "
+        "the selected portfolio. Do not ask the user — fetch it here."
+    ),
+    
     "parameters": {
         "type": "object",
         "properties": {},
@@ -33,7 +42,11 @@ scrape_news_tool_schema = {
 
 get_user_profile_tool_schema = {
     "name": "get_user_profile",
-    "description": "Return a text summary of the user's investment profile for a selected portfolio, including both the specific profile and the 'All Portfolios' profile, with reconciliation logic if they conflict.",
+    "description": (
+        "Always call this tool before answering if you need any information about "
+        "the user's investment profile (investment goals, and asset, sector and regional preferences) for "
+        "the selected portfolio. Do not ask the user — fetch it here."
+    ),
     "parameters": {
         "type": "object",
         "properties": {},

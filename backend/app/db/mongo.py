@@ -28,7 +28,7 @@ async def get_similar_articles(prompt_text: str, start_date=None, end_date=None,
     articles = await db.articles.find(query).to_list(length=100)
     
     heap = []
-    for article in articles:
+    for idx, article in enumerate(articles):
         emb = article.get("summary_embedding")
         if not emb:
             continue
@@ -37,11 +37,11 @@ async def get_similar_articles(prompt_text: str, start_date=None, end_date=None,
         article["similarity"] = score
 
         if len(heap) < top_k:
-            heapq.heappush(heap, (score, article))
+            heapq.heappush(heap, (score, idx, article))
         else:
-            heapq.heappushpop(heap, (score, article))
+            heapq.heappushpop(heap, (score, idx, article))
 
-    top_articles = [pair[1] for pair in heap]  # ← this would be a second loop
+    top_articles = [pair[2] for pair in heap]  # ← this would be a second loop
     
     return top_articles
 

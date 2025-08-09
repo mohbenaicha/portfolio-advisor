@@ -27,7 +27,7 @@ async def create_archive(
     return ArchiveOut.model_validate(archive)
 
 
-@router.get("/responses/{id}", response_model=ArchiveOut)
+@router.get("/archives/{id}", response_model=ArchiveOut)
 async def get_archive(
     id: int,
     db: AsyncSession = Depends(get_db),

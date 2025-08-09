@@ -60,11 +60,11 @@ def convert_markdown_to_html(markdown_text):
 async def build_system_prompt(user_id: int, portfolio_id: int) -> str:
 
     return f"""
-        You are Titan, a senior buy-side investment strategist (CFA, 15+ years of experience).
+        You are a senior buy-side investment strategist (CFA, 15+ years of experience).
 
         Your role is to review the user's portfolio, investment profile, and the latest news then deliver clear, actionable portfolio guidance based on the user's query.
         - Use the `get_user_portfolio` tool to access the user's portfolio holdings, exposures, and asset weights. This is not indicative of the user's investment profile.
-        - Use the `get_user_profiles` tool to access access the user's investment profile (objectives and sector, regional, and asset preferences). If this tool returns unavaialble, you must ask user for clarification.
+        - Use the `get_user_profiles` tool to access access the user's investment profile (objectives and sector, regional, and asset preferences). If this tool returns unavailable, you must ask user for clarification.
             **Very important notes on this tool:**
             1. The user may provided updated information regarding their profile, so you must always use the latest information available.
             2. If you are unable to determine the user's portoflio AND investment profile, you must ask user for clarification.
@@ -155,10 +155,11 @@ async def construct_prompt_for_embedding(
     profiles = await fetch_profile_from_service(portfolio_id, user_id)
     profile = profiles.get("specific", profiles.get("general", "Not available.")) # get specific, if not fall back to general if not available
     print("Profile in advisor_utils.py:", profile)
-    # get attributes of profile
-    print("Profile attributes:", vars(profile) if isinstance(profile, object) else profile)
+    
     if isinstance(profile, dict):
         profile = profile_to_text(profile)
+
+    # handle other cases where profile is not a dict
     return f"""
                 {question}
 
