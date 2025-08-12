@@ -42,7 +42,7 @@ async def api_retrieve_news(
 ):
 
     result = await retrieve_news(
-        question=payload.question,
+        question=payload.conversation,
         portfolio_id=payload.portfolio_id,
         db=db,
         user_id=payload.user_id,
@@ -98,7 +98,7 @@ async def api_get_user_profile(
     specific = profiles.get("specific")
     general = profiles.get("general")
 
-    print("DEBUG: get user profile tool call specigic: ", specific)
+    print("DEBUG: get user profile tool call specific: ", specific)
     print("DEBUG: get user profile tool call general: ", general)
 
     # specific, general = await get_user_profile_for_portfolio(
@@ -106,7 +106,9 @@ async def api_get_user_profile(
     # )
 
     # Extract and update profile details using LLM
-    question = getattr(payload, "question", None)
+    print("DEBUG: get user profile tool call payload: ", payload)
+    question = getattr(payload, "conversation", None)
+    print("DEBUG: get user profile tool call question: ", question)
     if question:
         # Dynamically get updatable fields from UserProfileBase
         exclude_fields = {"id", "user_id", "portfolio_id", "created_at", "updated_at"}

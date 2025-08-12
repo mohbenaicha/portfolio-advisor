@@ -240,13 +240,15 @@ async def extract_profile_details(
         - Return a JSON object with only the fields from the schema that can be inferred from the user's prompt.
         - If a field is not mentioned or cannot be inferred, from the user's prompt leave it blank.
         - If a field exists in the current profile but is not mentioned in the user's prompt, keep it as is.
-        - If a field is mentioned in the user's prompt, update it in the returned JSON object
+        - If a field is mentioned or can be inferred from a user's prompt, update it in the returned JSON object
         - Only return a valid JSON object, no explanations or extra text.
     """
     response = client.chat.completions.create(
         model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
+    print("DEBUG: Extracted profile details:", raw_content)
+
     if raw_content:
         cleaned = re.sub(
             r"^```json\s*|\s*```$", "", raw_content.strip(), flags=re.IGNORECASE
@@ -254,9 +256,9 @@ async def extract_profile_details(
         try:
             cleaned_json = json.loads(cleaned)
             if all(not value for value in cleaned_json.values()):
-                return False
+                cleaned_json = {}
         except Exception:
             cleaned_json = {}
-        return False
+        return cleaned_json
     else:
-        return False
+        return {}

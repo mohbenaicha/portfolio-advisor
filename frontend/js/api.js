@@ -156,11 +156,11 @@ export async function deletePortfolioAPI(id) {
   });
 }
 
-export async function analyzePrompt(question, portfolio_id) {
+export async function analyzePrompt(conversation, portfolio_id) {
   return safeFetch(`${ADVISOR_URL}/analyze`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ question, portfolio_id }),
+    body: JSON.stringify({ conversation, portfolio_id }),
   });
 }
 
@@ -171,7 +171,7 @@ export async function getArchives() {
 }
 
 export async function getArchivedResponse(id) {
-  return safeFetch(`${BASE_URL}/responses/${id}`, {
+  return safeFetch(`${ARHCIVE_URL}/archives/${id}`, {
     headers: getAuthHeaders(),
   });
 }

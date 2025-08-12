@@ -1,5 +1,5 @@
-import { getAuthHeaders, authenticateUser, loadPortfolioOptions, loadArchives, initApiToken } from "./api.js";
-import { loadArchiveDropdown } from "./archive.js";
+import { getAuthHeaders, authenticateUser, loadArchives, initApiToken, getPortfolios} from "./api.js";
+import { loadUserData } from "./dataLoader.js";
 import { initialUpdateQuestionPlaceholder } from "./portfolio.js";
 import { safeFetch, validateRecaptcha, handleLoginErrorDisplay, hideElement, showElement } from "./utils.js";
 import { TOKEN_EXPIRY_MS, BASE_URL, reCAPTCHA_SITE_KEY } from "./config.js";
@@ -34,12 +34,7 @@ async function login(token) {
     appScreen.style.display = "flex";
     
     handleLoginErrorDisplay(false);
-    await loadArchives();
-    const portfolios = await getPortfolios(true); // force refresh on login
-    window._portfolios = portfolios;
-    await initialUpdateQuestionPlaceholder(portfolios);
-    // Trigger summary panel render if function exists
-    if (window.renderPortfolioSummary) window.renderPortfolioSummary();
+    loadUserData();
 
   } catch (err) {
     handleLoginErrorDisplay(true, "Invalid token or authentication failed.");

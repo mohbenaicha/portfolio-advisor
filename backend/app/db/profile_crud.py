@@ -59,6 +59,7 @@ async def create_user_profile(db: AsyncSession, user_id: int, portfolio_id: int,
 
 async def update_user_profile_fields(db: AsyncSession, user_id: int, portfolio_id: int, update_fields: dict):
     from app.models.sql_models import UserProfile
+    print("DEBUG: update_user_profile_fields called with:", update_fields)
     result = await db.execute(
         select(UserProfile).where(UserProfile.user_id == user_id, UserProfile.portfolio_id == portfolio_id)
     )

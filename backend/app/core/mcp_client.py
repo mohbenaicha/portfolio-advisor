@@ -64,7 +64,7 @@ async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id
 
         # Pass the actual question manually for all tools
         if question:
-            payload["question"] = question
+            payload["conversation"] = question
 
         endpoint = endpoint_map.get(name)
         if not endpoint:

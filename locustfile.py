@@ -259,7 +259,7 @@ class APITestUser(HttpUser):
             
         archive_id = random.choice(self.created_archives)
         with self.client.get(
-            f"/responses/{archive_id}",
+            f"/archives/{archive_id}",
             headers=self.headers,
             catch_response=True
         ) as response:

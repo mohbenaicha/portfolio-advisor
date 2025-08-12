@@ -14,7 +14,7 @@ backend/app/core/mcp_client_backup.py
 backend/app/services/article_processor_backup.py
 backend/app/services/openai_client_backup.py
 backend/tests/ref_data/
-
+backend/print_backend_structure.py
 *.pptx
 .vscode
 *.backup

@@ -5,21 +5,39 @@ import { refreshProfiles } from './profile.js';
 
 
 // handles submitting the prompt to the backend
+let conversation;
+
 async function submitPrompt() {
 
   const select = document.getElementById("portfolio-select");
   const questionInput = document.getElementById("question");
-  // Gather all previous user chat bubbles
-  const userBubbles = Array.from(document.querySelectorAll('#chat-container .chat-bubble.user'));
-  const previousUserMessages = userBubbles.map(b => b.textContent.trim()).filter(Boolean);
   // Append current input
   const currentInput = questionInput.value.trim();
-  // Combine all user messages, separated by newlines
-  const question = [...previousUserMessages, currentInput].join('\n');
+  
+  if (!currentInput || currentInput.replace(/[^a-zA-Z0-9]/g, "").trim() === "" || currentInput.length > 500) {
+    questionInput.value = "Please enter a valid question.";
+    questionInput.style.color = "red";
+    questionInput.addEventListener("input", () => {
+      questionInput.style.color = "";
+    });
+    return;
+  }
+  
+  // Combine all user and assistant messages, separated by newlines
+  // Gather all previous user and assistant chat bubbles
+  const chatBubbles = Array.from(document.querySelectorAll('#chat-container .chat-bubble'));
+  conversation = chatBubbles.map(b => {
+    const sender = b.classList.contains('user') ? 'user' : 'assistant';
+    return `${sender}: ${b.textContent.trim()}`;
+  }).join('\n');
+  conversation = `${conversation}\nuser: ${currentInput}`;
+
+  // TODO: check conversation length and handle (summary/limit length)
+
+  // Validate portfolio 
+  //  Validate portfolio selection
   const portfolioId = parseInt(select.value);
-  const responseDiv = document.getElementById("response");
-
-
+  // const responseDiv = document.getElementById("response");
   if (!portfolioId) {
     questionInput.value = "Please select a portfolio.";
     questionInput.style.color = "red";
@@ -29,20 +47,12 @@ async function submitPrompt() {
     return;
   }
 
-  if (!question || question.replace(/[^a-zA-Z0-9]/g, "").trim() === "" || question.length > 500) {
-    questionInput.value = "Please enter a valid question.";
-    questionInput.style.color = "red";
-    questionInput.addEventListener("input", () => {
-      questionInput.style.color = "";
-    });
-    return;
-  }
 
   // Check if the selected portfolio has at least one asset
   try {
     const portfolios = await getPortfolios();
     const selectedPortfolio = portfolios.find(p => p.id === portfolioId);
-    
+
     if (!selectedPortfolio || !selectedPortfolio.assets || selectedPortfolio.assets.length === 0) {
       questionInput.value = "Portfolio should have at least 1 asset before it can be analyzed.";
       questionInput.style.color = "red";
@@ -61,23 +71,9 @@ async function submitPrompt() {
     return;
   }
 
-  // Show loading animation
-  // responseDiv.innerHTML = `
-  // <div class="loading-animation">
-  //   Generating response&nbsp;&nbsp;<span class="ellipsis">
-  //     <span> .</span>
-  //     <span> .</span>
-  //     <span> .</span>
-  //   </span>
-  // </div>
-  // <div id="chat-container"></div>
-  // `;
-
-  const refreshArchivesBtn = document.getElementById("refresh-archives-btn");
-  const questionTextarea = document.getElementById("question");
-  const askButton = document.querySelector(".input-footer button");
+  
   try {
-    
+
     // Do NOT clear chat history here!
     // Append only the current input as a chat bubble
     appendMessageToChat(currentInput, 'user');
@@ -88,7 +84,7 @@ async function submitPrompt() {
     bufferingBubble.innerHTML = '<span class="ellipsis"><span> .</span><span> .</span><span> .</span></span>';
     chatContainer.appendChild(bufferingBubble);
     chatContainer.scrollTop = chatContainer.scrollHeight;
-    const result = await analyzePrompt(question, portfolioId);
+    const result = await analyzePrompt(conversation, portfolioId);
     // Remove buffering bubble
     if (bufferingBubble.parentNode) bufferingBubble.parentNode.removeChild(bufferingBubble);
     renderResponse(result);
@@ -117,7 +113,7 @@ async function submitPrompt() {
     }
     // Append error as assistant message instead of destroying chat
     appendMessageToChat(`<p style=\"color: red;\">Failed to generate response. Please try again.</p>`, 'assistant');
-  } 
+  }
 
 }
 
@@ -160,12 +156,12 @@ async function archiveChat() {
   const select = document.getElementById("portfolio-select");
   const portfolioId = parseInt(select.value);
   const chatContainer = document.getElementById('chat-container');
-  
+
   if (!portfolioId) {
     await customAlert("Please select a portfolio first.");
     return;
   }
-  
+
   if (!chatContainer.innerHTML.trim()) {
     await customAlert("No chat to archive.");
     return;
@@ -190,7 +186,7 @@ async function archiveChat() {
     };
     await saveArchive(archivePayload);
     await customAlert("Chat archived successfully!");
-    
+
     // Clear the chat after archiving
     clearChat();
   } catch (error) {
@@ -198,8 +194,6 @@ async function archiveChat() {
     await customAlert("Failed to archive chat. Please try again.");
   }
 }
-
-
 
 
 const questionBox = document.getElementById("question");
@@ -282,7 +276,7 @@ async function renderPortfolioSummary() {
     const pct = totalValue ? ((value / totalValue) * 100).toFixed(2) : '0.00';
     table += `<tr>
       <td style='padding:4px;'>${label}</td>
-      <td style='text-align:right;padding:4px;'>$${value.toLocaleString(undefined, {maximumFractionDigits:2})}</td>
+      <td style='text-align:right;padding:4px;'>$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
       <td style='text-align:right;padding:4px;'>${pct}%</td>
     </tr>`;
   });
@@ -312,11 +306,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wire up chat control buttons
   const newChatBtn = document.getElementById('new-chat-btn');
   const archiveChatBtn = document.getElementById('archive-chat-btn');
-  
+
   if (newChatBtn) {
     newChatBtn.addEventListener('click', clearChat);
   }
-  
+
   if (archiveChatBtn) {
     archiveChatBtn.addEventListener('click', archiveChat);
   }
@@ -329,14 +323,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let isDragging = false;
 
   if (resizeBar && textareaWrapper && summaryPanel && advisorBox) {
-    resizeBar.addEventListener('mousedown', function(e) {
+    resizeBar.addEventListener('mousedown', function (e) {
       // Only allow horizontal drag if flex-direction is row
       if (window.getComputedStyle(advisorBox).flexDirection !== 'row') return;
       isDragging = true;
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
     });
-    document.addEventListener('mousemove', function(e) {
+    document.addEventListener('mousemove', function (e) {
       if (!isDragging) return;
       // Calculate new width for textareaWrapper
       const boxRect = advisorBox.getBoundingClientRect();
@@ -348,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
       textareaWrapper.style.width = newWidth + 'px';
       summaryPanel.style.flex = '1 1 0';
     });
-    document.addEventListener('mouseup', function(e) {
+    document.addEventListener('mouseup', function (e) {
       if (isDragging) {
         isDragging = false;
         document.body.style.cursor = '';
@@ -361,18 +355,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function setupChatBubbleThumbnails() {
     const chatContainer = document.getElementById('chat-container');
     let currentLink = null;
-    chatContainer.addEventListener('mouseover', async function(e) {
+    chatContainer.addEventListener('mouseover', async function (e) {
       if (e.target.matches('.chat-bubble.assistant a')) {
         currentLink = e.target;
         showThumbnailPreview(e.target, e.target.href, e);
       }
     });
-    chatContainer.addEventListener('mousemove', function(e) {
+    chatContainer.addEventListener('mousemove', function (e) {
       if (currentLink && e.target === currentLink) {
         moveThumbnailPreview(e);
       }
     });
-    chatContainer.addEventListener('mouseout', function(e) {
+    chatContainer.addEventListener('mouseout', function (e) {
       if (e.target.matches('.chat-bubble.assistant a')) {
         hideThumbnailPreview();
         currentLink = null;
@@ -422,7 +416,7 @@ function setupCharCounter() {
 // Bind Enter key to Ask/New Chat
 const questionInputEl = document.getElementById("question");
 if (questionInputEl) {
-  questionInputEl.addEventListener("keydown", function(e) {
+  questionInputEl.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       const askButton = document.querySelector(".input-footer button");

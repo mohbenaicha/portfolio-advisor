@@ -103,7 +103,7 @@ class DetermineAugmentationPayload(BaseModel):
 
 
 class RetrieveNewsPayload(BaseModel):
-    question: str
+    conversation: str
     portfolio_id: int
     user_id: int
 
@@ -168,8 +168,8 @@ class UserProfileResponse(UserProfileBase):
 
 # Multiple profiles for a user, specific and general
 class UserProfilePairResponse(BaseModel):
-    specific: UserProfileResponse
-    general: UserProfileResponse
+    specific: Optional[UserProfileResponse] = None  # Allow None for specific
+    general: Optional[UserProfileResponse] = None  # Allow None for general
 
     class Config:
         orm_mode = True
@@ -187,7 +187,7 @@ class ProfileDeleteResponse(BaseModel):
 class GetUserProfilesPayload(BaseModel):
     user_id: int
     portfolio_id: int
-    question: str | None = None
+    conversation: str | None = None
 
 
 class AdminPortfolioRequest(BaseModel):

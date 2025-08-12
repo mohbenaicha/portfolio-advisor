@@ -50,13 +50,13 @@ export async function loadPortfolio(portfolios) {
 
   selectedPortfolioId = id;
   document.getElementById("portfolio-name").value = selected.name;
-  
+
   // Clear any existing error messages
   const nameErr = document.getElementById("portfolio-name-error");
   if (nameErr) {
     nameErr.textContent = "";
   }
-  
+
   const tbody = document.querySelector("#asset-table tbody");
   tbody.innerHTML = "";
 
@@ -101,11 +101,11 @@ export async function createPortfolio() {
     // Refresh cache and update dropdown
     const portfolios = await getPortfolios(true); // force refresh
     window._portfolios = portfolios;
-    
+
     // Store current selection before updating dropdown
     const currentSelection = selectedPortfolioId;
     await loadPortfolioDropdown(portfolios);
-    
+
     // Restore the current selection
     const dropdown = document.getElementById("portfolio-dropdown");
     if (dropdown && currentSelection) {
@@ -158,6 +158,14 @@ export async function deletePortfolio() {
 export function addAssetRow() {
   const row = createAssetRow();
   document.querySelector("#asset-table tbody").appendChild(row);
+}
+
+export async function reloadPortfolios() {
+  const portfolios = await getPortfolios(true);
+  window._portfolios = portfolios;
+  await loadPortfolioDropdown(portfolios);
+  await initialUpdateQuestionPlaceholder(portfolios);
+  if (window.renderPortfolioSummary) window.renderPortfolioSummary();
 }
 
 function createAssetRow(data = {}) {
@@ -219,11 +227,11 @@ function createAssetRow(data = {}) {
 function calculateTotals(assets) {
   const total = assets.reduce((acc, a) => acc + (a.market_price * a.units_held), 0);
   const tableRows = document.querySelectorAll("#asset-table tbody tr");
-  
+
   assets.forEach((a, i) => {
     a.total_value = a.market_price * a.units_held * (a.asset_type === "option" ? 100 : 1);
     a.percentage_of_total = ((a.total_value / total) * 100).toFixed(2);
-    
+
     // Update DOM in same loop
     tableRows[i].querySelector(".auto-total").textContent = a.total_value.toFixed(2);
     tableRows[i].querySelector(".auto-pct").textContent = a.percentage_of_total;
@@ -284,7 +292,7 @@ export async function saveAssets() {
         errorOutput.textContent = "Error: Invalid price/units.";
         return;
       }
-      
+
       tickerSet.add(a.ticker);
       nameSet.add(a.name);
     }
@@ -304,21 +312,21 @@ export async function saveAssets() {
 
   try {
     await createPortfolioAPI(name, assets, selectedPortfolioId);
-    
+
     // Refresh cache and update dropdown
     const portfolios = await getPortfolios(true); // force refresh
     window._portfolios = portfolios;
-    
+
     // Store current selection before updating dropdown
     const currentSelection = selectedPortfolioId;
     await loadPortfolioDropdown(portfolios);
-    
+
     // Restore the current selection
     const dropdown = document.getElementById("portfolio-dropdown");
     if (dropdown && currentSelection) {
       dropdown.value = currentSelection.toString();
     }
-    
+
     // Show success notification
     showToast("💾 Portfolio saved successfully!", 2500);
   } catch (err) {
@@ -365,7 +373,7 @@ export async function duplicatePortfolio() {
     // Get current portfolio data
     const portfolios = await getPortfolios();
     const currentPortfolio = portfolios.find(p => p.id === selectedPortfolioId);
-    
+
     if (!currentPortfolio || !currentPortfolio.assets) {
       showToast("No portfolio data found to duplicate.", 3000);
       return;
@@ -373,41 +381,41 @@ export async function duplicatePortfolio() {
 
     // Create new portfolio with blank name and copied assets
     const newPortfolio = await createPortfolioAPI("", currentPortfolio.assets);
-    
+
     // Update the selected portfolio ID to the new one
     selectedPortfolioId = newPortfolio.id;
-    
+
     // Refresh cache and reload the dropdown to include the new portfolio
     const updatedPortfolios = await getPortfolios(true); // force refresh
     window._portfolios = updatedPortfolios;
     await loadPortfolioDropdown(updatedPortfolios);
-    
+
     // Select the new portfolio in the dropdown
     const dropdown = document.getElementById("portfolio-dropdown");
     if (dropdown) {
       dropdown.value = selectedPortfolioId.toString();
     }
-    
+
     // Clear the portfolio name field (since it's a new portfolio)
     document.getElementById("portfolio-name").value = "";
-    
+
     // Clear any existing error messages
     const nameErr = document.getElementById("portfolio-name-error");
     if (nameErr) {
       nameErr.textContent = "";
     }
-    
+
     // Clear any existing error output
     const errorOutput = document.getElementById("portfolio-err-pout");
     if (errorOutput) {
       errorOutput.textContent = "";
     }
-    
+
     // Reload the portfolio to show the duplicated assets
     await loadPortfolio(updatedPortfolios);
-    
+
     showToast("Portfolio duplicated successfully! 📋", 2500);
-    
+
   } catch (err) {
     console.error('Failed to duplicate portfolio: ' + err.message);
     showToast("Failed to duplicate portfolio. Please try again.", 3000);
@@ -421,6 +429,7 @@ window.deletePortfolio = deletePortfolio;
 window.duplicatePortfolio = duplicatePortfolio;
 window.addAssetRow = addAssetRow;
 window.createAssetRow = createAssetRow;
+window.reloadPortfolios = reloadPortfolios;
 
 // logic for uploading portfoloi
 function initPortfolioUpload() {
@@ -438,15 +447,15 @@ function initPortfolioUpload() {
   const sectorEnum = ["Technology", "Finance", "Utilities", "Healthcare", "Consumer Goods", "Energy", "Real Estate", "Government Bonds", "Retail", "Life Sciences", "Manufacturing"];
   const regionEnum = ["US", "Europe", "Asia", "Emerging Markets", "Global"];
   const schemaCols = [
-    {name: 'ticker', type: 'string', required: true},
-    {name: 'name', type: 'string', required: true},
-    {name: 'asset_type', type: 'enum', required: true, values: assetTypeEnum},
-    {name: 'sector', type: 'enum', required: true, values: sectorEnum},
-    {name: 'region', type: 'enum', required: true, values: regionEnum},
-    {name: 'market_price', type: 'float', required: true, min: 0.01},
-    {name: 'units_held', type: 'int', required: true, min: 1},
-    {name: 'is_hedge', type: 'int', required: true, values: [0,1]},
-    {name: 'hedges_asset', type: 'string', required: false}
+    { name: 'ticker', type: 'string', required: true },
+    { name: 'name', type: 'string', required: true },
+    { name: 'asset_type', type: 'enum', required: true, values: assetTypeEnum },
+    { name: 'sector', type: 'enum', required: true, values: sectorEnum },
+    { name: 'region', type: 'enum', required: true, values: regionEnum },
+    { name: 'market_price', type: 'float', required: true, min: 0.01 },
+    { name: 'units_held', type: 'int', required: true, min: 1 },
+    { name: 'is_hedge', type: 'int', required: true, values: [0, 1] },
+    { name: 'hedges_asset', type: 'string', required: false }
   ];
 
   // schema sample
@@ -511,7 +520,7 @@ function initPortfolioUpload() {
       if (!lines[i].trim()) continue;
       const vals = lines[i].split(',');
       if (vals.length < headers.length) {
-        errorsDiv.textContent = `Row ${i+1} has missing columns.`;
+        errorsDiv.textContent = `Row ${i + 1} has missing columns.`;
         return;
       }
       const asset = {};
@@ -523,17 +532,17 @@ function initPortfolioUpload() {
       for (const col of schemaCols) {
         const val = asset[col.name];
         if (col.required && (val === undefined || val === '')) {
-          errorsDiv.textContent = `Row ${i+1}: ${col.name} is required.`;
+          errorsDiv.textContent = `Row ${i + 1}: ${col.name} is required.`;
           return;
         }
         if (col.type === 'enum' && val && !col.values.includes(val)) {
-          errorsDiv.textContent = `Row ${i+1}: ${col.name} must be one of: ${col.values.join(', ')}`;
+          errorsDiv.textContent = `Row ${i + 1}: ${col.name} must be one of: ${col.values.join(', ')}`;
           return;
         }
         if (col.type === 'float' && val) {
           const num = parseFloat(val);
           if (isNaN(num) || num < (col.min || 0)) {
-            errorsDiv.textContent = `Row ${i+1}: ${col.name} must be a number >= ${col.min}`;
+            errorsDiv.textContent = `Row ${i + 1}: ${col.name} must be a number >= ${col.min}`;
             return;
           }
           asset[col.name] = num;
@@ -541,14 +550,14 @@ function initPortfolioUpload() {
         if (col.type === 'int' && val) {
           const num = parseInt(val, 10);
           if (isNaN(num) || num < (col.min || 0) || !/^\d+$/.test(val)) {
-            errorsDiv.textContent = `Row ${i+1}: ${col.name} must be a whole number >= ${col.min}`;
+            errorsDiv.textContent = `Row ${i + 1}: ${col.name} must be a whole number >= ${col.min}`;
             return;
           }
           asset[col.name] = num;
         }
         if (col.name === 'is_hedge' && val !== undefined) {
           if (val !== '0' && val !== '1' && val !== 0 && val !== 1) {
-            errorsDiv.textContent = `Row ${i+1}: is_hedge must be 0 or 1.`;
+            errorsDiv.textContent = `Row ${i + 1}: is_hedge must be 0 or 1.`;
             return;
           }
           asset.is_hedge = val == '1';

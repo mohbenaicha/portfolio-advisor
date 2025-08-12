@@ -36,7 +36,7 @@
           investment advice.
         </p>
       </div>
-      
+
       <!-- Login Box Footer -->
       <div class="login-box-footer">
         <p>© 2025 <a href="https://www.mohamedbenaicha.ca" target="_blank" title="Website">Mohamed Benaicha</a></p>
@@ -63,18 +63,24 @@
         <h2>Previous chats</h2>
         <div id="archive-list" class="archive-list"></div>
         <div class="archive-controls">
-          <button id="refresh-archives-btn" class="refresh-arch-btn">⟳<span class="btn-tooltip">Refresh archives</span></button>
-          <button id="delete-all-archives-btn" class="delete-all-arch-btn">🗑<span class="btn-tooltip">Delete all archives</span></button>
+          <button id="refresh-archives-btn" class="refresh-arch-btn">⟳<span class="btn-tooltip">Refresh
+              archives</span></button>
+          <button id="delete-all-archives-btn" class="delete-all-arch-btn">🗑<span class="btn-tooltip">Delete all
+              archives</span></button>
         </div>
       </aside>
       <main class="main">
         <!-- Top Navigation -->
         <div class="topbar">
           <div class="tabs">
-            <button class="tab-button active-tab" data-tab="advisor">Advisor<span class="btn-tooltip">Chat with the AI advisor</span></button>
-            <button class="tab-button" data-tab="portfolio">Portfolios<span class="btn-tooltip">Manage your portfolios</span></button>
-            <button class="tab-button" data-tab="archive">Archives<span class="btn-tooltip">View your archived chats</span></button>
-            <button class="tab-button" data-tab="profile" id="profile-tab-link">Profiles<span class="btn-tooltip">Manage your investment profiles</span></button>
+            <button class="tab-button active-tab" data-tab="advisor">Advisor<span class="btn-tooltip">Chat with the AI
+                advisor</span></button>
+            <button class="tab-button" data-tab="portfolio">Portfolios<span class="btn-tooltip">Manage your
+                portfolios</span></button>
+            <button class="tab-button" data-tab="archive">Archives<span class="btn-tooltip">View your archived
+                chats</span></button>
+            <button class="tab-button" data-tab="profile" id="profile-tab-link">Profiles<span class="btn-tooltip">Manage
+                your investment profiles</span></button>
           </div>
           <button id="logout-btn" onclick="logout()" class="logout-button">Logout</button>
         </div>
@@ -95,7 +101,8 @@
                 <select id="portfolio-select">
                   <!-- options -->
                 </select>
-                <span class="btn-tooltip" style="left:unset;right:0;top:-32px;transform:none;">Select a portfolio to chat about</span>
+                <span class="btn-tooltip" style="left:unset;right:0;top:-32px;transform:none;">Select a portfolio to
+                  chat about</span>
                 <button>Ask</button>
               </div>
             </div>
@@ -108,9 +115,12 @@
             </div>
             <div class="portfolio-summary-panel">
               <div class="summary-tabs">
-                <button class="summary-tab active" data-summary="exposure">Asset<span class="btn-tooltip">Asset composition of selected portfolio</span></button>
-                <button class="summary-tab" data-summary="region">Region<span class="btn-tooltip">Regional exposure of selected portfolio</span></button>
-                <button class="summary-tab" data-summary="sector">Sector<span class="btn-tooltip">Sector exposure of selected portfolio</span></button>
+                <button class="summary-tab active" data-summary="exposure">Asset<span class="btn-tooltip">Asset
+                    composition of selected portfolio</span></button>
+                <button class="summary-tab" data-summary="region">Region<span class="btn-tooltip">Regional exposure of
+                    selected portfolio</span></button>
+                <button class="summary-tab" data-summary="sector">Sector<span class="btn-tooltip">Sector exposure of
+                    selected portfolio</span></button>
               </div>
               <div id="summary-content"></div>
             </div>
@@ -155,7 +165,11 @@
             </table>
           </div>
           <div id="portfolio-err-pout" class="error-font"></div>
-          <button id="add-asset-btn" onclick="addAssetRow()">+ Add Asset</button>
+          
+          <div>
+            <button id="add-asset-btn" onclick="addAssetRow()">+ Add Asset</button>
+            <button id="refresh-portfolio-btn" onclick="reloadPortfolios()">↻ Refresh</button>
+          </div>
         </section>
 
         <section id="archive" class="tab">

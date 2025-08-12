@@ -1,8 +1,11 @@
 import httpx
+from sqlalchemy.inspection import inspect
 from app.config import SYSTEM_USER_TOKEN, BACKEND_SERVICE_MAP
 
 
 def profile_to_text(profile, label=None) -> str:
+    if not isinstance(profile, dict):
+        profile = sqlalchemy_object_to_dict(profile)
     if not profile:
         return ""
     exclude = {"id", "user_id", "portfolio_id", "name", "created_at", "updated_at"}
@@ -38,3 +41,7 @@ async def fetch_profile_from_service(portfolio_id: str, user_id: int) -> dict:
         ) # response =  {specific: UserProfileResponse, general: UserProfileResponse}
         response.raise_for_status()
         return response.json()
+    
+    
+def sqlalchemy_object_to_dict(obj):
+    return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}

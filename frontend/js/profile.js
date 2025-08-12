@@ -23,14 +23,32 @@ async function fetchPortfolios() {
 }
 
 async function fetchProfiles() {
+  const container = document.getElementById('profile');
   try {
     profiles = await getProfiles();
-    // Always set profile_id for all loaded profiles
+    // Set profile_id for all loaded profiles
     profiles.forEach(p => { p.profile_id = p.id; });
     usedPortfolioIds = new Set(profiles.map(p => p.portfolio_id));
+    return true;
   } catch (err) {
-    throw new Error('Could not load profiles: ' + err.message);
+    displayProfileError(container, err.message);
+    return false;
   }
+}
+
+function displayProfileError(container, errorMessage) {
+  container.innerHTML = `
+    <div class="error-font" style="color:red;">
+      Could not load profiles: ${errorMessage}. <br>
+      Try <a href="#" id="reload-profiles-link">reloading</a> or try again later.
+    </div>
+  `;
+  const reloadLink = document.getElementById('reload-profiles-link');
+  reloadLink.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await fetchProfiles();
+    renderProfileTab();
+  });
 }
 
 // Render the Profile tab
@@ -39,13 +57,13 @@ export async function renderProfileTab() {
   container.innerHTML = '';
   try {
     await fetchPortfolios();
-    await fetchProfiles();
+    let success = await fetchProfiles();
     // Merge backend profiles and unsaved profiles
     const allProfiles = [...profiles, ...unsavedProfiles];
     allProfiles.forEach((profile, idx) => {
       container.appendChild(createProfileDiv(profile, idx, allProfiles));
     });
-    if (canAddProfile()) {
+    if (success && canAddProfile()) {
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'profile-buttons-container';
       

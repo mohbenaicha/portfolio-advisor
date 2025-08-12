@@ -1,22 +1,16 @@
 from os import getenv
 import json
 import os
+import logging
 
-# Debug: Print all environment variables
-print("All environment variables:")
-for k, v in os.environ.items():
-    if any(x in k for x in ['DATABASE', 'ENV', 'MONGO', 'OPENAI']):
-        print(f"{k}: {v}")
-        
+
 ENV = getenv("ENV", "DEV")  # Default to "DEV" if ENV is not set
-
-if ENV == "DEV":
-    TEST_DB_URL = getenv("TEST_DB_URI", "").strip()
-
 DATABASE_URL = getenv("DATABASE_URI").strip()
 MONGO_URI = getenv("MONGO_URI").strip()
 OUTSCRAPER_API_KEY = getenv("OUTSCRAPER_API_KEY").strip()
-OPEN_AI_API_KEY = getenv("OPENAI_API_KEY").strip()  # Remove any surrounding quotes due to GCP cloud secter create
+OPEN_AI_API_KEY = getenv(
+    "OPENAI_API_KEY"
+).strip()  # Remove any surrounding quotes due to GCP cloud secter create
 SYSTEM_USER_TOKEN = getenv("SYSTEM_USER_TOKEN", "").strip()
 
 ALLOWED_ORIGINS = [
@@ -25,17 +19,26 @@ ALLOWED_ORIGINS = [
 
 raw_endpoint_str = getenv("BACKEND_URLS")
 if raw_endpoint_str:
-    BACKEND_SERVICE_MAP = json.loads(raw_endpoint_str.strip()) # ("core" "advisor" "archive" "portfolio" "profile")
+    BACKEND_SERVICE_MAP = json.loads(
+        raw_endpoint_str.strip()
+    )  # ("core" "advisor" "archive" "portfolio" "profile")
 else:
     BACKEND_SERVICE_MAP = {}
 
 if ENV == "TEST":
     ALLOWED_ORIGINS.append("http://localhost:8089")
 
-    
+
 PROVIDER_BASE_URL = "/".join([getenv("ADVISOR_INTERNAL_BASE_URI"), "tool"])
 GMAIL_PWD = getenv("GMAIL_PWD", "").strip()
 RECAPTCHA_SECRET_KEY = getenv("RECAPTCHA_SECRET_KEY", "").strip()
+LOG_LEVEL = logging.INFO
+
+
+if ENV == "DEV":
+    TEST_DB_URL = getenv("TEST_DB_URI", "").strip()
+    LOG_LEVEL = logging.DEBUG
+
 
 if not DATABASE_URL:
     raise ValueError("DATABASE_URI environment variable not set")
@@ -66,6 +69,7 @@ ALT_LLM = "gpt-4.1-mini"
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMAIL_ADDRESS = "mohamedbenaicha1992@gmail.com"
 
+
 def print_env_variables():
     env_vars = {
         "ENV": ENV,
@@ -86,5 +90,6 @@ def print_env_variables():
 
     for key, value in env_vars.items():
         print(f"{key}: {value}")
+
 
 print_env_variables()
