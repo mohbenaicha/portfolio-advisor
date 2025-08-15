@@ -7,8 +7,7 @@ from langchain.docstore.document import Document
 from openai import OpenAI
 from pydantic import SecretStr
 from app.config import OPEN_AI_API_KEY, SUMMARY_LLM, EMBEDDING_MODEL
-from app.utils.advisor_utils import count_tokens
-
+from app.core.logging_config import logger
 
 # production model
 summary_client = ChatOpenAI(
@@ -36,17 +35,16 @@ async def embed_articles(articles: List[dict]) -> List[dict]:
     texts = [a["summary"] for a in articles]
 
     # Count input tokens for embeddings
-    total_embedding_text = " ".join(texts)
     embeddings = await batch_embed(texts)
     for article, emb in zip(articles, embeddings):
+        logger.info(f"Embedding article: {article.get('link', 'unknown')} with embedding length: {len(emb)}")
         article["summary_embedding"] = emb
-
     return articles
 
 
 async def process_article(article, splitter, chain, max_summary_length):
     # Debug: Check what fields are actually available
-    
+    logger.debug(f"Processing article: {article.get('link', 'unknown')} with raw_article length: {len(article.get('raw_article', ''))}")
     # Use raw_article as before (no assumptions)
     content = article.get("raw_article", "")
     if len(content) < 50:
@@ -65,7 +63,7 @@ async def process_article(article, splitter, chain, max_summary_length):
     response = await chain.arun(
         {"input_documents": chunks, "max_length": max_summary_length}
     )  # COMMENTED OUT TO SAVE API COSTS
-
+    logger.debug(f"Length of summary response: {len(response)} for article {article.get('link', 'unknown')}")
     article["summary"] = response
     return article
 
@@ -75,18 +73,21 @@ async def summarize_articles(articles, llm=summary_client, max_summary_length=30
     filtered_articles = []
     for article in articles:
         raw_article = article.get("raw_article", "")
+        if not raw_article:
+            logger.warning(f"Article {article.get('link', 'unknown')} has no raw content.")
+            continue
         if len(raw_article) >= 50:
             filtered_articles.append(article)
     splitter = CharacterTextSplitter(chunk_size=3000, chunk_overlap=200)
 
     custom_prompt = """
-    Summarize the following text in {max_length} characters or less. 
+    Summarize the following text in {max_length} characters or less.  
     Focus on key facts. Be concise and direct. 
     Keep important entity names, dates and figures in the summary.
     
     {text}
     
-    Summary:"""
+    Summary:""" # max_length and text are input variables specified in process_article in the list comprehension below
 
     from langchain.prompts import PromptTemplate
 

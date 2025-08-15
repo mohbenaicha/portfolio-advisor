@@ -8,11 +8,11 @@ from app.utils.advisor_utils import (
     convert_markdown_to_html,
     call_provider_endpoint,
     increment_prompt_usage,
-    count_tokens,
     check_prompt_limit
 )
 from app.config import OPEN_AI_API_KEY, LLM
 from app.core.provider_endpoint_map import endpoint_map
+from app.core.logging_config import logger
 
 client = OpenAI(api_key=OPEN_AI_API_KEY)
 
@@ -25,24 +25,24 @@ async def validate_prompt(question: str, user_id: int, portfolio_id: int, db: As
         {"question": question, "user_id": user_id, "portfolio_id": portfolio_id},
     )
     if not validate_prompt_resp.get("valid", False):
+        logger.warning(f"Validation failed for question: {question}")
         response_msg = "<p>Invalid question. Please ask a relevant investment question.</p>"
         return {
             "archived": False,
             "summary": response_msg,
-            
         }
     
     return {}
 
 
 async def construct_initial_messages(
-    question: str, portfolio_id: int, user_id: int
+    question: str
 ) -> list:
     """Construct the initial messages for OpenAI."""
     return [
         {
             "role": "system",
-            "content": await build_system_prompt(user_id, portfolio_id),
+            "content": await build_system_prompt(),
         },
         {"role": "user", "content": question},
     ]
@@ -68,6 +68,7 @@ async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id
 
         endpoint = endpoint_map.get(name)
         if not endpoint:
+            logger.warning(f"Unknown tool requested: {name}")
             messages.append(
                 {
                     "role": "tool",
@@ -77,8 +78,8 @@ async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id
                 }
             )
             continue
-
-        print(f"DEBUG: [TOOL CALL] Invoking tool: {name}")
+        
+        logger.debug(f"Calling tool: {name} with payload: {payload}")
         tool_result = await call_provider_endpoint(endpoint, payload)
         tool_outputs[name] = tool_result
 
@@ -93,8 +94,6 @@ async def handle_tool_call(choice, messages, tool_outputs, user_id, portfolio_id
             }
         )
 
-        tool_response_tokens = count_tokens(json.dumps(tool_result), LLM)
-        total_input_tokens += tool_response_tokens
 
     return choice, messages, tool_outputs, stop
 
@@ -108,11 +107,13 @@ async def run_mcp_client_pipeline(
     # Check both prompt and failed prompt limits
     limit_hit, limit_response = await check_prompt_limit(user_id)
     if limit_hit:
+        logger.info(f"User {user_id} has hit the prompt limit.")
         if isinstance(limit_response, dict):
             limit_response["final_message"] = True
         return limit_response
     # Call validation endpoints first via HTTPfv
     validation_issue = await validate_prompt(question, user_id, portfolio_id, db)
+    logger.warning(f"Validation issue: {validation_issue}")
     if validation_issue:
         if db:
             with UserSessionManager.use_advisor_session():
@@ -123,6 +124,7 @@ async def run_mcp_client_pipeline(
                 if isinstance(limit_response, dict):
                     limit_response["final_message"] = True
                 return limit_response
+        
         if isinstance(validation_issue, dict):
             validation_issue["final_message"] = False
         return validation_issue
@@ -136,7 +138,7 @@ async def run_mcp_client_pipeline(
             "final_message": False,
         }
 
-    messages = await construct_initial_messages(question, portfolio_id, user_id)
+    messages = await construct_initial_messages(question)
 
     tool_outputs = {}
     stop = False

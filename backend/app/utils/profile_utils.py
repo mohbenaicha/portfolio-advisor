@@ -1,6 +1,23 @@
 import httpx
 from sqlalchemy.inspection import inspect
 from app.config import SYSTEM_USER_TOKEN, BACKEND_SERVICE_MAP
+from app.models.schemas import UserProfileResponse
+from app.services.profile_service import str_to_list
+
+
+def profile_to_response(profile):
+    return UserProfileResponse(
+        id=getattr(profile, 'id'),
+        user_id=getattr(profile, 'user_id'),
+        portfolio_id=getattr(profile, 'portfolio_id'),
+        short_term_objectives=str_to_list(getattr(profile, 'short_term_objectives')),
+        long_term_objectives=str_to_list(getattr(profile, 'long_term_objectives')),
+        sector_preferences=str_to_list(getattr(profile, 'sector_preferences')),
+        regional_preferences=str_to_list(getattr(profile, 'regional_preferences')),
+        asset_preferences=str_to_list(getattr(profile, 'asset_preferences')),
+        created_at=getattr(profile, 'created_at'),
+        updated_at=getattr(profile, 'updated_at'),
+    )
 
 
 def profile_to_text(profile, label=None) -> str:

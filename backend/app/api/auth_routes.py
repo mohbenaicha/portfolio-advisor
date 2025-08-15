@@ -11,6 +11,7 @@ from app.core.session_state import session_store
 from app.db.user_session import UserSessionManager
 from app.db.memory import get_user_memory
 from app.dependencies.user import get_current_user
+from app.core.logging_config import logger
 
 router = APIRouter()
 
@@ -19,6 +20,7 @@ router = APIRouter()
 async def authenticate_user(
     payload: TokenAuth, request: Request, db: AsyncSession = Depends(get_db)
 ):
+    logger.debug("Authenticating user with provided token.")
     try:
         token = uuid.UUID(payload.token)
     except ValueError:
@@ -30,10 +32,12 @@ async def authenticate_user(
     if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    logger.info(f"User {user.id} authenticated successfully.")
     # Check if session already exists in session_store (i.e. for reaccessing the app within 24 hrs)
     if user_id := next(
         (uid for uid in session_store if session_store[uid]["timestamp"]), None
     ):
+        logger.debug(f"Session already active for user {user_id}.")
         return {"message": "Session already active", "user_id": user_id}
 
     # returns object list(LLMMemory) for the user
@@ -48,16 +52,18 @@ async def authenticate_user(
  
     # Check if session was actually loaded from database (has timestamp)
     if session and session.get("timestamp"):
+        logger.debug(f"Session loaded from database for user {user.id}.")
         return {"message": "Session loaded from database", "user_id": user.id}
 
     # Otherwise, create a new session
+    logger.debug(f"Creating new session for user {user.id}.")
     await UserSessionManager.create_session(
         user_id=user.id,
         llm_memory=llm_memories,
         db=db,
         timestamp=request.headers.get("x-client-time"),
     )
-
+    logger.info(f"New session created for user {user.id}.")
     return {
         "message": f"User {user.id} authenticated; new session created",
         "user_id": user.id,
@@ -73,5 +79,6 @@ async def logout_user(
 
     if user_id in session_store:
         del session_store[user_id]
+        logger.info(f"User {user_id} logged out and session cleared.")
 
     return {"message": "Logout successful"}

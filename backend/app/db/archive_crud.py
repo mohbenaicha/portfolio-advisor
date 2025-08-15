@@ -1,10 +1,10 @@
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import delete
-from datetime import datetime, timezone
-from app.models.sql_models import ArchivedResponse, Portfolio
+from fastapi import HTTPException
 from html import escape
-
+from app.models.sql_models import ArchivedResponse, Portfolio
 
 async def delete_archive_by_id(db: AsyncSession, archive_id: int, user_id: int) -> bool:
 
@@ -13,15 +13,13 @@ async def delete_archive_by_id(db: AsyncSession, archive_id: int, user_id: int) 
     )
     result = await db.execute(query)
     await db.commit()
-
     return result.rowcount > 0
 
 
 async def delete_all_archives_by_user_id(db: AsyncSession, user_id: int) -> bool:
     query = delete(ArchivedResponse).where(ArchivedResponse.user_id == user_id)
-    _ = await db.execute(query)
+    await db.execute(query)
     await db.commit()
-    
     return True  # Always return True as we're deleting all archives for the user
 
 
@@ -34,7 +32,7 @@ async def save_archive(db: AsyncSession = None, archive_data=None, user_id: int 
             )
         )
         portfolio = portfolio_exists.scalar()
-        if not portfolio:
+        if not portfolio: # should not arise unless user deletes portfolio before saving archive
             raise ValueError(
                 f"Portfolio with id {archive_data.portfolio_id} does not exist."
             )
@@ -53,14 +51,17 @@ async def save_archive(db: AsyncSession = None, archive_data=None, user_id: int 
         await db.refresh(record)
         return record
     else:
-        raise ValueError("No archive data provided.")
+        raise HTTPException(
+            status_code=400, detail="Archive data is required."
+        )
 
 
 async def get_archived_responses(user_id: int = None, db: AsyncSession = None):
     result = await db.execute(
         select(ArchivedResponse).where(ArchivedResponse.user_id == user_id)
     )
-    return result.scalars().all()
+    result = result.scalars().all()
+    return result
 
 
 async def get_archive_by_id(
@@ -73,4 +74,9 @@ async def get_archive_by_id(
             ArchivedResponse.id == archive_id, ArchivedResponse.user_id == user_id
         )
     )
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Archive with id {archive_id} not found for user {user_id}."
+        )
     return result.scalar_one_or_none()

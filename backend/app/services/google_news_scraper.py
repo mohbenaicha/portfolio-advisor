@@ -1,6 +1,7 @@
 import time
 from outscraper import ApiClient
 from app.config import OUTSCRAPER_API_KEY
+from app.core.logging_config import logger
 
 client = ApiClient(api_key=OUTSCRAPER_API_KEY)
 
@@ -31,7 +32,7 @@ def fetch_news(
         ):
             return response
         time.sleep(3)  # wait before retrying
-
+    logger.warning(f"Failed to fetch news for query: {query} after {retries} retries")
     return []
 
 
@@ -40,7 +41,7 @@ async def fetch_articles(themes):
         return False
     news_response = []
     for theme in themes:
-        print(f"DEBUG: Fetching news for theme: {theme}")
+        logger.debug(f"Fetching news for theme: {theme}")
         response = fetch_news(theme, 1, time_range="w")
         if response and response[0] != []:
             for article in response[0]:

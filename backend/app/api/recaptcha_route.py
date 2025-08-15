@@ -3,6 +3,8 @@ from fastapi import HTTPException
 from fastapi import APIRouter
 from app.models.schemas import RecaptchaRequest
 from app.config import RECAPTCHA_SECRET_KEY
+from app.core.logging_config import logger
+
 router = APIRouter()
 
 
@@ -11,13 +13,16 @@ async def verify_recaptcha(request: RecaptchaRequest):
     secret_key = RECAPTCHA_SECRET_KEY  # Replace with your reCAPTCHA secret key
     url = "https://www.google.com/recaptcha/api/siteverify"
     payload = {"secret": secret_key, "response": request.token}
-
+    logger.info(f"Verifying reCAPTCHA for token: {request.token}")
+    
     async with httpx.AsyncClient() as client:
         response = await client.post(url, data=payload)
         result = response.json()
 
     score = result.get("score", 0)
-    if score < 0.5:  # Set your threshold score here
+    if score < 0.5:
+        logger.warning(f"Suspicious activity detected: score {score} for token {request.token}")
         raise HTTPException(status_code=400, detail="Suspicious activity detected")
-
+    
+    logger.info(f"reCAPTCHA verified successfully with score {score} for token {request.token}")
     return {"message": "success", "score": score}

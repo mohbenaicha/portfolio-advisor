@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from typing import Union
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.services.openai_client import (
@@ -8,7 +9,7 @@ from app.services.openai_client import (
 from app.models.schemas import *
 from app.utils.profile_utils import fetch_profile_from_service, profile_to_text
 from app.utils.portfolio_utils import fetch_portfolio_from_service
-from typing import Union
+from app.core.logging_config import logger
 
 router = APIRouter()
 
@@ -28,10 +29,11 @@ async def api_validate_prompt(
 
     # Create response with token counts
     if isinstance(result, dict):
+        logger.warning("validate_prompt returned dict, expected ValidatePromptResponse format.")
         return ValidatePromptResponse(
             valid=result.get("valid", False),
         )
-
+    logger.info(f"Prompt validation result: {result}")
     return result
 
 
@@ -55,8 +57,9 @@ async def api_retrieve_news(
 
     # Fallback for old format
     if isinstance(result, list):
+        logger.warning("retrieve_news returned list, expected RetrieveNewsResponse format.")
         return RetrieveNewsResponse(articles=result)
-
+    
     return result
 
 
@@ -71,15 +74,10 @@ async def api_get_user_portfolio(
         portfolio_id=payload.portfolio_id,
         user_id=payload.user_id,
     ))
-    # portfolio = portfolio_to_text(
-    #     jsonable_encoder(
-    #         await get_portfolio_by_id(db, payload.portfolio_id, payload.user_id)
-    #     )
-    # )
-
     if not portfolio:
-        return {"error": "Portfolio not found"}
+        raise HTTPException(status_code=404, detail="Portfolio not found")
 
+    logger.info(f"Fetched portfolio for user_id: {payload.user_id} and portfolio_id: {payload.portfolio_id}")
     return portfolio  # str
 
 
@@ -88,9 +86,7 @@ async def api_get_user_profile(
     payload: GetUserProfilesPayload,
     db: AsyncSession = Depends(get_db),
 ) -> Union[dict[str, str], str]:
-    from app.db.profile_crud import (
-        update_user_profile_fields,
-    )  # , get_user_profile_for_portfolio
+    from app.db.profile_crud import update_user_profile_fields
     from app.services.openai_client import extract_profile_details
     from app.models.schemas import UserProfileBase
 
@@ -98,17 +94,9 @@ async def api_get_user_profile(
     specific = profiles.get("specific")
     general = profiles.get("general")
 
-    print("DEBUG: get user profile tool call specific: ", specific)
-    print("DEBUG: get user profile tool call general: ", general)
-
-    # specific, general = await get_user_profile_for_portfolio(
-    #     db, payload.user_id, payload.portfolio_id
-    # )
 
     # Extract and update profile details using LLM
-    print("DEBUG: get user profile tool call payload: ", payload)
     question = getattr(payload, "conversation", None)
-    print("DEBUG: get user profile tool call question: ", question)
     if question:
         # Dynamically get updatable fields from UserProfileBase
         exclude_fields = {"id", "user_id", "portfolio_id", "created_at", "updated_at"}
@@ -156,12 +144,13 @@ async def api_get_user_profile(
                 db, payload.user_id, payload.portfolio_id, update_fields
             )
             if updated_profile:
+                logger.debug(f"Updated profile for user {payload.user_id} with new fields.")
                 specific = updated_profile
         else:
-            print("DEBUG: No profile updates extracted from user question.")
+            logger.warning("No profile fields extracted from the question.")
 
     if not specific and not general:
-        print("DEBUG: No investment profile found.")
+        logger.warning("No investment profile found for the user.")
         return {"error": "No investment profile found."}
 
     summary = ""
@@ -178,6 +167,7 @@ async def api_get_user_profile(
     if general:
         summary += profile_to_text(general, "all portfolios") + "\n\n"
     if specific and general:
+        logger.info(f"Both specific and general profiles found for the user {payload.user_id}.")
         summary += "If general profile conflicts with the specific portfolio investment profile, try to reconcile between the two, otherwise prioritize the specific profile investment profile."
-    print("DEBUG: get investment profile tool call: ", summary)
+    
     return {"investment_profile": summary}

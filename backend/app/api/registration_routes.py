@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from fastapi import HTTPException
 from app.config import GMAIL_PWD, EMAIL_ADDRESS
 from app.models.schemas import AccessRequest
+from app.core.logging_config import logger
 
 def email_access_request(user_email):
     msg = EmailMessage()
@@ -29,4 +30,5 @@ def request_auth_token(request: AccessRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+    logger.info(f"Access request email sent to {EMAIL_ADDRESS} from {user_email}.")
     return {"message": "Access request submitted successfully."}

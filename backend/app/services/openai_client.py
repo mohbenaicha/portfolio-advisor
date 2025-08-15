@@ -2,6 +2,7 @@ import json, re
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict
 from fastapi.encoders import jsonable_encoder
+from openai import OpenAI
 from app.db.portfolio_crud import get_portfolio_by_id
 from app.utils.portfolio_utils import get_exposure_summary, get_portfolio_summary
 from app.db.session import AsyncSession
@@ -11,8 +12,8 @@ from app.db.mongo import get_similar_articles, store_article_summaries
 from app.services.google_news_scraper import fetch_articles
 from app.services.article_processor import summarize_and_embed_articles
 from app.utils.article_utils import extract_with_readability
-from app.utils.advisor_utils import construct_prompt_for_embedding, count_tokens
-from openai import OpenAI
+from app.utils.advisor_utils import construct_prompt_for_embedding
+from app.core.logging_config import logger
 
 client = OpenAI(api_key=OPEN_AI_API_KEY)
 
@@ -132,15 +133,9 @@ async def retrieve_news(
         db=db,
         user_id=user_id,
     )
-
+    logger.debug(f"Extracted themes: {themes}")
     start_date = datetime.now(timezone.utc) - timedelta(days=8)
     end_date = datetime.now(timezone.utc)
-
-    print("DEBUG: Looking for Cached Articles :", themes)
-    # keys: link, posted (date published), query, query_tags, source (publisher), stored_at (d/t), summary, title
-    # cached_articles = await get_cached_articles(
-    #     themes, start_date=start_date, end_date=end_date
-    # )
 
     composite_prompt = await construct_prompt_for_embedding(
         db=db, portfolio_id=portfolio_id, user_id=user_id, question=question
@@ -148,7 +143,7 @@ async def retrieve_news(
     cached_articles = await get_similar_articles(
         composite_prompt, start_date=start_date, end_date=end_date
     )
-    print("DEBUG: Found {} chached articles".format(len(cached_articles)))
+    logger.debug(f"Found {len(cached_articles)} cached articles")
 
     if len(cached_articles) > 0:
         for article in cached_articles:
@@ -178,7 +173,9 @@ async def retrieve_news(
                     )
                 except Exception as e:
                     article["raw_article"] = "Readability extraction failed."
-
+        else:
+            logger.warning("No fresh articles fetched from Outscraper.")
+        
         # 5: Summarize articles using LangChain (Prompt 2 - multiple requests to open ai)
         # keys added:
         #   summary - summarized version of each article by GPT-4o mini
@@ -188,19 +185,19 @@ async def retrieve_news(
         # 6: Cache summaries in MongoDB
         await store_article_summaries(articles)
 
-        print("DEBUG: Retreived {} fresh articles".format(len(articles)))
         articles_to_return = articles + cached_articles if cached_articles else articles
         filtered_articles = [filter_article_fields(a) for a in articles_to_return]
-        # Return articles with token counts
+        logger.info(f"retrieved {len(filtered_articles)} articles after filtering for user {user_id} and portfolio {portfolio_id}")
+        # Return articles
         return {
             "articles": filtered_articles,
         }
     else:
+        logger.debug("Skipping scraping, returning cached articles only.")
         articles_to_return = cached_articles if cached_articles else []
         filtered_articles = [filter_article_fields(a) for a in articles_to_return]
         return {
             "articles": filtered_articles,
-            "token_counts": {"input_tokens": 0, "output_tokens": 0},
         }
 
 
@@ -247,7 +244,6 @@ async def extract_profile_details(
         model=ALT_LLM, messages=[{"role": "user", "content": prompt}]
     )
     raw_content = response.choices[0].message.content
-    print("DEBUG: Extracted profile details:", raw_content)
 
     if raw_content:
         cleaned = re.sub(
